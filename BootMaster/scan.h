@@ -153,6 +153,9 @@ Kubuntu,Lubuntu,Xubuntu,Ubuntu,Void,Zorin"
 L"Arch,CachyOS,Debian,Deepin,Elementary,EndeavourOS,Fedora,Gentoo,\
 LinuxMint,Manjaro,OpenSUSE,Redhat,Slackware,SUSE,Ubuntu,Zorin"
 
+#define RECOVERY_NAME_HFS       L"HFS+ Instance"
+#define RECOVERY_NAME_APFS      L"APFS Instance"
+
 
 EG_IMAGE * GetDiskBadge (IN UINTN DiskType);
 

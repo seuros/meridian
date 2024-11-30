@@ -4199,6 +4199,64 @@ CHAR16 GetKeyVal (
     return KeyVal;
 } // static CHAR16 GetKeyVal()
 
+static
+CHAR16 * GetMacVersion (
+    IN  REFIT_FILE   *File
+) {
+    CHAR16  *Line;
+    CHAR16  *TypeMacOS;
+    BOOLEAN  CheckNext;
+    BOOLEAN  ExitLoop;
+
+    TypeMacOS = L"Unknown";
+    CheckNext =      FALSE;
+    ExitLoop  =      FALSE;
+
+    for (;;) {
+        Line = ReadLine (File);
+        if (Line == NULL) {
+            break;
+        }
+
+        if (!CheckNext) {
+            if (MyStrStr (Line, L"<key>ProductVersion") ||
+                MyStrStr (Line, L"<key>ProductUserVisibleVersion")
+            ) {
+                CheckNext = TRUE;
+            }
+        }
+        else {
+            CheckNext = FALSE;
+
+            if (0);
+            else if (MyStrStr (Line, L"10.4."   )) TypeMacOS = L"10.04 Tiger"        ;
+            else if (MyStrStr (Line, L"10.5."   )) TypeMacOS = L"10.05 Leopard"      ;
+            else if (MyStrStr (Line, L"10.6."   )) TypeMacOS = L"10.06 Snow Leopard" ;
+            else if (MyStrStr (Line, L"10.7."   )) TypeMacOS = L"10.07 Lion"         ;
+            else if (MyStrStr (Line, L"10.8."   )) TypeMacOS = L"10.08 Mountain Lion";
+            else if (MyStrStr (Line, L"10.9."   )) TypeMacOS = L"10.09 Mavericks"    ;
+            else if (MyStrStr (Line, L"10.10."  )) TypeMacOS = L"10.10 Yosemite"     ;
+            else if (MyStrStr (Line, L"10.11."  )) TypeMacOS = L"10.11 El Capitan"   ;
+            else if (MyStrStr (Line, L"10.12."  )) TypeMacOS = L"10.12 Sierra"       ;
+            else if (MyStrStr (Line, L"10.13."  )) TypeMacOS = L"10.13 High Sierra"  ;
+            else if (MyStrStr (Line, L"10.14."  )) TypeMacOS = L"10.14 Mojave"       ;
+            else if (MyStrStr (Line, L"<string>")) CheckNext = TRUE                  ;
+
+            if (!CheckNext) {
+                ExitLoop = TRUE;
+            }
+        }
+
+        MY_FREE_POOL(Line);
+
+        if (ExitLoop) {
+            break;
+        }
+    } // for
+
+    return TypeMacOS;
+} // static CHAR16 * GetMacVersion()
+
 // Locates boot loaders.
 // NOTE: This assumes that GlobalConfig.LegacyType is correctly set.
 VOID ScanForBootloaders (VOID) {
@@ -4743,6 +4801,7 @@ VOID ScanForBootloaders (VOID) {
 VOID ScanForTools (VOID) {
     EFI_STATUS              Status;
     UINTN                   i, j, k;
+    UINTN                   TempSize;
     UINTN                   ToolTotal;
     UINTN                   VolumeIndex;
     VOID                   *ItemBuffer;
@@ -4756,6 +4815,7 @@ VOID ScanForTools (VOID) {
     BOOLEAN                 FoundTool;
     BOOLEAN                 OtherFind;
     BOOLEAN                 FoundThis;
+    REFIT_FILE             *TempFile;
 
     REFIT_MENU_ENTRY *MenuEntryPreCleanNvram;
     REFIT_MENU_ENTRY *MenuEntryHiddenTags   ;
@@ -5273,26 +5333,31 @@ VOID ScanForTools (VOID) {
             case TAG_RECOVERY_MAC:
                 OtherFind  = FALSE;
                 RecoverVol =  NULL;
-                for (VolumeIndex = 0; VolumeIndex < HfsRecoveryCount; VolumeIndex++) {
+                for (VolumeIndex = 0; VolumeIndex < RecoveryVolumesHFSCount; VolumeIndex++) {
                     j = 0;
                     while ((FileName = FindCommaDelimited (GlobalConfig.MacOSRecoveryFiles, j++)) != NULL) {
                         // DA-TAG: Do not free 'FileName'
                         //         If used in 'AddToolEntry'
                         FoundThis = FALSE;
-                        if ((HfsRecovery[VolumeIndex]->RootDir != NULL)     &&
-                            (IsValidTool (HfsRecovery[VolumeIndex], FileName))
+                        if ((RecoveryVolumesHFS[VolumeIndex]->RootDir != NULL)     &&
+                            (IsValidTool (RecoveryVolumesHFS[VolumeIndex], FileName))
                         ) {
-                            // Get a meaningful tag for the recovery tool
-                            // DA-TAG: Limit to TianoCore
-                            #ifdef __MAKEWITH_TIANO
-                            RecoverVol = RefitGetAppleDiskLabel (
-                                HfsRecovery[VolumeIndex]
+                            Status = RefitReadFile (
+                                RecoveryVolumesHFS[VolumeIndex]->RootDir,
+                                MACOS_RECOVERY_VERSION_FILE,
+                                TempFile, &TempSize
                             );
-                            #endif
+                            if (EFI_ERROR(Status)) {
+                                RecoverVol = L"RecoveryHD";
+                            }
+                            else {
+                                RecoverVol = GetMacVersion (TempFile);
+                                MY_FREE_FILE(TempFile);
+                            }
 
-                            VolumeTag = (RecoverVol != NULL)
-                                ? PoolPrint (L"HFS+ Recovery : %s", RecoverVol)
-                                : StrDuplicate (L"HFS+ Recovery : Recovery HD");
+                            VolumeTag = PoolPrint (
+                                L"%s - %s", RECOVERY_NAME_HFS, RecoverVol
+                            );
 
                             #if REFIT_DEBUG > 0
                             ALT_LOG(1, LOG_LINE_NORMAL,
@@ -5307,7 +5372,7 @@ VOID ScanForTools (VOID) {
 
                             // DA-TAG: PoolPrint below does not leak memory
                             AddToolEntry (
-                                HfsRecovery[VolumeIndex],
+                                RecoveryVolumesHFS[VolumeIndex],
                                 FileName,
                                 PoolPrint (
                                     L"%s : %s",
@@ -5335,9 +5400,8 @@ VOID ScanForTools (VOID) {
                             OtherFind = TRUE;
 
                             MY_FREE_POOL(VolumeTag);
-                        } // if (HfsRecovery[VolumeIndex]->RootDir
+                        } // if (RecoveryVolumesHFS[VolumeIndex]->RootDir
 
-                        MY_FREE_POOL(RecoverVol);
                         if (!FoundThis) {
                             MY_FREE_POOL(FileName);
                         }
@@ -5345,10 +5409,10 @@ VOID ScanForTools (VOID) {
                 } // for
 
                 if (SingleAPFS) {
-                    for (j = 0; j < RecoveryVolumesCount; j++) {
+                    for (j = 0; j < RecoveryVolumesAPFSCount; j++) {
+// DA-TAG: Limit to TianoCore
+#ifdef __MAKEWITH_TIANO
                         // Get a meaningful tag for the recovery tool
-                        // DA-TAG: Limit to TianoCore
-                        #ifdef __MAKEWITH_TIANO
                         for (k = 0; k < SystemVolumesCount; k++) {
                             SkipSystemVolume = FALSE;
                             for (VolumeIndex = 0; VolumeIndex < SkipApfsVolumesCount; VolumeIndex++) {
@@ -5365,7 +5429,7 @@ VOID ScanForTools (VOID) {
                             }
 
                             if (GuidsAreEqual (
-                                    &(RecoveryVolumes[j]->PartGuid),
+                                    &(RecoveryVolumesAPFS[j]->PartGuid),
                                     &(SystemVolumes[k]->PartGuid)
                                 )
                             ) {
@@ -5374,7 +5438,7 @@ VOID ScanForTools (VOID) {
                                 ) {
                                     // DA-TAG: Do not free 'FileName'
                                     //         Used in 'AddToolEntry'
-                                    RecoverVol  = StrDuplicate (SystemVolumes[k]->VolName);
+                                    RecoverVol  = SystemVolumes[k]->VolName;
                                     TmpStr      = GuidAsString (&(SystemVolumes[k]->VolUuid));
                                     FileName    = PoolPrint (L"%s\\boot.efi", TmpStr);
                                     MY_FREE_POOL(TmpStr);
@@ -5383,11 +5447,12 @@ VOID ScanForTools (VOID) {
                                 }
                             }
                         } // for k = 0
-                        #endif
+#endif
 
                         VolumeTag = (RecoverVol != NULL)
-                            ? PoolPrint (L"APFS Instance : %s", RecoverVol)
-                            : StrDuplicate (L"APFS Instance : Recovery");
+                            ? PoolPrint (L"%s - %s", RECOVERY_NAME_APFS, RecoverVol)
+                            : PoolPrint (L"%s - RecoveryHD", RECOVERY_NAME_APFS);
+
                         #if REFIT_DEBUG > 0
                         ALT_LOG(1, LOG_LINE_NORMAL,
                             L"Adding Mac Recovery Tag:- '%s' for '%s'",
@@ -5399,7 +5464,7 @@ VOID ScanForTools (VOID) {
 
                         // DA-TAG: PoolPrint below does not leak memory
                         AddToolEntry (
-                            RecoveryVolumes[j],
+                            RecoveryVolumesAPFS[j],
                             FileName,
                             PoolPrint (
                                 L"%s : %s",
@@ -5427,7 +5492,6 @@ VOID ScanForTools (VOID) {
                         OtherFind = TRUE;
 
                         MY_FREE_POOL(VolumeTag);
-                        MY_FREE_POOL(RecoverVol);
                     } // for j = 0
                 } // if SingleAPFS
 

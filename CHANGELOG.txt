@@ -11,6 +11,12 @@
     - Key `0` is an internally reserved key
     - Keys `A` and `Z` are used for tools
     - Keys `B`, `I` and `O` are not used
+- Improves `Mac Recovery` Handling
+  * Now labels HFS Recovery instances with the Mac OS version
+  * Activates previously disabled implementation for APFS
+    - Attempts restart into APFS Recovery via `BootNext`
+    - **IMPORTANT**:
+      * This implementation is still a work in progress ... feedback required/welcome
 
 
 0.14.2.AA (08 OCT 2024):

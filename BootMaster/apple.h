@@ -129,9 +129,17 @@ EFI_STATUS RefitGetApfsVolumeInfo (
     OUT EFI_GUID          *VolumeGuid    OPTIONAL,
     OUT APFS_VOLUME_ROLE  *VolumeRole    OPTIONAL
 );
+
+
+// DA-TAG: Currently Disabled by '#if 0' - START
+#if 0
 CHAR16 * RefitGetAppleDiskLabel (
     IN  REFIT_VOLUME *Volume
 );
+// DA-TAG: Currently Disabled by '#if 0' - END
+#endif
+
+
 // DA-TAG: Limit to TianoCore - END
 #endif
 

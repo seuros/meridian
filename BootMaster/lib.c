@@ -116,71 +116,71 @@ EFI_GUID gFreedesktopRootGuid = {0x69dad710, 0x2ce4, 0x4e3c, {0xb1, 0x6c, 0x21, 
 
 
 // Variables
-EFI_HANDLE                  SelfImageHandle         = NULL;
+EFI_HANDLE                  SelfImageHandle          = NULL;
 
-EFI_LOADED_IMAGE_PROTOCOL  *SelfLoadedImage         = NULL;
+EFI_LOADED_IMAGE_PROTOCOL  *SelfLoadedImage          = NULL;
 
-CHAR16                     *StrSelfUUID             = NULL;
-CHAR16                     *SelfDirPath             = NULL;
-CHAR16                     *SelfBaseName            = NULL;
-CHAR16                     *SelfToolPath            = NULL;
+CHAR16                     *StrSelfUUID              = NULL;
+CHAR16                     *SelfDirPath              = NULL;
+CHAR16                     *SelfBaseName             = NULL;
+CHAR16                     *SelfToolPath             = NULL;
 
-EFI_FILE_PROTOCOL          *SelfRootDir             = NULL;
-EFI_FILE_PROTOCOL          *SelfDir                 = NULL;
-EFI_FILE_PROTOCOL          *gVarsDir                = NULL;
+EFI_FILE_PROTOCOL          *SelfRootDir              = NULL;
+EFI_FILE_PROTOCOL          *SelfDir                  = NULL;
+EFI_FILE_PROTOCOL          *gVarsDir                 = NULL;
 
-REFIT_VOLUME               *SelfVolume              = NULL;
-REFIT_VOLUME              **Volumes                 = NULL;
-REFIT_VOLUME              **RecoveryVolumes         = NULL;
-REFIT_VOLUME              **SkipApfsVolumes         = NULL;
-REFIT_VOLUME              **PreBootVolumes          = NULL;
-REFIT_VOLUME              **SystemVolumes           = NULL;
-REFIT_VOLUME              **DataVolumes             = NULL;
-REFIT_VOLUME              **HfsRecovery             = NULL;
+REFIT_VOLUME               *SelfVolume               = NULL;
+REFIT_VOLUME              **Volumes                  = NULL;
+REFIT_VOLUME              **RecoveryVolumesAPFS      = NULL;
+REFIT_VOLUME              **RecoveryVolumesHFS       = NULL;
+REFIT_VOLUME              **SkipApfsVolumes          = NULL;
+REFIT_VOLUME              **PreBootVolumes           = NULL;
+REFIT_VOLUME              **SystemVolumes            = NULL;
+REFIT_VOLUME              **DataVolumes              = NULL;
 
-UINTN                       RecoveryVolumesCount    = 0;
-UINTN                       SkipApfsVolumesCount    = 0;
-UINTN                       PreBootVolumesCount     = 0;
-UINTN                       SystemVolumesCount      = 0;
-UINTN                       DataVolumesCount        = 0;
-UINTN                       HfsRecoveryCount        = 0;
-UINTN                       VolumesCount            = 0;
+UINTN                       RecoveryVolumesAPFSCount = 0;
+UINTN                       RecoveryVolumesHFSCount  = 0;
+UINTN                       SkipApfsVolumesCount     = 0;
+UINTN                       PreBootVolumesCount      = 0;
+UINTN                       SystemVolumesCount       = 0;
+UINTN                       DataVolumesCount         = 0;
+UINTN                       VolumesCount             = 0;
 
-UINT64                      ReadWriteCreate         = EFI_FILE_MODE_READ|EFI_FILE_MODE_WRITE|EFI_FILE_MODE_CREATE;
+UINT64                      ReadWriteCreate          = EFI_FILE_MODE_READ|EFI_FILE_MODE_WRITE|EFI_FILE_MODE_CREATE;
 
-BOOLEAN                     FoundExternalDisk       = FALSE;
-BOOLEAN                     DoneHeadings            = FALSE;
-BOOLEAN                     SkipSpacing             = FALSE;
-BOOLEAN                     UseButJoin              = FALSE;
-BOOLEAN                     SelfVolSet              = FALSE;
-BOOLEAN                     SelfVolRun              = FALSE;
-BOOLEAN                     MediaCheck              = FALSE;
-BOOLEAN                     SingleAPFS              =  TRUE;
-BOOLEAN                     ValidAPFS               =  TRUE;
-BOOLEAN                     ScanMBR                 = FALSE;
+BOOLEAN                     FoundExternalDisk        = FALSE;
+BOOLEAN                     DoneHeadings             = FALSE;
+BOOLEAN                     SkipSpacing              = FALSE;
+BOOLEAN                     UseButJoin               = FALSE;
+BOOLEAN                     SelfVolSet               = FALSE;
+BOOLEAN                     SelfVolRun               = FALSE;
+BOOLEAN                     MediaCheck               = FALSE;
+BOOLEAN                     SingleAPFS               =  TRUE;
+BOOLEAN                     ValidAPFS                =  TRUE;
+BOOLEAN                     ScanMBR                  = FALSE;
 
 #if REFIT_DEBUG > 0
-BOOLEAN                     FirstVolume             =  TRUE;
-BOOLEAN                     ScannedOnce             = FALSE;
-BOOLEAN                     FoundMBR                = FALSE;
+BOOLEAN                     FirstVolume              =  TRUE;
+BOOLEAN                     ScannedOnce              = FALSE;
+BOOLEAN                     FoundMBR                 = FALSE;
 #endif
 
-EFI_GUID                    GuidESP                 =              ESP_GUID_VALUE;
-EFI_GUID                    GuidHFS                 =              HFS_GUID_VALUE;
-EFI_GUID                    GuidAPFS                =             APFS_GUID_VALUE;
-EFI_GUID                    GuidNull                =             NULL_GUID_VALUE;
-EFI_GUID                    GuidSwap                =             SWAP_GUID_VALUE;
-EFI_GUID                    GuidLuks                =             LUKS_GUID_VALUE;
-EFI_GUID                    GuidLinux               =            LINUX_GUID_VALUE;
-EFI_GUID                    GuidBasicData           =       BASIC_DATA_GUID_VALUE;
-EFI_GUID                    GuidApplTvRec           =      APPLE_TV_RECOVERY_GUID;
-EFI_GUID                    GuidFlagAPFS            =      APFS_FINGER_PRINT_GUID;
-EFI_GUID                    GuidMacRaidOn           =      MAC_RAID_ON_GUID_VALUE;
-EFI_GUID                    GuidMacRaidOff          =     MAC_RAID_OFF_GUID_VALUE;
-EFI_GUID                    GuidReservedMS          =    MSFT_RESERVED_GUID_VALUE;
-EFI_GUID                    GuidWindowsRE           = WIN_RECOVERY_ENV_GUID_VALUE;
-EFI_GUID                    GuidRecoveryHD          =  MAC_RECOVERY_HD_GUID_VALUE;
-EFI_GUID                    GuidContainerHFS        =    CONTAINER_HFS_GUID_VALUE;
+EFI_GUID                    GuidESP                  =              ESP_GUID_VALUE;
+EFI_GUID                    GuidHFS                  =              HFS_GUID_VALUE;
+EFI_GUID                    GuidAPFS                 =             APFS_GUID_VALUE;
+EFI_GUID                    GuidNull                 =             NULL_GUID_VALUE;
+EFI_GUID                    GuidSwap                 =             SWAP_GUID_VALUE;
+EFI_GUID                    GuidLuks                 =             LUKS_GUID_VALUE;
+EFI_GUID                    GuidLinux                =            LINUX_GUID_VALUE;
+EFI_GUID                    GuidBasicData            =       BASIC_DATA_GUID_VALUE;
+EFI_GUID                    GuidApplTvRec            =      APPLE_TV_RECOVERY_GUID;
+EFI_GUID                    GuidFlagAPFS             =      APFS_FINGER_PRINT_GUID;
+EFI_GUID                    GuidMacRaidOn            =      MAC_RAID_ON_GUID_VALUE;
+EFI_GUID                    GuidMacRaidOff           =     MAC_RAID_OFF_GUID_VALUE;
+EFI_GUID                    GuidReservedMS           =    MSFT_RESERVED_GUID_VALUE;
+EFI_GUID                    GuidWindowsRE            = WIN_RECOVERY_ENV_GUID_VALUE;
+EFI_GUID                    GuidRecoveryHD           =  MAC_RECOVERY_HD_GUID_VALUE;
+EFI_GUID                    GuidContainerHFS         =    CONTAINER_HFS_GUID_VALUE;
 
 
 extern EFI_GUID             RefindPlusOldGuid;
@@ -360,13 +360,13 @@ VOID UninitVolume (
 
 static
 VOID UninitVolumes (VOID) {
-    UNINIT_VOLUMES(RecoveryVolumes, RecoveryVolumesCount);
-    UNINIT_VOLUMES(SkipApfsVolumes, SkipApfsVolumesCount);
-    UNINIT_VOLUMES(PreBootVolumes,  PreBootVolumesCount);
-    UNINIT_VOLUMES(SystemVolumes,   SystemVolumesCount);
-    UNINIT_VOLUMES(HfsRecovery,     HfsRecoveryCount);
-    UNINIT_VOLUMES(DataVolumes,     DataVolumesCount);
-    UNINIT_VOLUMES(Volumes,         VolumesCount);
+    UNINIT_VOLUMES(RecoveryVolumesAPFS, RecoveryVolumesAPFSCount);
+    UNINIT_VOLUMES(RecoveryVolumesHFS,  RecoveryVolumesHFSCount);
+    UNINIT_VOLUMES(SkipApfsVolumes,     SkipApfsVolumesCount);
+    UNINIT_VOLUMES(PreBootVolumes,      PreBootVolumesCount);
+    UNINIT_VOLUMES(SystemVolumes,       SystemVolumesCount);
+    UNINIT_VOLUMES(DataVolumes,         DataVolumesCount);
+    UNINIT_VOLUMES(Volumes,             VolumesCount);
     UninitVolume (&SelfVolume);
 } // static VOID UninitVolumes()
 
@@ -656,13 +656,13 @@ EFI_STATUS InitRefitLib (
 } // EFI_STATUS InitRefitLib
 
 VOID ReinitVolumes (VOID) {
-    REINIT_VOLUMES(RecoveryVolumes, RecoveryVolumesCount);
-    REINIT_VOLUMES(SkipApfsVolumes, SkipApfsVolumesCount);
-    REINIT_VOLUMES(PreBootVolumes,  PreBootVolumesCount);
-    REINIT_VOLUMES(SystemVolumes,   SystemVolumesCount);
-    REINIT_VOLUMES(HfsRecovery,     HfsRecoveryCount);
-    REINIT_VOLUMES(DataVolumes,     DataVolumesCount);
-    REINIT_VOLUMES(Volumes,         VolumesCount);
+    REINIT_VOLUMES(RecoveryVolumesAPFS, RecoveryVolumesAPFSCount);
+    REINIT_VOLUMES(RecoveryVolumesHFS,  RecoveryVolumesHFSCount);
+    REINIT_VOLUMES(SkipApfsVolumes,     SkipApfsVolumesCount);
+    REINIT_VOLUMES(PreBootVolumes,      PreBootVolumesCount);
+    REINIT_VOLUMES(SystemVolumes,       SystemVolumesCount);
+    REINIT_VOLUMES(DataVolumes,         DataVolumesCount);
+    REINIT_VOLUMES(Volumes,             VolumesCount);
     ReinitVolume (&SelfVolume);
 } // VOID ReinitVolumes()
 
@@ -1155,19 +1155,19 @@ VOID FreeSyncVolumes (VOID) {
         return;
     }
 
-    MY_FREE_POOL(RecoveryVolumes);
-    MY_FREE_POOL(SkipApfsVolumes);
-    MY_FREE_POOL(PreBootVolumes );
-    MY_FREE_POOL(SystemVolumes  );
-    MY_FREE_POOL(HfsRecovery    );
-    MY_FREE_POOL(DataVolumes    );
+    MY_FREE_POOL(RecoveryVolumesAPFS);
+    MY_FREE_POOL(RecoveryVolumesHFS );
+    MY_FREE_POOL(SkipApfsVolumes    );
+    MY_FREE_POOL(PreBootVolumes     );
+    MY_FREE_POOL(SystemVolumes      );
+    MY_FREE_POOL(DataVolumes        );
 
-    RecoveryVolumesCount      = 0;
-    SkipApfsVolumesCount      = 0;
-    PreBootVolumesCount       = 0;
-    SystemVolumesCount        = 0;
-    HfsRecoveryCount          = 0;
-    DataVolumesCount          = 0;
+    RecoveryVolumesAPFSCount      = 0;
+    RecoveryVolumesHFSCount       = 0;
+    SkipApfsVolumesCount          = 0;
+    PreBootVolumesCount           = 0;
+    SystemVolumesCount            = 0;
+    DataVolumesCount              = 0;
 } // VOID FreeSyncVolumes()
 
 VOID FreeVolumes (
@@ -3206,8 +3206,8 @@ MY_MUTELOGGER_SET;
 
                             // Create or add to a list of APFS Recovery volumes
                             AddListElement (
-                                (VOID ***) &RecoveryVolumes,
-                                &RecoveryVolumesCount, Volume
+                                (VOID ***) &RecoveryVolumesAPFS,
+                                &RecoveryVolumesAPFSCount, Volume
                             );
                         }
                         else if (Volume->VolRole == APFS_VOLUME_ROLE_DATA) {
@@ -3269,8 +3269,8 @@ MY_MUTELOGGER_SET;
                 ) {
                     // Create or add to a list of HFS+ Recovery volumes
                     AddListElement (
-                        (VOID ***) &HfsRecovery,
-                        &HfsRecoveryCount, Volume
+                        (VOID ***) &RecoveryVolumesHFS,
+                        &RecoveryVolumesHFSCount, Volume
                     );
                 }
             }

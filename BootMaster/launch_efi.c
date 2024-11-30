@@ -53,6 +53,7 @@
 #include "icns.h"
 #include "menu.h"
 #include "apple.h"
+#include "install.h"
 #include "mystrings.h"
 #include "screenmgt.h"
 #include "launch_efi.h"
@@ -192,21 +193,16 @@ static
 EFI_STATUS RecoveryBootAPFS (
     IN LOADER_ENTRY *Entry
 ) {
-    if (!SingleAPFS) {
-        // Early Return
-        return EFI_INVALID_PARAMETER;
-    }
-
-
-#if 0
-// DA-TAG: Force Error Until Finalised - START
-
-
     EFI_STATUS  Status;
+    CHAR16     *VarName;
     CHAR16     *InitNVRAM;
     CHAR16     *NameNVRAM;
     CHAR8      *DataNVRAM;
-    UINTN       Size;
+    UINTN       OurSize;
+    UINTN       EntrySize;
+    BOOLEAN     AlreadyExists;
+    EFI_DEVICE_PATH_PROTOCOL *DevicePath;
+
 
     // Set Relevant NVRAM Variable
     DataNVRAM = NULL;
@@ -219,8 +215,6 @@ EFI_STATUS RecoveryBootAPFS (
         &AppleBootGuid, NameNVRAM,
         DataNVRAM, AsciiStrSize (DataNVRAM), TRUE
     );
-    MY_FREE_POOL(NameNVRAM);
-    MY_FREE_POOL(DataNVRAM);
     if (EFI_ERROR(Status)) {
         // Early Return
         return Status;
@@ -228,54 +222,74 @@ EFI_STATUS RecoveryBootAPFS (
 
     // Set Recovery Initiator
     NameNVRAM = L"RecoveryBootInitiator";
+    OurSize = StrSize (DevicePathToStr (Entry->Volume->DevicePath));
     Status = EfivarSetRaw (
         &AppleBootGuid, NameNVRAM,
-        (VOID **) &Entry->Volume->DevicePath, StrSize (DevicePathToStr (Entry->Volume->DevicePath)), TRUE
+        (VOID **) &Entry->Volume->DevicePath, OurSize, TRUE
     );
-    MY_FREE_POOL(NameNVRAM);
-    MY_FREE_POOL(DataNVRAM);
     if (EFI_ERROR(Status)) {
         // Early Return
         return Status;
     }
 
     // Construct Boot Entry
-    Entry->EfiBootNum = StrToHex (L"80", 0, 16);
+    DevicePath = NULL;
     MY_FREE_POOL(Entry->EfiLoaderPath);
-    Entry->EfiLoaderPath = FileDevicePath (Entry->Volume->DeviceHandle, Entry->LoaderPath);
+    Entry->EfiLoaderPath = FileDevicePath (
+        Entry->Volume->DeviceHandle,
+        Entry->LoaderPath
+    );
 
     Status = ConstructBootEntry (
         Entry->Volume->DeviceHandle,
-        Basename (DevicePathToStr (Entry->EfiLoaderPath)),
-        L"Mac Recovery",
-        (CHAR8**) &Entry->EfiLoaderPath,
-        &Size
+        Entry->LoaderPath, Entry->Volume->VolName,
+        (CHAR8**) &DevicePath,
+        &EntrySize
     );
+    if (!EFI_ERROR(Status)) {
+        AlreadyExists = FALSE;
+        Entry->EfiBootNum = FindBootNum (
+            DevicePath, EntrySize, &AlreadyExists
+        );
+        VarName = PoolPrint (L"Boot%04x", Entry->EfiBootNum);
+
+        if (!AlreadyExists) {
+            Status = EfivarSetRaw (
+               &GlobalGuid, VarName,
+               DevicePath, EntrySize, TRUE
+            );
+        }
+        if (!EFI_ERROR(Status)) {
+            // Wait 0.50 second
+            // DA-TAG: 100 Loops == 1 Sec
+            RefitStall (50);
+
+            // Set as BootNext entry
+            Status = EfivarSetRaw (
+                &GlobalGuid, L"BootNext",
+                &(Entry->EfiBootNum), sizeof (UINT16), TRUE
+            );
+        }
+
+        MY_FREE_POOL(VarName);
+    }
+
+    MY_FREE_POOL(DevicePath);
+
     if (EFI_ERROR(Status)) {
         // Early Return
         return Status;
     }
 
-    // Set as BootNext entry
-    Status = EfivarSetRaw (
-        &GlobalGuid, L"BootNext",
-        &(Entry->EfiBootNum), sizeof (UINT16), TRUE
-    );
-    if (EFI_ERROR(Status)) {
-        // Early Return
-        return Status;
-    }
+    // Wait 0.50 second
+    // DA-TAG: 100 Loops == 1 Sec
+    RefitStall (50);
 
     // Reboot into new BootNext entry
     REFIT_CALL_4_WRAPPER(
         gRT->ResetSystem, EfiResetCold,
         EFI_SUCCESS, 0, NULL
     );
-
-
-// DA-TAG: Force Error Until Finalised - END
-#endif
-
 
     return EFI_LOAD_ERROR;
 } // static EFI_STATUS RecoveryBootAPFS()
@@ -1153,24 +1167,30 @@ VOID StartTool (
 
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_LINE_NORMAL, L"%s", MsgStr);
-    #endif
-
-    BeginExternalScreen (Entry->UseGraphicsMode, MsgStr);
-
-    #if REFIT_DEBUG > 0
     LOG_MSG("%s    * %s", OffsetNext, MsgStr);
-    LOG_MSG("\n");
     #endif
 
-    if (FindSubStr (Entry->me.Title, L"APFS Instance")) {
+    if (FindSubStr (Entry->me.Title, RECOVERY_NAME_APFS)) {
+        MY_FREE_POOL(MsgStr);
+
         /* APFS Recovery Instance */
-        Status = RecoveryBootAPFS (Entry);
-        if (EFI_ERROR(Status)) {
-            MY_FREE_POOL(MsgStr);
-            MsgStr = PoolPrint (
-                L"'%r' While Running '%s'",
-                Status, Entry->me.Title
+        if (SingleAPFS) {
+            Status = RecoveryBootAPFS (Entry);
+        }
+        else {
+            Status = EFI_NOT_STARTED;
+
+            MsgStr = StrDuplicate (
+                L"APFS Recovery Boot *IS NOT* Available When Multi-Instance Contaners are Present"
             );
+        }
+        if (EFI_ERROR(Status)) {
+            if (SingleAPFS) {
+                MsgStr = PoolPrint (
+                    L"'%r' While Running '%s'",
+                    Status, Entry->me.Title
+                );
+            }
 
             #if REFIT_DEBUG > 0
             ALT_LOG(1, LOG_LINE_NORMAL, L"%s", MsgStr);
@@ -1187,13 +1207,16 @@ VOID StartTool (
             #endif
 
             PauseForKey();
-
-            MY_FREE_POOL(MsgStr);
         }
+
+        MY_FREE_POOL(MsgStr);
 
         // Early Return
         return;
     }
+
+    BeginExternalScreen (Entry->UseGraphicsMode, MsgStr);
+    MY_FREE_POOL(MsgStr);
 
     StartEFIImage (
         Entry->Volume,
@@ -1205,6 +1228,5 @@ VOID StartTool (
         FALSE, NULL
     );
 
-    MY_FREE_POOL(MsgStr);
     MY_FREE_POOL(LoaderPath);
 } // VOID StartTool()

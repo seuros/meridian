@@ -559,30 +559,10 @@ VOID * OcReadFile (
     IN  UINT32                            MaxFileSize OPTIONAL
 );
 
-static
-VOID SetBootFlag (
-    CHAR16     *VariableName
-) {
-    EFI_STATUS  Status;
-    UINTN       BufferSize;
-    VOID       *TmpBuffer;
 
+// DA-TAG: Currently Disabled by '#if 0' - START
+#if 0
 
-    TmpBuffer    = NULL;
-    BufferSize   =    0;
-    Status = REFIT_CALL_5_WRAPPER(
-        gRT->GetVariable, VariableName,
-        &AppleBootGuid, NULL,
-        &BufferSize, TmpBuffer
-    );
-    if (Status == EFI_BUFFER_TOO_SMALL || BufferSize != 0) {
-        REFIT_CALL_5_WRAPPER(
-            gRT->SetVariable, VariableName,
-            &AppleBootGuid, AccessFlagsFull, 0, NULL
-        );
-        MY_FREE_POOL(TmpBuffer);
-    }
-} // VOID SetBootFlag()
 
 static
 CHAR16 * RefitGetAppleDiskLabelEx (
@@ -678,6 +658,80 @@ CHAR16 * RefitGetAppleDiskLabel (
 
     return AppleDiskLabel;
 } // CHAR16 * RefitGetAppleDiskLabel()
+
+static
+EFI_STATUS RefitUninstallAllProtocolInstances (
+    EFI_GUID  *Protocol
+) {
+    EFI_STATUS      Status;
+    EFI_HANDLE     *Handles;
+    UINTN           Index;
+    UINTN           NoHandles;
+    VOID           *OriginalProto;
+
+
+    Status = REFIT_CALL_5_WRAPPER(
+        gBS->LocateHandleBuffer, ByProtocol,
+        Protocol, NULL,
+        &NoHandles, &Handles
+    );
+    if (EFI_ERROR (Status)) {
+        return Status;
+    }
+
+    for (Index = 0; Index < NoHandles; ++Index) {
+        Status = REFIT_CALL_3_WRAPPER(
+            gBS->HandleProtocol, Handles[Index],
+            Protocol, &OriginalProto
+        );
+        if (EFI_ERROR (Status)) {
+            break;
+        }
+
+        Status = REFIT_CALL_3_WRAPPER(
+            gBS->UninstallProtocolInterface, Handles[Index],
+            Protocol, OriginalProto
+        );
+        if (EFI_ERROR (Status)) {
+            break;
+        }
+    } // for
+
+    MY_FREE_POOL(Handles);
+
+    return Status;
+} // static EFI_STATUS RefitUninstallAllProtocolInstances()
+
+
+// DA-TAG: Currently Disabled by '#if 0' - END
+#endif
+
+
+static
+VOID ZapBootFlag (
+    CHAR16     *VariableName
+) {
+    EFI_STATUS  Status;
+    UINTN       BufferSize;
+    VOID       *TmpBuffer;
+
+
+    TmpBuffer    = NULL;
+    BufferSize   =    0;
+    Status = REFIT_CALL_5_WRAPPER(
+        gRT->GetVariable, VariableName,
+        &AppleBootGuid, NULL,
+        &BufferSize, TmpBuffer
+    );
+    if (Status == EFI_BUFFER_TOO_SMALL || BufferSize != 0) {
+        REFIT_CALL_5_WRAPPER(
+            gRT->SetVariable, VariableName,
+            &AppleBootGuid, AccessFlagsFull, 0, NULL
+        );
+    }
+
+    MY_FREE_POOL(TmpBuffer);
+} // VOID ZapBootFlag()
 
 static
 VOID * RefitGetFileInfo (
@@ -786,6 +840,59 @@ EFI_STATUS RefitGetApfsSpecialFileInfo (
     return EFI_SUCCESS;
 } // static EFI_STATUS RefitGetApfsSpecialFileInfo()
 
+static
+EFI_STATUS EFIAPI RefitAppleFramebufferGetInfo (
+    IN   APPLE_FRAMEBUFFER_INFO_PROTOCOL  *This,
+    OUT  EFI_PHYSICAL_ADDRESS             *FramebufferBase,
+    OUT  UINT32                           *FramebufferSize,
+    OUT  UINT32                           *ScreenRowBytes,
+    OUT  UINT32                           *ScreenWidth,
+    OUT  UINT32                           *ScreenHeight,
+    OUT  UINT32                           *ScreenDepth
+) {
+    EFI_STATUS                             Status;
+    EFI_GRAPHICS_OUTPUT_PROTOCOL          *GraphicsOutput;
+    EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE     *Mode;
+    EFI_GRAPHICS_OUTPUT_MODE_INFORMATION  *Info;
+
+
+    if (!AppleFirmware) {
+        return EFI_UNSUPPORTED;
+    }
+
+    if (This            == NULL ||
+        FramebufferBase == NULL ||
+        FramebufferSize ==    0 ||
+        ScreenRowBytes  ==    0 ||
+        ScreenWidth     ==    0 ||
+        ScreenHeight    ==    0 ||
+        ScreenDepth     ==    0
+    ) {
+        return EFI_INVALID_PARAMETER;
+    }
+
+    Status = REFIT_CALL_3_WRAPPER(
+        gBS->HandleProtocol, gST->ConsoleOutHandle,
+        &gEfiGraphicsOutputProtocolGuid, (VOID **) &GraphicsOutput
+    );
+    if (EFI_ERROR (Status) || GraphicsOutput->Mode->Info == NULL) {
+        return EFI_UNSUPPORTED;
+    }
+
+    Mode = GraphicsOutput->Mode;
+    Info = Mode->Info;
+
+    // DA-TAG: This is a bit inaccurate as it assumes 32-bit BPP but will do for most cases.
+    *FramebufferBase = Mode->FrameBufferBase;
+    *FramebufferSize = (UINT32) Mode->FrameBufferSize;
+    *ScreenRowBytes  = (UINT32) (Info->PixelsPerScanLine * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
+    *ScreenWidth     = Info->HorizontalResolution;
+    *ScreenHeight    = Info->VerticalResolution;
+    *ScreenDepth     = DEFAULT_COLOUR_DEPTH;
+
+    return EFI_SUCCESS;
+} // static EFI_STATUS EFIAPI RefitAppleFramebufferGetInfo()
+
 EFI_STATUS RefitGetApfsVolumeInfo (
     IN  EFI_HANDLE         Device,
     OUT EFI_GUID          *ContainerGuid OPTIONAL,
@@ -854,105 +961,6 @@ EFI_STATUS RefitGetApfsVolumeInfo (
 
     return EFI_SUCCESS;
 } // EFI_STATUS RefitGetApfsVolumeInfo()
-
-// DA-TAG: Currently Disabled by '#if 0'
-#if 0
-static
-EFI_STATUS RefitUninstallAllProtocolInstances (
-    EFI_GUID  *Protocol
-) {
-    EFI_STATUS      Status;
-    EFI_HANDLE     *Handles;
-    UINTN           Index;
-    UINTN           NoHandles;
-    VOID           *OriginalProto;
-
-
-    Status = REFIT_CALL_5_WRAPPER(
-        gBS->LocateHandleBuffer, ByProtocol,
-        Protocol, NULL,
-        &NoHandles, &Handles
-    );
-    if (EFI_ERROR (Status)) {
-        return Status;
-    }
-
-    for (Index = 0; Index < NoHandles; ++Index) {
-        Status = REFIT_CALL_3_WRAPPER(
-            gBS->HandleProtocol, Handles[Index],
-            Protocol, &OriginalProto
-        );
-        if (EFI_ERROR (Status)) {
-            break;
-        }
-
-        Status = REFIT_CALL_3_WRAPPER(
-            gBS->UninstallProtocolInterface, Handles[Index],
-            Protocol, OriginalProto
-        );
-        if (EFI_ERROR (Status)) {
-            break;
-        }
-    } // for
-
-    MY_FREE_POOL(Handles);
-
-    return Status;
-} // static EFI_STATUS RefitUninstallAllProtocolInstances()
-#endif
-
-static
-EFI_STATUS EFIAPI RefitAppleFramebufferGetInfo (
-    IN   APPLE_FRAMEBUFFER_INFO_PROTOCOL  *This,
-    OUT  EFI_PHYSICAL_ADDRESS             *FramebufferBase,
-    OUT  UINT32                           *FramebufferSize,
-    OUT  UINT32                           *ScreenRowBytes,
-    OUT  UINT32                           *ScreenWidth,
-    OUT  UINT32                           *ScreenHeight,
-    OUT  UINT32                           *ScreenDepth
-) {
-    EFI_STATUS                             Status;
-    EFI_GRAPHICS_OUTPUT_PROTOCOL          *GraphicsOutput;
-    EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE     *Mode;
-    EFI_GRAPHICS_OUTPUT_MODE_INFORMATION  *Info;
-
-
-    if (!AppleFirmware) {
-        return EFI_UNSUPPORTED;
-    }
-
-    if (This            == NULL ||
-        FramebufferBase == NULL ||
-        FramebufferSize ==    0 ||
-        ScreenRowBytes  ==    0 ||
-        ScreenWidth     ==    0 ||
-        ScreenHeight    ==    0 ||
-        ScreenDepth     ==    0
-    ) {
-        return EFI_INVALID_PARAMETER;
-    }
-
-    Status = REFIT_CALL_3_WRAPPER(
-        gBS->HandleProtocol, gST->ConsoleOutHandle,
-        &gEfiGraphicsOutputProtocolGuid, (VOID **) &GraphicsOutput
-    );
-    if (EFI_ERROR (Status) || GraphicsOutput->Mode->Info == NULL) {
-        return EFI_UNSUPPORTED;
-    }
-
-    Mode = GraphicsOutput->Mode;
-    Info = Mode->Info;
-
-    // DA-TAG: This is a bit inaccurate as it assumes 32-bit BPP but will do for most cases.
-    *FramebufferBase = Mode->FrameBufferBase;
-    *FramebufferSize = (UINT32) Mode->FrameBufferSize;
-    *ScreenRowBytes  = (UINT32) (Info->PixelsPerScanLine * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
-    *ScreenWidth     = Info->HorizontalResolution;
-    *ScreenHeight    = Info->VerticalResolution;
-    *ScreenDepth     = DEFAULT_COLOUR_DEPTH;
-
-    return EFI_SUCCESS;
-} // static EFI_STATUS EFIAPI RefitAppleFramebufferGetInfo()
 
 VOID RefitAppleFbInfoInstallProtocol (VOID) {
     EFI_STATUS                       Status;
@@ -1023,7 +1031,7 @@ VOID RefitAppleFbInfoInstallProtocol (VOID) {
 
 // Delete recovery-boot-mode/internet-recovery-mode flags
 VOID ClearRecoveryBootFlags (VOID) {
-    SetBootFlag (L"recovery-boot-mode");
-    SetBootFlag (L"internet-recovery-mode");
-    SetBootFlag (L"RecoveryBootInitiator");
+    ZapBootFlag (L"recovery-boot-mode");
+    ZapBootFlag (L"internet-recovery-mode");
+    ZapBootFlag (L"RecoveryBootInitiator");
 } // VOID ClearRecoveryBootFlags()

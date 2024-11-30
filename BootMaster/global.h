@@ -259,7 +259,9 @@ EFI\\OEM\\Boot\\bootmgfw.efi"
 #define MACOSX_DIAGNOSTICS    ( MACOSX_LOADER_DIR L"\\.diagnostics\\diags.efi" )
 
 // Files that may be macOS recovery files
-#define MACOS_RECOVERY_FILES  L"com.apple.recovery.boot\\boot.efi"
+#define MACOS_RECOVERY_BASE         L"com.apple.recovery.boot"
+#define MACOS_RECOVERY_FILES        ( MACOS_RECOVERY_BASE L"\\boot.efi" )
+#define MACOS_RECOVERY_VERSION_FILE ( MACOS_RECOVERY_BASE L"\\SystemVersion.plist" )
 
 // Filename patterns that identify EFI boot loaders. Note that a single case (either L"*.efi" or
 // L"*.EFI") is fine for most systems; but Gigabyte's buggy Hybrid EFI does a case-sensitive
@@ -588,12 +590,12 @@ extern CHAR16                  *gHiddenTools;
 
 extern UINTN                    PadPosition;
 extern UINTN                    VolumesCount;
-extern UINTN                    RecoveryVolumesCount;
+extern UINTN                    RecoveryVolumesAPFSCount;
+extern UINTN                    RecoveryVolumesHFSCount;
 extern UINTN                    SkipApfsVolumesCount;
 extern UINTN                    PreBootVolumesCount;
 extern UINTN                    SystemVolumesCount;
 extern UINTN                    DataVolumesCount;
-extern UINTN                    HfsRecoveryCount;
 
 extern UINT32                   AccessFlagsFull;
 extern UINT32                   AccessFlagsBoot;
@@ -626,12 +628,12 @@ extern EFI_LOADED_IMAGE_PROTOCOL *SelfLoadedImage;
 
 extern REFIT_VOLUME            *SelfVolume;
 extern REFIT_VOLUME           **Volumes;
-extern REFIT_VOLUME           **RecoveryVolumes;
+extern REFIT_VOLUME           **RecoveryVolumesAPFS;
+extern REFIT_VOLUME           **RecoveryVolumesHFS;
 extern REFIT_VOLUME           **SkipApfsVolumes;
 extern REFIT_VOLUME           **PreBootVolumes;
 extern REFIT_VOLUME           **SystemVolumes;
 extern REFIT_VOLUME           **DataVolumes;
-extern REFIT_VOLUME           **HfsRecovery;
 
 extern REFIT_CONFIG             GlobalConfig;
 
