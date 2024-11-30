@@ -246,6 +246,28 @@ EFI_GUID               MicrosoftVendorGuid  = MICROSOFT_VENDOR_GUID;
 EFI_SET_VARIABLE       OrigSetVariableRT    =                  NULL;
 EFI_OPEN_PROTOCOL      OrigOpenProtocolBS   =                  NULL;
 
+
+UINTN                  RecoveryMacEntryItemsCount =    0;
+UINTN                  RecoveryWinEntryItemsCount =    0;
+UINTN                  MemTestEntryItemsCount     =    0;
+UINTN                  NetBootEntryItemsCount     =    0;
+UINTN                  ShellEntryItemsCount       =    0;
+UINTN                  MOKEntryItemsCount         =    0;
+UINTN                  GDiskEntryItemsCount       =    0;
+UINTN                  GPTSyncEntryItemsCount     =    0;
+UINTN                  FwUpdateEntryItemsCount    =    0;
+
+LOADER_ENTRY         **RecoveryMacEntryItems      = NULL;
+LOADER_ENTRY         **RecoveryWinEntryItems      = NULL;
+LOADER_ENTRY         **MemTestEntryItems          = NULL;
+LOADER_ENTRY         **NetBootEntryItems          = NULL;
+LOADER_ENTRY         **ShellEntryItems            = NULL;
+LOADER_ENTRY         **MOKEntryItems              = NULL;
+LOADER_ENTRY         **GDiskEntryItems            = NULL;
+LOADER_ENTRY         **GPTSyncEntryItems          = NULL;
+LOADER_ENTRY         **FwUpdateEntryItems         = NULL;
+
+
 #define NVRAM_SIZE_THRESHOLD       (1023)
 
 #define BOOT_FIX_STR_01            L"Disable AMFI Check"
@@ -1812,99 +1834,1274 @@ VOID RunMacBootSupportFuncs (
 } // static VOID RunMacBootSupportFuncs()
 
 static
-BOOLEAN ShowCleanNvramInfo (
-    CHAR16 *ToolPurpose
+CHAR16 * GetMacVersion (
+    IN  REFIT_FILE   *File
 ) {
-    INTN               DefaultEntry;
-    UINTN              MenuExit, i, j;
-    CHAR16            *FilePath;
-    CHAR16            *FileName;
-    BOOLEAN            RetVal;
-    MENU_STYLE_FUNC    Style;
-    REFIT_MENU_ENTRY  *ChosenOption;
-    REFIT_MENU_SCREEN *CleanNvramInfoMenu;
+    UINTN    i;          // To stop runaway loops
+    CHAR16  *Line;
+    CHAR16  *TypeMacOS;
+    BOOLEAN  CheckNext;
+    BOOLEAN  ExitLoop;
 
-    CleanNvramInfoMenu = AllocateZeroPool (sizeof (REFIT_MENU_SCREEN));
-    if (CleanNvramInfoMenu == NULL) {
-        return FALSE;
-    }
+    TypeMacOS = L"Unknown";
+    CheckNext =      FALSE;
+    ExitLoop  =      FALSE;
 
+    for (i = 0; i < 100; i++) {
+        Line = ReadLine (File);
+        if (Line == NULL) {
+            break;
+        }
+
+        if (!CheckNext) {
+            if (MyStrStr (Line, L"<key>ProductVersion") ||
+                MyStrStr (Line, L"<key>ProductUserVisibleVersion")
+            ) {
+                CheckNext = TRUE;
+            }
+        }
+        else {
+            CheckNext = FALSE;
+
+            if (0);
+            else if (MyStrStr (Line, L"10.4."   )) TypeMacOS = L"10.04 Tiger"        ;
+            else if (MyStrStr (Line, L"10.5."   )) TypeMacOS = L"10.05 Leopard"      ;
+            else if (MyStrStr (Line, L"10.6."   )) TypeMacOS = L"10.06 Snow Leopard" ;
+            else if (MyStrStr (Line, L"10.7."   )) TypeMacOS = L"10.07 Lion"         ;
+            else if (MyStrStr (Line, L"10.8."   )) TypeMacOS = L"10.08 Mountain Lion";
+            else if (MyStrStr (Line, L"10.9."   )) TypeMacOS = L"10.09 Mavericks"    ;
+            else if (MyStrStr (Line, L"10.10."  )) TypeMacOS = L"10.10 Yosemite"     ;
+            else if (MyStrStr (Line, L"10.11."  )) TypeMacOS = L"10.11 El Capitan"   ;
+            else if (MyStrStr (Line, L"10.12."  )) TypeMacOS = L"10.12 Sierra"       ;
+            else if (MyStrStr (Line, L"10.13."  )) TypeMacOS = L"10.13 High Sierra"  ;
+            else if (MyStrStr (Line, L"10.14."  )) TypeMacOS = L"10.14 Mojave"       ;
+            else if (MyStrStr (Line, L"<string>")) CheckNext = TRUE                  ;
+
+            if (!CheckNext) {
+                ExitLoop = TRUE;
+            }
+        }
+
+        MY_FREE_POOL(Line);
+
+        if (ExitLoop) {
+            break;
+        }
+    } // for
+
+    return TypeMacOS;
+} // static CHAR16 * GetMacVersion()
+
+static
+BOOLEAN HandleExitShowInfo (VOID) {
     #if REFIT_DEBUG > 0
-    ALT_LOG(1, LOG_LINE_THIN_SEP, L"Prepare Menu Screen");
-    ALT_LOG(1, LOG_LINE_NORMAL, L"Screen Title:- '%s Info'", ToolPurpose);
+    const CHAR16 *AbortedMenu = L"Aborted ... ToolInfoMenu:- 'NULL'";
+
+
+    ALT_LOG(1, LOG_LINE_NORMAL, L"%s", AbortedMenu);
+    LOG_MSG("INFO: %s", AbortedMenu);
+    LOG_MSG("\n\n");
     #endif
 
-    CleanNvramInfoMenu->TitleImage = BuiltinIcon (BUILTIN_ICON_TOOL_NVRAMCLEAN);
-    CleanNvramInfoMenu->Title      = StrDuplicate (LABEL_CLEAN_NVRAM          );
-    CleanNvramInfoMenu->Hint1      = StrDuplicate (RETURN_MAIN_SCREEN_HINT    );
-    CleanNvramInfoMenu->Hint2      = StrDuplicate (L""                        );
+    return FALSE;
+} // static BOOLEAN HandleExitShowInfo()
 
-    AddMenuInfoLine (CleanNvramInfoMenu, PoolPrint (L"A Tool to %s", ToolPurpose),                     TRUE);
-    AddMenuInfoLine (CleanNvramInfoMenu, L"",                                                         FALSE);
-    AddMenuInfoLine (CleanNvramInfoMenu, L"The binary must be placed in one of the paths below",      FALSE);
-    AddMenuInfoLine (CleanNvramInfoMenu, L" - The first file found in the order listed will be used", FALSE);
-    AddMenuInfoLine (CleanNvramInfoMenu, L" - You will be returned to the main menu if not found",    FALSE);
-    AddMenuInfoLine (CleanNvramInfoMenu, L"",                                                         FALSE);
+static
+BOOLEAN ShowInfoRecoveryMac (
+    CHAR16        *ToolPurpose,
+    LOADER_ENTRY **ReturnEntryItem OPTIONAL
+) {
+    EFI_STATUS                Status;
+    INTN                      DefaultEntry;
+    UINTN                     i, j;
+    UINTN                     MenuExit;
+    UINTN                     TempSize;
+    UINTN                     VolumeIndex;
+    CHAR16                   *RecoverVol; // *DO NOT* Free
+    CHAR16                   *FileName;
+    BOOLEAN                   RetVal;
+    REFIT_FILE               *TempFile;
+    MENU_STYLE_FUNC           Style;
+    LOADER_ENTRY             *MenuEntryItem;
+    REFIT_MENU_ENTRY         *ChosenOption;
 
-    i = 0;
-    while ((FilePath = FindCommaDelimited (GlobalConfig.ToolLocations, i++)) != NULL) {
-        j = 0;
-        while ((FileName = FindCommaDelimited (NVRAMCLEAN_FILES, j++)) != NULL) {
-            AddMenuInfoLine (CleanNvramInfoMenu, PoolPrint (L"%s\\%s", FilePath, FileName), TRUE);
+    static BOOLEAN             RunOnce = FALSE;
+    static REFIT_MENU_SCREEN  *ToolInfoMenu = NULL;
+
+    #ifdef __MAKEWITH_TIANO
+    BOOLEAN SkipSystemVolume;
+    #endif
+
+
+    do {
+        if (RunOnce) {
+            break;
+        }
+
+        ToolInfoMenu = AllocateZeroPool (sizeof (REFIT_MENU_SCREEN));
+        if (ToolInfoMenu == NULL) {
+            break;
+        }
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_THIN_SEP, L"Prepare Menu Screen");
+        ALT_LOG(1, LOG_LINE_NORMAL, L"Screen Title:- 'Run %s Info'", ToolPurpose);
+        #endif
+
+        ToolInfoMenu->TitleImage = BuiltinIcon (BUILTIN_ICON_TOOL_APPLE_RESCUE);
+        ToolInfoMenu->Title      = StrDuplicate (LABEL_RECOVERY_MAC           );
+        ToolInfoMenu->Hint1      = StrDuplicate (SELECT_OPTION_HINT           );
+        ToolInfoMenu->Hint2      = StrDuplicate (RETURN_MAIN_SCREEN_HINT      );
+
+        i = 0;
+        while ((FileName = FindCommaDelimited (GlobalConfig.MacOSRecoveryFiles, i++)) != NULL) {
+            for (VolumeIndex = 0; VolumeIndex < RecoveryVolumesHFSCount; VolumeIndex++) {
+                if ((RecoveryVolumesHFS[VolumeIndex]->RootDir != NULL)     &&
+                    (IsValidTool (RecoveryVolumesHFS[VolumeIndex], FileName))
+                ) {
+                    Status = RefitReadFile (
+                        RecoveryVolumesHFS[VolumeIndex]->RootDir,
+                        MACOS_RECOVERY_VERSION_FILE,
+                        TempFile, &TempSize
+                    );
+                    if (EFI_ERROR(Status)) {
+                        RecoverVol = L"RecoveryHD";
+                    }
+                    else {
+                        RecoverVol = GetMacVersion (TempFile);
+                        MY_FREE_FILE(TempFile);
+                    }
+
+                    MenuEntryItem = AllocateZeroPool (sizeof (LOADER_ENTRY));
+                    if (MenuEntryItem != NULL) {
+                        MenuEntryItem->me.Title = PoolPrint (
+                            L"%s - %s",
+                            RECOVERY_NAME_HFS, RecoverVol
+                        );
+                        MenuEntryItem->me.Tag          = TAG_BASE;
+                        MenuEntryItem->me.Row          = RecoveryMacEntryItemsCount;
+                        MenuEntryItem->LoaderPath      = StrDuplicate (FileName);
+                        MenuEntryItem->Volume          = RecoveryVolumesHFS[VolumeIndex];
+                        MenuEntryItem->UseGraphicsMode = FALSE;
+
+                        AddListElement (
+                            (VOID ***) &RecoveryMacEntryItems,
+                            &RecoveryMacEntryItemsCount, MenuEntryItem
+                        );
+                    }
+                } // if (RecoveryVolumesHFS[VolumeIndex]->RootDir
+            } // for
 
             MY_FREE_POOL(FileName);
         } // while
 
-        MY_FREE_POOL(FilePath);
-    } // while
 
-    AddMenuInfoLine (CleanNvramInfoMenu, L"", FALSE);
+// DA-TAG: Limit to TianoCore
+#ifdef __MAKEWITH_TIANO
 
-    REFIT_MENU_ENTRY *MenuEntryCleanNvram = AllocateZeroPool (sizeof (REFIT_MENU_ENTRY));
-    if (MenuEntryCleanNvram == NULL) {
-        FreeMenuScreen (&CleanNvramInfoMenu);
 
-        // Early Return
-        return FALSE;
-    }
+        if (SingleAPFS) {
+            for (i = 0; i < RecoveryVolumesAPFSCount; i++) {
+                RecoverVol = NULL;
 
-    MenuEntryCleanNvram->Title = StrDuplicate (ToolPurpose);
-    MenuEntryCleanNvram->Tag   = TAG_BASE;
-    AddMenuEntry (CleanNvramInfoMenu, MenuEntryCleanNvram);
+                for (j = 0; j < SystemVolumesCount; j++) {
+                    SkipSystemVolume = FALSE;
+                    for (VolumeIndex = 0; VolumeIndex < SkipApfsVolumesCount; VolumeIndex++) {
+                        if (GuidsAreEqual (
+                            &(SkipApfsVolumes[VolumeIndex]->VolUuid),
+                            &(SystemVolumes[j]->VolUuid))
+                        ) {
+                            SkipSystemVolume = TRUE;
+                            break;
+                        }
+                    } // for
 
-    RetVal = GetMenuEntryReturn (&CleanNvramInfoMenu);
-    if (!RetVal) {
-        FreeMenuScreen (&CleanNvramInfoMenu);
+                    if (!SkipSystemVolume) {
+                        if (GuidsAreEqual (
+                                &(RecoveryVolumesAPFS[i]->PartGuid),
+                                &(SystemVolumes[j]->PartGuid)
+                            )
+                        ) {
+                            if (SystemVolumes[j]->VolRole == APFS_VOLUME_ROLE_SYSTEM ||
+                                SystemVolumes[j]->VolRole == APFS_VOLUME_ROLE_UNDEFINED
+                            ) {
+                                RecoverVol = SystemVolumes[j]->VolName;
 
-        // Early Return
-        return FALSE;
-    }
+                                break;
+                            }
+                        }
+                    }
+                } // for j = 0
 
-    DefaultEntry = 9999; // Use the Max Index
-    Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
-    ChosenOption = NULL;
-    MenuExit = DrawMenuScreen (CleanNvramInfoMenu, Style, &DefaultEntry, &ChosenOption);
+                if (RecoverVol != NULL) {
+                    MenuEntryItem = AllocateZeroPool (sizeof (LOADER_ENTRY));
+                    if (MenuEntryItem != NULL) {
+                        MenuEntryItem->me.Title = PoolPrint (
+                            L"%s - %s",
+                            RECOVERY_NAME_APFS, RecoverVol
+                        );
+                        MenuEntryItem->me.Tag          = TAG_BASE;
+                        MenuEntryItem->me.Row          = RecoveryMacEntryItemsCount;
+                        MenuEntryItem->LoaderPath      = StrDuplicate (L"boot.efi");
+                        MenuEntryItem->Volume          = RecoveryVolumesAPFS[i];
+                        MenuEntryItem->UseGraphicsMode = FALSE;
 
-    #if REFIT_DEBUG > 0
-    LogExit (MenuExit, __func__, ChosenOption->Title);
-    LOG_MSG("Received User Input:");
-    LOG_MSG("%s  - %s", OffsetNext, ChosenOption->Title);
-    #endif
+                        AddListElement (
+                            (VOID ***) &RecoveryMacEntryItems,
+                            &RecoveryMacEntryItemsCount, MenuEntryItem
+                        );
+                    }
+                }
+            } // for i = 0
+        } // if SingleAPFS
 
-    if (MenuExit != MENU_EXIT_ENTER || ChosenOption->Tag != TAG_BASE) {
-        RetVal = FALSE;
+
+// DA-TAG: Limit to TianoCore
+#endif
+
+        if (RecoveryMacEntryItems == NULL) {
+            AddMenuInfoLine (ToolInfoMenu, L"Could *NOT* Find Valid Instance", FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"  Remove from 'showtools' List",  FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"",                                FALSE);
+        }
+        else {
+            for (VolumeIndex = 0; VolumeIndex < RecoveryMacEntryItemsCount; VolumeIndex++) {
+                AddMenuEntry (
+                    ToolInfoMenu,
+                    (REFIT_MENU_ENTRY *) RecoveryMacEntryItems[VolumeIndex]
+                );
+            } // for
+        }
+
+        RetVal = GetMenuEntryReturn (&ToolInfoMenu);
+        if (!RetVal) {
+            FreeMenuScreen (&ToolInfoMenu);
+        }
+    } while (0); // This 'loop' only runs once
+
+    if (ToolInfoMenu == NULL) {
+        RetVal = HandleExitShowInfo();
     }
     else {
-        RetVal = TRUE;
+        DefaultEntry = 9999; // Use the Max Index
+        Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
+        MenuExit = DrawMenuScreen (
+            ToolInfoMenu, Style,
+            &DefaultEntry, &ChosenOption
+        );
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_NORMAL,
+            L"Returned '%d' (%s) in '%a' Function from the \"%s\" Option in Menu Screen",
+            MenuExit, MenuExitInfo (MenuExit), __func__, ChosenOption->Title
+        );
+        LOG_MSG("\n\n");
+        LOG_MSG("Received User Input:");
+        LOG_MSG("%s  - %s", OffsetNext, ChosenOption->Title);
+        #endif
+
+        if (MenuExit != MENU_EXIT_ENTER || ChosenOption->Tag != TAG_BASE) {
+            RetVal = FALSE;
+        }
+        else {
+            RetVal = TRUE;
+
+            *ReturnEntryItem = CopyLoaderEntry (
+                RecoveryMacEntryItems[ChosenOption->Row]
+            );
+        }
     }
 
-    FreeMenuScreen (&CleanNvramInfoMenu);
+    RunOnce = TRUE;
 
     return RetVal;
-} // static BOOLEAN ShowCleanNvramInfo()
+} // static BOOLEAN ShowInfoRecoveryMac()
+
+static
+BOOLEAN ShowInfoRecoveryWin (
+    CHAR16        *ToolPurpose,
+    LOADER_ENTRY **ReturnEntryItem OPTIONAL
+) {
+    INTN                       DefaultEntry;
+    UINTN                      i, j;
+    UINTN                      VolumeIndex;
+    UINTN                      MenuExit;
+    CHAR16                    *RecoverVol;
+    CHAR16                    *FileName;
+    BOOLEAN                    RetVal;
+    MENU_STYLE_FUNC            Style;
+    LOADER_ENTRY              *MenuEntryItem;
+    REFIT_MENU_ENTRY          *ChosenOption;
+
+    static BOOLEAN             RunOnce = FALSE;
+    static REFIT_MENU_SCREEN  *ToolInfoMenu = NULL;
+
+
+    do {
+        if (RunOnce) {
+            break;
+        }
+
+        ToolInfoMenu = AllocateZeroPool (sizeof (REFIT_MENU_SCREEN));
+        if (ToolInfoMenu == NULL) {
+            break;
+        }
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_THIN_SEP, L"Prepare Menu Screen");
+        ALT_LOG(1, LOG_LINE_NORMAL, L"Screen Title:- 'Run %s Info'", ToolPurpose);
+        #endif
+
+        ToolInfoMenu->TitleImage = BuiltinIcon (BUILTIN_ICON_TOOL_WINDOWS_RESCUE);
+        ToolInfoMenu->Title      = StrDuplicate (LABEL_RECOVERY_WIN             );
+        ToolInfoMenu->Hint1      = StrDuplicate (SELECT_OPTION_HINT             );
+        ToolInfoMenu->Hint2      = StrDuplicate (RETURN_MAIN_SCREEN_HINT        );
+
+        for (i = 0; i < RecoveryWinEntryItemsCount; i++) {
+            j = 0;
+            while ((FileName = FindCommaDelimited (GlobalConfig.WindowsRecoveryFiles, j++)) != NULL) {
+                SplitVolumeAndFilename (&FileName, &RecoverVol);
+                for (VolumeIndex = 0; VolumeIndex < VolumesCount; VolumeIndex++) {
+                    if (Volumes[VolumeIndex]->RootDir != NULL        &&
+                        IsValidTool (Volumes[VolumeIndex], FileName) &&
+                        (
+                            RecoverVol == NULL ||
+                            MyStriCmp (
+                                RecoverVol,
+                                Volumes[VolumeIndex]->VolName
+                            )
+                        )
+                    ) {
+                        MenuEntryItem = AllocateZeroPool (sizeof (LOADER_ENTRY));
+                        if (MenuEntryItem != NULL) {
+                            MenuEntryItem->me.Title = PoolPrint (
+                                L"Windows Recovery from %s via %s",
+                                SetVolType (
+                                    NULL,
+                                    Volumes[VolumeIndex]->VolName,
+                                    Volumes[VolumeIndex]->FSType
+                                ),
+                                FileName
+                            );
+                            MenuEntryItem->me.Tag          = TAG_BASE;
+                            MenuEntryItem->me.Row          = RecoveryWinEntryItemsCount;
+                            MenuEntryItem->LoaderPath      = StrDuplicate (FileName);
+                            MenuEntryItem->Volume          = Volumes[VolumeIndex];
+                            MenuEntryItem->UseGraphicsMode = FALSE;
+
+                            AddListElement (
+                                (VOID ***) &RecoveryWinEntryItems,
+                                &RecoveryWinEntryItemsCount, MenuEntryItem
+                            );
+                        }
+                    } // if Volumes[VolumeIndex]->RootDir
+                } // for
+
+                MY_FREE_POOL(RecoverVol);
+                MY_FREE_POOL(FileName);
+            } // while
+        } // for
+
+        if (RecoveryWinEntryItems == NULL) {
+            AddMenuInfoLine (ToolInfoMenu, L"Could *NOT* Find Valid Instance", FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"  Remove from 'showtools' List",  FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"",                                FALSE);
+        }
+        else {
+            for (VolumeIndex = 0; VolumeIndex < RecoveryWinEntryItemsCount; VolumeIndex++) {
+                AddMenuEntry (
+                    ToolInfoMenu,
+                    (REFIT_MENU_ENTRY *) RecoveryWinEntryItems[VolumeIndex]
+                );
+            } // for
+        }
+
+        RetVal = GetMenuEntryReturn (&ToolInfoMenu);
+        if (!RetVal) {
+            FreeMenuScreen (&ToolInfoMenu);
+        }
+    } while (0); // This 'loop' only runs once
+
+    if (ToolInfoMenu == NULL) {
+        RetVal = HandleExitShowInfo();
+    }
+    else {
+        DefaultEntry = 9999; // Use the Max Index
+        Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
+        MenuExit = DrawMenuScreen (
+            ToolInfoMenu, Style,
+            &DefaultEntry, &ChosenOption
+        );
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_NORMAL,
+            L"Returned '%d' (%s) in '%a' Function from the \"%s\" Option in Menu Screen",
+            MenuExit, MenuExitInfo (MenuExit), __func__, ChosenOption->Title
+        );
+        LOG_MSG("\n\n");
+        LOG_MSG("Received User Input:");
+        LOG_MSG("%s  - %s", OffsetNext, ChosenOption->Title);
+        #endif
+
+        if (MenuExit != MENU_EXIT_ENTER || ChosenOption->Tag != TAG_BASE) {
+            RetVal = FALSE;
+        }
+        else {
+            RetVal = TRUE;
+
+            *ReturnEntryItem = CopyLoaderEntry (
+                RecoveryWinEntryItems[ChosenOption->Row]
+            );
+        }
+    }
+
+    RunOnce = TRUE;
+
+    return RetVal;
+} // static BOOLEAN ShowInfoRecoveryWin()
+
+static
+BOOLEAN ShowInfoMemTest (
+    CHAR16        *ToolPurpose,
+    LOADER_ENTRY **ReturnEntryItem OPTIONAL
+) {
+    INTN                       DefaultEntry;
+    UINTN                      VolumeIndex;
+    UINTN                      MenuExit;
+    CHAR16                    *ToolLoc;
+    BOOLEAN                    RetVal;
+    MENU_STYLE_FUNC            Style;
+    REFIT_MENU_ENTRY          *ChosenOption;
+
+    static BOOLEAN             RunOnce = FALSE;
+    static REFIT_MENU_SCREEN  *ToolInfoMenu = NULL;
+
+
+    do {
+        if (RunOnce) {
+            break;
+        }
+
+        ToolInfoMenu = AllocateZeroPool (sizeof (REFIT_MENU_SCREEN));
+        if (ToolInfoMenu == NULL) {
+            break;
+        }
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_THIN_SEP, L"Prepare Menu Screen");
+        ALT_LOG(1, LOG_LINE_NORMAL, L"Screen Title:- 'Run %s Info'", ToolPurpose);
+        #endif
+
+        ToolInfoMenu->TitleImage = BuiltinIcon (BUILTIN_ICON_TOOL_MEMTEST);
+        ToolInfoMenu->Title      = StrDuplicate (LABEL_MEMTEST           );
+        ToolInfoMenu->Hint1      = StrDuplicate (SELECT_OPTION_HINT      );
+        ToolInfoMenu->Hint2      = StrDuplicate (RETURN_MAIN_SCREEN_HINT );
+
+        ToolLoc = StrDuplicate (SelfDirPath);
+        MergeStrings (
+            &ToolLoc,
+            SelfToolPath, L','
+        );
+        MergeUniqueItems (
+            &ToolLoc,
+            GlobalConfig.ToolLocations, L','
+        );
+        MergeUniqueItems (
+            &ToolLoc,
+            MEMTEST_LOCATIONS, L','
+        );
+
+        FindTool (
+            ToolLoc, MEMTEST_FILES,
+            ToolPurpose, BUILTIN_ICON_TOOL_MEMTEST,
+            TRUE, FALSE, TAG_MEMTEST
+        );
+        MY_FREE_POOL(ToolLoc);
+
+        if (MemTestEntryItems == NULL) {
+            AddMenuInfoLine (ToolInfoMenu, L"Could *NOT* Find Valid Instance", FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"  Remove from 'showtools' List",  FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"",                                FALSE);
+        }
+        else {
+            for (VolumeIndex = 0; VolumeIndex < MemTestEntryItemsCount; VolumeIndex++) {
+                AddMenuEntry (
+                    ToolInfoMenu,
+                    (REFIT_MENU_ENTRY *) MemTestEntryItems[VolumeIndex]
+                );
+            } // for
+        }
+
+        RetVal = GetMenuEntryReturn (&ToolInfoMenu);
+        if (!RetVal) {
+            FreeMenuScreen (&ToolInfoMenu);
+        }
+    } while (0); // This 'loop' only runs once
+
+    if (ToolInfoMenu == NULL) {
+        RetVal = HandleExitShowInfo();
+    }
+    else {
+        DefaultEntry = 9999; // Use the Max Index
+        Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
+        MenuExit = DrawMenuScreen (
+            ToolInfoMenu, Style,
+            &DefaultEntry, &ChosenOption
+        );
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_NORMAL,
+            L"Returned '%d' (%s) in '%a' Function from the \"%s\" Option in Menu Screen",
+            MenuExit, MenuExitInfo (MenuExit), __func__, ChosenOption->Title
+        );
+        LOG_MSG("\n\n");
+        LOG_MSG("Received User Input:");
+        LOG_MSG("%s  - %s", OffsetNext, ChosenOption->Title);
+        #endif
+
+        if (MenuExit != MENU_EXIT_ENTER || ChosenOption->Tag != TAG_BASE) {
+            RetVal = FALSE;
+        }
+        else {
+            RetVal = TRUE;
+
+            *ReturnEntryItem = CopyLoaderEntry (
+                MemTestEntryItems[ChosenOption->Row]
+            );
+        }
+    }
+
+    RunOnce = TRUE;
+
+    return RetVal;
+} // static BOOLEAN ShowInfoMemTest()
+
+static
+BOOLEAN ShowInfoShell (
+    CHAR16        *ToolPurpose,
+    LOADER_ENTRY **ReturnEntryItem OPTIONAL
+) {
+    #if REFIT_DEBUG > 0
+    BOOLEAN CheckMute = FALSE;
+    #endif
+
+    INTN                       DefaultEntry;
+    UINTN                      VolumeIndex;
+    UINTN                      MenuExit;
+    BOOLEAN                    RetVal;
+    MENU_STYLE_FUNC            Style;
+    REFIT_MENU_ENTRY          *ChosenOption;
+
+    static BOOLEAN             RunOnce = FALSE;
+    static REFIT_MENU_SCREEN  *ToolInfoMenu = NULL;
+
+
+    do {
+        if (RunOnce) {
+            break;
+        }
+
+        ToolInfoMenu = AllocateZeroPool (sizeof (REFIT_MENU_SCREEN));
+        if (ToolInfoMenu == NULL) {
+            break;
+        }
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_THIN_SEP, L"Prepare Menu Screen");
+        ALT_LOG(1, LOG_LINE_NORMAL, L"Screen Title:- 'Run %s Info'", ToolPurpose);
+        #endif
+
+        ToolInfoMenu->TitleImage = BuiltinIcon (BUILTIN_ICON_TOOL_SHELL );
+        ToolInfoMenu->Title      = StrDuplicate (LABEL_SHELL            );
+        ToolInfoMenu->Hint1      = StrDuplicate (SELECT_OPTION_HINT     );
+        ToolInfoMenu->Hint2      = StrDuplicate (RETURN_MAIN_SCREEN_HINT);
+
+        FindTool (
+            AllToolLocations, SHELL_FILES,
+            ToolPurpose, BUILTIN_ICON_TOOL_SHELL,
+            TRUE, TRUE, TAG_SHELL
+        );
+
+        #if REFIT_DEBUG > 0
+        MY_MUTELOGGER_SET;
+        #endif
+        ScanFirmwareDefined (
+            1, L"Shell",
+            BuiltinIcon (BUILTIN_ICON_TOOL_SHELL),
+            TAG_SHELL
+        );
+        #if REFIT_DEBUG > 0
+        MY_MUTELOGGER_OFF;
+        #endif
+
+        if (ShellEntryItems == NULL) {
+            AddMenuInfoLine (ToolInfoMenu, L"Could *NOT* Find Valid Instance", FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"  Remove from 'showtools' List",  FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"",                                FALSE);
+        }
+        else {
+            for (VolumeIndex = 0; VolumeIndex < ShellEntryItemsCount; VolumeIndex++) {
+                AddMenuEntry (
+                    ToolInfoMenu,
+                    (REFIT_MENU_ENTRY *) ShellEntryItems[VolumeIndex]
+                );
+            } // for
+        }
+
+        RetVal = GetMenuEntryReturn (&ToolInfoMenu);
+        if (!RetVal) {
+            FreeMenuScreen (&ToolInfoMenu);
+        }
+    } while (0); // This 'loop' only runs once
+
+    if (ToolInfoMenu == NULL) {
+        RetVal = HandleExitShowInfo();
+    }
+    else {
+        DefaultEntry = 9999; // Use the Max Index
+        Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
+        MenuExit = DrawMenuScreen (
+            ToolInfoMenu, Style,
+            &DefaultEntry, &ChosenOption
+        );
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_NORMAL,
+            L"Returned '%d' (%s) in '%a' Function from the \"%s\" Option in Menu Screen",
+            MenuExit, MenuExitInfo (MenuExit), __func__, ChosenOption->Title
+        );
+        LOG_MSG("\n\n");
+        LOG_MSG("Received User Input:");
+        LOG_MSG("%s  - %s", OffsetNext, ChosenOption->Title);
+        #endif
+
+        if (MenuExit != MENU_EXIT_ENTER || ChosenOption->Tag != TAG_BASE) {
+            RetVal = FALSE;
+        }
+        else {
+            RetVal = TRUE;
+
+            *ReturnEntryItem = CopyLoaderEntry (
+                ShellEntryItems[ChosenOption->Row]
+            );
+        }
+    }
+
+    RunOnce = TRUE;
+
+    return RetVal;
+} // static BOOLEAN ShowInfoShell()
+
+static
+BOOLEAN ShowInfoGPTSync (
+    CHAR16        *ToolPurpose,
+    LOADER_ENTRY **ReturnEntryItem OPTIONAL
+) {
+    INTN                       DefaultEntry;
+    UINTN                      VolumeIndex;
+    UINTN                      MenuExit;
+    BOOLEAN                    RetVal;
+    MENU_STYLE_FUNC            Style;
+    REFIT_MENU_ENTRY          *ChosenOption;
+
+    static BOOLEAN             RunOnce = FALSE;
+    static REFIT_MENU_SCREEN  *ToolInfoMenu = NULL;
+
+
+    do {
+        if (RunOnce) {
+            break;
+        }
+
+        ToolInfoMenu = AllocateZeroPool (sizeof (REFIT_MENU_SCREEN));
+        if (ToolInfoMenu == NULL) {
+            break;
+        }
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_THIN_SEP, L"Prepare Menu Screen");
+        ALT_LOG(1, LOG_LINE_NORMAL, L"Screen Title:- 'Run %s Info'", ToolPurpose);
+        #endif
+
+        ToolInfoMenu->TitleImage = BuiltinIcon (BUILTIN_ICON_TOOL_PART  );
+        ToolInfoMenu->Title      = StrDuplicate (LABEL_GPTSYNC          );
+        ToolInfoMenu->Hint1      = StrDuplicate (SELECT_OPTION_HINT     );
+        ToolInfoMenu->Hint2      = StrDuplicate (RETURN_MAIN_SCREEN_HINT);
+
+        FindTool (
+            AllToolLocations, GPTSYNC_FILES,
+            ToolPurpose, BUILTIN_ICON_TOOL_PART,
+            TRUE, FALSE, TAG_GPTSYNC
+        );
+
+        if (GPTSyncEntryItems == NULL) {
+            AddMenuInfoLine (ToolInfoMenu, L"Could *NOT* Find Valid Instance", FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"  Remove from 'showtools' List",  FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"",                                FALSE);
+        }
+        else {
+            for (VolumeIndex = 0; VolumeIndex < GPTSyncEntryItemsCount; VolumeIndex++) {
+                AddMenuEntry (
+                    ToolInfoMenu,
+                    (REFIT_MENU_ENTRY *) GPTSyncEntryItems[VolumeIndex]
+                );
+            } // for
+        }
+
+        RetVal = GetMenuEntryReturn (&ToolInfoMenu);
+        if (!RetVal) {
+            FreeMenuScreen (&ToolInfoMenu);
+        }
+    } while (0); // This 'loop' only runs once
+
+    if (ToolInfoMenu == NULL) {
+        RetVal = HandleExitShowInfo();
+    }
+    else {
+        DefaultEntry = 9999; // Use the Max Index
+        Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
+        MenuExit = DrawMenuScreen (
+            ToolInfoMenu, Style,
+            &DefaultEntry, &ChosenOption
+        );
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_NORMAL,
+            L"Returned '%d' (%s) in '%a' Function from the \"%s\" Option in Menu Screen",
+            MenuExit, MenuExitInfo (MenuExit), __func__, ChosenOption->Title
+        );
+        LOG_MSG("\n\n");
+        LOG_MSG("Received User Input:");
+        LOG_MSG("%s  - %s", OffsetNext, ChosenOption->Title);
+        #endif
+
+        if (MenuExit != MENU_EXIT_ENTER || ChosenOption->Tag != TAG_BASE) {
+            RetVal = FALSE;
+        }
+        else {
+            RetVal = TRUE;
+
+            *ReturnEntryItem = CopyLoaderEntry (
+                GPTSyncEntryItems[ChosenOption->Row]
+            );
+        }
+    }
+
+    RunOnce = TRUE;
+
+    return RetVal;
+} // static BOOLEAN ShowInfoGPTSync()
+
+static
+BOOLEAN ShowInfoGDisk (
+    CHAR16        *ToolPurpose,
+    LOADER_ENTRY **ReturnEntryItem OPTIONAL
+) {
+    INTN                       DefaultEntry;
+    UINTN                      VolumeIndex;
+    UINTN                      MenuExit;
+    BOOLEAN                    RetVal;
+    MENU_STYLE_FUNC            Style;
+    REFIT_MENU_ENTRY          *ChosenOption;
+
+    static BOOLEAN             RunOnce = FALSE;
+    static REFIT_MENU_SCREEN  *ToolInfoMenu = NULL;
+
+
+    do {
+        if (RunOnce) {
+            break;
+        }
+
+        ToolInfoMenu = AllocateZeroPool (sizeof (REFIT_MENU_SCREEN));
+        if (ToolInfoMenu == NULL) {
+            break;
+        }
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_THIN_SEP, L"Prepare Menu Screen");
+        ALT_LOG(1, LOG_LINE_NORMAL, L"Screen Title:- 'Run %s Info'", ToolPurpose);
+        #endif
+
+        ToolInfoMenu->TitleImage = BuiltinIcon (BUILTIN_ICON_TOOL_PART  );
+        ToolInfoMenu->Title      = StrDuplicate (LABEL_GDISK            );
+        ToolInfoMenu->Hint1      = StrDuplicate (SELECT_OPTION_HINT     );
+        ToolInfoMenu->Hint2      = StrDuplicate (RETURN_MAIN_SCREEN_HINT);
+
+        FindTool (
+            AllToolLocations, GDISK_FILES,
+            ToolPurpose, BUILTIN_ICON_TOOL_PART,
+            TRUE, FALSE, TAG_GDISK
+        );
+
+        if (GDiskEntryItems == NULL) {
+            AddMenuInfoLine (ToolInfoMenu, L"Could *NOT* Find Valid Instance", FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"  Remove from 'showtools' List",  FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"",                                FALSE);
+        }
+        else {
+            for (VolumeIndex = 0; VolumeIndex < GDiskEntryItemsCount; VolumeIndex++) {
+                AddMenuEntry (
+                    ToolInfoMenu,
+                    (REFIT_MENU_ENTRY *) GDiskEntryItems[VolumeIndex]
+                );
+            } // for
+        }
+
+        RetVal = GetMenuEntryReturn (&ToolInfoMenu);
+        if (!RetVal) {
+            FreeMenuScreen (&ToolInfoMenu);
+        }
+    } while (0); // This 'loop' only runs once
+
+    if (ToolInfoMenu == NULL) {
+        RetVal = HandleExitShowInfo();
+    }
+    else {
+        DefaultEntry = 9999; // Use the Max Index
+        Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
+        MenuExit = DrawMenuScreen (
+            ToolInfoMenu, Style,
+            &DefaultEntry, &ChosenOption
+        );
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_NORMAL,
+            L"Returned '%d' (%s) in '%a' Function from the \"%s\" Option in Menu Screen",
+            MenuExit, MenuExitInfo (MenuExit), __func__, ChosenOption->Title
+        );
+        LOG_MSG("\n\n");
+        LOG_MSG("Received User Input:");
+        LOG_MSG("%s  - %s", OffsetNext, ChosenOption->Title);
+        #endif
+
+        if (MenuExit != MENU_EXIT_ENTER || ChosenOption->Tag != TAG_BASE) {
+            RetVal = FALSE;
+        }
+        else {
+            RetVal = TRUE;
+
+            *ReturnEntryItem = CopyLoaderEntry (
+                GDiskEntryItems[ChosenOption->Row]
+            );
+        }
+    }
+
+    RunOnce = TRUE;
+
+    return RetVal;
+} // static BOOLEAN ShowInfoGDisk()
+
+static
+BOOLEAN ShowInfoMOK (
+    CHAR16        *ToolPurpose,
+    LOADER_ENTRY **ReturnEntryItem OPTIONAL
+) {
+    INTN                       DefaultEntry;
+    UINTN                      VolumeIndex;
+    UINTN                      MenuExit;
+    BOOLEAN                    RetVal;
+    MENU_STYLE_FUNC            Style;
+    REFIT_MENU_ENTRY          *ChosenOption;
+
+    static BOOLEAN             RunOnce = FALSE;
+    static REFIT_MENU_SCREEN  *ToolInfoMenu = NULL;
+
+
+    do {
+        if (RunOnce) {
+            break;
+        }
+
+        ToolInfoMenu = AllocateZeroPool (sizeof (REFIT_MENU_SCREEN));
+        if (ToolInfoMenu == NULL) {
+            break;
+        }
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_THIN_SEP, L"Prepare Menu Screen");
+        ALT_LOG(1, LOG_LINE_NORMAL, L"Screen Title:- 'Run %s Info'", ToolPurpose);
+        #endif
+
+        ToolInfoMenu->TitleImage = BuiltinIcon (BUILTIN_ICON_TOOL_MOK   );
+        ToolInfoMenu->Title      = StrDuplicate (LABEL_MOK              );
+        ToolInfoMenu->Hint1      = StrDuplicate (SELECT_OPTION_HINT     );
+        ToolInfoMenu->Hint2      = StrDuplicate (RETURN_MAIN_SCREEN_HINT);
+
+        FindTool (
+            AllToolLocations, MOK_FILES,
+            ToolPurpose, BUILTIN_ICON_TOOL_MOK,
+            FALSE, TRUE, TAG_MOK_TOOL
+        );
+
+        if (MOKEntryItems == NULL) {
+            AddMenuInfoLine (ToolInfoMenu, L"Could *NOT* Find Valid Instance", FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"  Remove from 'showtools' List",  FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"",                                FALSE);
+        }
+        else {
+            for (VolumeIndex = 0; VolumeIndex < MOKEntryItemsCount; VolumeIndex++) {
+                AddMenuEntry (
+                    ToolInfoMenu,
+                    (REFIT_MENU_ENTRY *) MOKEntryItems[VolumeIndex]
+                );
+            } // for
+        }
+
+        RetVal = GetMenuEntryReturn (&ToolInfoMenu);
+        if (!RetVal) {
+            FreeMenuScreen (&ToolInfoMenu);
+        }
+    } while (0); // This 'loop' only runs once
+
+    if (ToolInfoMenu == NULL) {
+        RetVal = HandleExitShowInfo();
+    }
+    else {
+        DefaultEntry = 9999; // Use the Max Index
+        Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
+        MenuExit = DrawMenuScreen (
+            ToolInfoMenu, Style,
+            &DefaultEntry, &ChosenOption
+        );
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_NORMAL,
+            L"Returned '%d' (%s) in '%a' Function from the \"%s\" Option in Menu Screen",
+            MenuExit, MenuExitInfo (MenuExit), __func__, ChosenOption->Title
+        );
+        LOG_MSG("\n\n");
+        LOG_MSG("Received User Input:");
+        LOG_MSG("%s  - %s", OffsetNext, ChosenOption->Title);
+        #endif
+
+        if (MenuExit != MENU_EXIT_ENTER || ChosenOption->Tag != TAG_BASE) {
+            RetVal = FALSE;
+        }
+        else {
+            RetVal = TRUE;
+
+            *ReturnEntryItem = CopyLoaderEntry (
+                MOKEntryItems[ChosenOption->Row]
+            );
+        }
+    }
+
+    RunOnce = TRUE;
+
+    return RetVal;
+} // static BOOLEAN ShowInfoMOK()
+
+static
+BOOLEAN ShowInfoFwUpdate (
+    CHAR16        *ToolPurpose,
+    LOADER_ENTRY **ReturnEntryItem OPTIONAL
+) {
+    INTN                       DefaultEntry;
+    UINTN                      VolumeIndex;
+    UINTN                      MenuExit;
+    BOOLEAN                    RetVal;
+    MENU_STYLE_FUNC            Style;
+    REFIT_MENU_ENTRY          *ChosenOption;
+
+    static BOOLEAN             RunOnce = FALSE;
+    static REFIT_MENU_SCREEN  *ToolInfoMenu = NULL;
+
+
+    do {
+        if (RunOnce) {
+            break;
+        }
+
+        ToolInfoMenu = AllocateZeroPool (sizeof (REFIT_MENU_SCREEN));
+        if (ToolInfoMenu == NULL) {
+            break;
+        }
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_THIN_SEP, L"Prepare Menu Screen");
+        ALT_LOG(1, LOG_LINE_NORMAL, L"Screen Title:- 'Run %s Info'", ToolPurpose);
+        #endif
+
+        ToolInfoMenu->TitleImage = BuiltinIcon (BUILTIN_ICON_TOOL_FWUPDATE);
+        ToolInfoMenu->Title      = StrDuplicate (LABEL_FWUPDATE           );
+        ToolInfoMenu->Hint1      = StrDuplicate (SELECT_OPTION_HINT       );
+        ToolInfoMenu->Hint2      = StrDuplicate (RETURN_MAIN_SCREEN_HINT  );
+
+        FindTool (
+            AllToolLocations, FWUPDATE_FILES,
+            ToolPurpose, BUILTIN_ICON_TOOL_FWUPDATE,
+            FALSE, TRUE, TAG_FWUPDATE_TOOL
+        );
+
+        if (FwUpdateEntryItems == NULL) {
+            AddMenuInfoLine (ToolInfoMenu, L"Could *NOT* Find Valid Instance", FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"  Remove from 'showtools' List",  FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"",                                FALSE);
+        }
+        else {
+            for (VolumeIndex = 0; VolumeIndex < FwUpdateEntryItemsCount; VolumeIndex++) {
+                AddMenuEntry (
+                    ToolInfoMenu,
+                    (REFIT_MENU_ENTRY *) FwUpdateEntryItems[VolumeIndex]
+                );
+            } // for
+        }
+
+        RetVal = GetMenuEntryReturn (&ToolInfoMenu);
+        if (!RetVal) {
+            FreeMenuScreen (&ToolInfoMenu);
+        }
+    } while (0); // This 'loop' only runs once
+
+    if (ToolInfoMenu == NULL) {
+        RetVal = HandleExitShowInfo();
+    }
+    else {
+        DefaultEntry = 9999; // Use the Max Index
+        Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
+        MenuExit = DrawMenuScreen (
+            ToolInfoMenu, Style,
+            &DefaultEntry, &ChosenOption
+        );
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_NORMAL,
+            L"Returned '%d' (%s) in '%a' Function from the \"%s\" Option in Menu Screen",
+            MenuExit, MenuExitInfo (MenuExit), __func__, ChosenOption->Title
+        );
+        LOG_MSG("\n\n");
+        LOG_MSG("Received User Input:");
+        LOG_MSG("%s  - %s", OffsetNext, ChosenOption->Title);
+        #endif
+
+        if (MenuExit != MENU_EXIT_ENTER || ChosenOption->Tag != TAG_BASE) {
+            RetVal = FALSE;
+        }
+        else {
+            RetVal = TRUE;
+
+            *ReturnEntryItem = CopyLoaderEntry (
+                FwUpdateEntryItems[ChosenOption->Row]
+            );
+        }
+    }
+
+    RunOnce = TRUE;
+
+    return RetVal;
+} // static BOOLEAN ShowInfoFwUpdate()
+
+static
+BOOLEAN ShowInfoNetBoot (
+    CHAR16        *ToolPurpose,
+    LOADER_ENTRY **ReturnEntryItem OPTIONAL
+) {
+    INTN                       DefaultEntry;
+    UINTN                      VolumeIndex;
+    UINTN                      MenuExit;
+    BOOLEAN                    RetVal;
+    MENU_STYLE_FUNC            Style;
+    REFIT_MENU_ENTRY          *ChosenOption;
+
+    static BOOLEAN             RunOnce = FALSE;
+    static REFIT_MENU_SCREEN  *ToolInfoMenu = NULL;
+
+
+    do {
+        if (RunOnce) {
+            break;
+        }
+
+        ToolInfoMenu = AllocateZeroPool (sizeof (REFIT_MENU_SCREEN));
+        if (ToolInfoMenu == NULL) {
+            break;
+        }
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_THIN_SEP, L"Prepare Menu Screen");
+        ALT_LOG(1, LOG_LINE_NORMAL, L"Screen Title:- 'Run %s Info'", ToolPurpose);
+        #endif
+
+        ToolInfoMenu->TitleImage = BuiltinIcon (BUILTIN_ICON_TOOL_NETBOOT);
+        ToolInfoMenu->Title      = StrDuplicate (LABEL_NETBOOT           );
+        ToolInfoMenu->Hint1      = StrDuplicate (SELECT_OPTION_HINT      );
+        ToolInfoMenu->Hint2      = StrDuplicate (RETURN_MAIN_SCREEN_HINT );
+
+        FindTool (
+            AllToolLocations, NETBOOT_FILES,
+            ToolPurpose, BUILTIN_ICON_TOOL_NETBOOT,
+            FALSE, TRUE, TAG_NETBOOT
+        );
+
+        if (NetBootEntryItems == NULL) {
+            AddMenuInfoLine (ToolInfoMenu, L"Could *NOT* Find Valid Instance", FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"  Remove from 'showtools' List",  FALSE);
+            AddMenuInfoLine (ToolInfoMenu, L"",                                FALSE);
+        }
+        else {
+            for (VolumeIndex = 0; VolumeIndex < NetBootEntryItemsCount; VolumeIndex++) {
+                AddMenuEntry (
+                    ToolInfoMenu,
+                    (REFIT_MENU_ENTRY *) NetBootEntryItems[VolumeIndex]
+                );
+            } // for
+        }
+
+        RetVal = GetMenuEntryReturn (&ToolInfoMenu);
+        if (!RetVal) {
+            FreeMenuScreen (&ToolInfoMenu);
+        }
+    } while (0); // This 'loop' only runs once
+
+    if (ToolInfoMenu == NULL) {
+        RetVal = HandleExitShowInfo();
+    }
+    else {
+        DefaultEntry = 9999; // Use the Max Index
+        Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
+        MenuExit = DrawMenuScreen (
+            ToolInfoMenu, Style,
+            &DefaultEntry, &ChosenOption
+        );
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_NORMAL,
+            L"Returned '%d' (%s) in '%a' Function from the \"%s\" Option in Menu Screen",
+            MenuExit, MenuExitInfo (MenuExit), __func__, ChosenOption->Title
+        );
+        LOG_MSG("\n\n");
+        LOG_MSG("Received User Input:");
+        LOG_MSG("%s  - %s", OffsetNext, ChosenOption->Title);
+        #endif
+
+        if (MenuExit != MENU_EXIT_ENTER || ChosenOption->Tag != TAG_BASE) {
+            RetVal = FALSE;
+        }
+        else {
+            RetVal = TRUE;
+
+            *ReturnEntryItem = CopyLoaderEntry (
+                NetBootEntryItems[ChosenOption->Row]
+            );
+        }
+    }
+
+    RunOnce = TRUE;
+
+    return RetVal;
+} // static BOOLEAN ShowInfoNetBoot()
+
+static
+BOOLEAN ShowInfoCleanNvram (
+    CHAR16 *ToolPurpose
+) {
+    INTN                       DefaultEntry;
+    UINTN                      i, j;
+    UINTN                      MenuExit;
+    CHAR16                    *FilePath;
+    CHAR16                    *FileName;
+    BOOLEAN                    RetVal;
+    MENU_STYLE_FUNC            Style;
+    REFIT_MENU_ENTRY          *ChosenOption;
+
+    static BOOLEAN             RunOnce = FALSE;
+    static REFIT_MENU_SCREEN  *ToolInfoMenu = NULL;
+
+
+    do {
+        if (RunOnce) {
+            break;
+        }
+
+        ToolInfoMenu = AllocateZeroPool (sizeof (REFIT_MENU_SCREEN));
+        if (ToolInfoMenu == NULL) {
+            break;
+        }
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_THIN_SEP, L"Prepare Menu Screen");
+        ALT_LOG(1, LOG_LINE_NORMAL, L"Screen Title:- 'Run %s Info'", ToolPurpose);
+        #endif
+
+        ToolInfoMenu->TitleImage = BuiltinIcon (BUILTIN_ICON_TOOL_NVRAMCLEAN);
+        ToolInfoMenu->Title      = StrDuplicate (LABEL_CLEAN_NVRAM          );
+        ToolInfoMenu->Hint1      = StrDuplicate (RETURN_MAIN_SCREEN_HINT    );
+        ToolInfoMenu->Hint2      = StrDuplicate (L""                        );
+
+        AddMenuInfoLine (ToolInfoMenu, L"The tool binary must be placed in one of the paths below", FALSE);
+        AddMenuInfoLine (ToolInfoMenu, L" - The first file found in the order listed will be used", FALSE);
+        AddMenuInfoLine (ToolInfoMenu, L" - You will be returned to the main menu if not found",    FALSE);
+        AddMenuInfoLine (ToolInfoMenu, L"",                                                         FALSE);
+
+        i = 0;
+        while ((FilePath = FindCommaDelimited (GlobalConfig.ToolLocations, i++)) != NULL) {
+            j = 0;
+            while ((FileName = FindCommaDelimited (NVRAMCLEAN_FILES, j++)) != NULL) {
+                AddMenuInfoLine (ToolInfoMenu, PoolPrint (L"%s\\%s", FilePath, FileName), TRUE);
+
+                MY_FREE_POOL(FileName);
+            } // while
+
+            MY_FREE_POOL(FilePath);
+        } // while
+
+        AddMenuInfoLine (ToolInfoMenu, L"", FALSE);
+
+        REFIT_MENU_ENTRY *MenuEntryCleanNvram = AllocateZeroPool (sizeof (REFIT_MENU_ENTRY));
+        if (MenuEntryCleanNvram == NULL) {
+            FreeMenuScreen (&ToolInfoMenu);
+            break;
+        }
+
+        MenuEntryCleanNvram->Title = StrDuplicate (ToolPurpose);
+        MenuEntryCleanNvram->Tag   = TAG_BASE;
+        AddMenuEntry (ToolInfoMenu, MenuEntryCleanNvram);
+
+        RetVal = GetMenuEntryReturn (&ToolInfoMenu);
+        if (!RetVal) {
+            FreeMenuScreen (&ToolInfoMenu);
+        }
+    } while (0); // This 'loop' only runs once
+
+    if (ToolInfoMenu == NULL) {
+        RetVal = HandleExitShowInfo();
+    }
+    else {
+        DefaultEntry = 9999; // Use the Max Index
+        Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
+        ChosenOption = NULL;
+        MenuExit = DrawMenuScreen (ToolInfoMenu, Style, &DefaultEntry, &ChosenOption);
+
+        #if REFIT_DEBUG > 0
+        ALT_LOG(1, LOG_LINE_NORMAL,
+            L"Returned '%d' (%s) in '%a' Function from the \"%s\" Option in Menu Screen",
+            MenuExit, MenuExitInfo (MenuExit), __func__, ChosenOption->Title
+        );
+        LOG_MSG("Received User Input:");
+        LOG_MSG("%s  - %s", OffsetNext, ChosenOption->Title);
+        LOG_MSG("\n\n");
+        #endif
+
+        if (MenuExit != MENU_EXIT_ENTER || ChosenOption->Tag != TAG_BASE) {
+            RetVal = FALSE;
+        }
+        else {
+            RetVal = TRUE;
+        }
+    }
+
+    RunOnce = TRUE;
+
+    return RetVal;
+} // static BOOLEAN ShowInfoCleanNvram()
 
 static
 VOID AboutRefindPlus (VOID) {
+    #if REFIT_DEBUG > 0
+    BOOLEAN CheckMute = FALSE;
+    #endif
+
     EFI_STATUS         Status;
     UINT32             CsrStatus;
     CHAR16            *TmpStr;
@@ -1916,7 +3113,7 @@ VOID AboutRefindPlus (VOID) {
     MENU_STYLE_FUNC    Style;
     REFIT_MENU_SCREEN *AboutMenu;
 
-    static UINTN ScreenSize = 0;
+    static UINTN       ScreenSize = 0;
 
 
     AboutMenu = AllocateZeroPool (sizeof (REFIT_MENU_SCREEN));
@@ -1925,8 +3122,6 @@ VOID AboutRefindPlus (VOID) {
     }
 
     #if REFIT_DEBUG > 0
-    BOOLEAN CheckMute = FALSE;
-
     ALT_LOG(1, LOG_LINE_THIN_SEP, L"Prepare Menu Screen");
     ALT_LOG(1, LOG_LINE_NORMAL, L"Screen Title:- '%s'", LABEL_ABOUT);
     #endif
@@ -1965,15 +3160,15 @@ VOID AboutRefindPlus (VOID) {
         LimitStringLength (TmpStr, (MAX_LINE_LENGTH - 16));
     }
 
-    AddMenuInfoLine (AboutMenu, PoolPrint (L"Firmware      : %s", TmpStr),   TRUE);
-    AddMenuInfoLine (AboutMenu, PoolPrint (L"Platform      : %s", ArchType), TRUE);
+    AddMenuInfoLine (AboutMenu, PoolPrint (L"Firmware      : %s", TmpStr),                  TRUE);
+    AddMenuInfoLine (AboutMenu, PoolPrint (L"Platform      : %s", ArchType),                TRUE);
     MY_FREE_POOL(TmpStr);
     AddMenuInfoLine (
         AboutMenu,
         PoolPrint (
             L"EFI Version   : %s %d.%02d%s",
-            (EfiMajorVersion > 1) ? L"UEFI" : L"EFI",
-            EfiMajorVersion,
+            ((gST->Hdr.Revision >> 16U) > 1) ? L"UEFI" : L"EFI",
+            gST->Hdr.Revision >> 16U,
             gST->Hdr.Revision & ((1 << 16) - 1),
             (WarnVersionEFI)
                 ? L" (Spoofed by Others)"
@@ -2055,6 +3250,71 @@ VOID AboutRefindPlus (VOID) {
 
     FreeMenuScreen (&AboutMenu);
 } // static VOID AboutRefindPlus()
+
+static
+VOID HandleToolRun (
+    CHAR16            *TypeStr,
+    BOOLEAN            ToolFlag,
+    LOADER_ENTRY      *OurLoaderEntry OPTIONAL
+) {
+    if (!ToolFlag || OurLoaderEntry == NULL) {
+        #if REFIT_DEBUG > 0
+        LOG_MSG("\n\n");
+        #endif
+
+        return;
+    }
+
+    #if REFIT_DEBUG > 0
+    LOG_MSG("%s  - Load Tool to Run %s", OffsetNext, TypeStr);
+    #endif
+
+    StartTool (OurLoaderEntry);
+} // static VOID HandleToolRun()
+
+static
+VOID PrepToolMenu (
+    UINTN              TypeTag
+) {
+    CHAR16            *TypeStr;
+    BOOLEAN            ToolFlag;
+    LOADER_ENTRY      *OurEntry;
+
+
+    switch (TypeTag) {
+        case TAG_SHELL:         TypeStr = LABEL_SHELL       ; break;
+        case TAG_GDISK:         TypeStr = LABEL_GDISK       ; break;
+        case TAG_GPTSYNC:       TypeStr = LABEL_GPTSYNC     ; break;
+        case TAG_MEMTEST:       TypeStr = LABEL_MEMTEST     ; break;
+        case TAG_NETBOOT:       TypeStr = LABEL_NETBOOT     ; break;
+        case TAG_MOK_TOOL:      TypeStr = LABEL_MOK         ; break;
+        case TAG_FWUPDATE_TOOL: TypeStr = LABEL_FWUPDATE    ; break;
+        case TAG_RECOVERY_MAC:  TypeStr = LABEL_RECOVERY_MAC; break;
+        case TAG_RECOVERY_WIN:  TypeStr = LABEL_RECOVERY_WIN; break;
+    } // switch
+
+    #if REFIT_DEBUG > 0
+    LOG_MSG("Received User Input:");
+    LOG_MSG("%s  - Show 'Run %s Tool' Menu", OffsetNext, TypeStr);
+    #endif
+
+    OurEntry =  NULL;
+    ToolFlag = FALSE;
+
+    switch (TypeTag) {
+        case TAG_SHELL:         ToolFlag = ShowInfoShell       (TypeStr, &OurEntry); break;
+        case TAG_GDISK:         ToolFlag = ShowInfoGDisk       (TypeStr, &OurEntry); break;
+        case TAG_GPTSYNC:       ToolFlag = ShowInfoGPTSync     (TypeStr, &OurEntry); break;
+        case TAG_MEMTEST:       ToolFlag = ShowInfoMemTest     (TypeStr, &OurEntry); break;
+        case TAG_NETBOOT:       ToolFlag = ShowInfoNetBoot     (TypeStr, &OurEntry); break;
+        case TAG_MOK_TOOL:      ToolFlag = ShowInfoMOK         (TypeStr, &OurEntry); break;
+        case TAG_FWUPDATE_TOOL: ToolFlag = ShowInfoFwUpdate    (TypeStr, &OurEntry); break;
+        case TAG_RECOVERY_MAC:  ToolFlag = ShowInfoRecoveryMac (TypeStr, &OurEntry); break;
+        case TAG_RECOVERY_WIN:  ToolFlag = ShowInfoRecoveryWin (TypeStr, &OurEntry); break;
+    } // switch
+
+    HandleToolRun (TypeStr, ToolFlag, OurEntry);
+} // static VOID PrepToolMenu()
 
 // DA-TAG: Caller responsible for returned buffer
 EFI_STATUS GetHardwareNvramVariable (
@@ -3657,23 +4917,20 @@ EFI_STATUS EFIAPI efi_main (
     SelectionName = (GlobalConfig.DefaultSelection != NULL)
         ? StrDuplicate (GlobalConfig.DefaultSelection) : NULL;
 
-    TypeStr         =  NULL;
-    FilePath        =  NULL;
-    FoundTool       = FALSE;
-    RunOurTool      = FALSE;
-    ChosenOption    =  NULL;
-    OurLoaderEntry  =  NULL;
     MainLoopRunning =  TRUE;
-
     while (MainLoopRunning) {
         // Reset Misc
-        IsBoot         = FALSE;
-        FoundTool      = FALSE;
-        RunOurTool     = FALSE;
-        OverrideSB     = FALSE;
-        SubScreenBoot  = FALSE;
-        KeepTrustChain = FALSE;
-        SkipTrustChain = FALSE;
+        TypeStr         =  NULL;
+        FilePath        =  NULL;
+        ChosenOption    =  NULL;
+        OurLoaderEntry  =  NULL;
+        IsBoot          = FALSE;
+        FoundTool       = FALSE;
+        RunOurTool      = FALSE;
+        OverrideSB      = FALSE;
+        SubScreenBoot   = FALSE;
+        KeepTrustChain  = FALSE;
+        SkipTrustChain  = FALSE;
 
         MY_FREE_POOL(FilePath);
 
@@ -3762,192 +5019,16 @@ EFI_STATUS EFIAPI efi_main (
         }
 
         switch (ChosenOption->Tag) {
-            case TAG_CLEAN_NVRAM:    // Clean nvRAM
-                TypeStr = L"Clean/Reset nvRAM";
-
-                #if REFIT_DEBUG > 0
-                LOG_MSG("Received User Input:");
-                LOG_MSG("%s  - %s", OffsetNext, TypeStr);
-                LOG_MSG("\n\n");
-                #endif
-
-                RunOurTool = ShowCleanNvramInfo (TypeStr);
-                if (!RunOurTool) {
-                    #if REFIT_DEBUG > 0
-                    LOG_MSG("%s    ** Not Running Tool to %s", OffsetNext, TypeStr);
-                    LOG_MSG("\n\n");
-                    #endif
-
-                    // Early Exit
-                    break;
-                }
-
-                i = 0;
-                while (
-                    !FoundTool &&
-                    (FilePath = FindCommaDelimited (GlobalConfig.ToolLocations, i++)) != NULL
-                ) {
-                    k = 0;
-                    while (
-                        !FoundTool &&
-                        (FileName = FindCommaDelimited (NVRAMCLEAN_FILES, k++)) != NULL
-                    ) {
-                        for (i = 0; i < VolumesCount; i++) {
-                            FileName = PoolPrint (L"%s\\%s", FilePath, FileName);
-                            if (Volumes[i]->RootDir != NULL &&
-                                FileExists (Volumes[i]->RootDir, FilePath)
-                            ) {
-                                FoundTool = TRUE;
-                                OurLoaderEntry = AllocateZeroPool (sizeof (LOADER_ENTRY));
-                                if (OurLoaderEntry) {
-                                    OurLoaderEntry->me.Title        =                    StrDuplicate (TypeStr);
-                                    OurLoaderEntry->me.Tag          =                           TAG_RESET_NVRAM;
-                                    OurLoaderEntry->Volume          =                                Volumes[i];
-                                    OurLoaderEntry->LoaderPath      = PoolPrint (L"%s\\%s", FilePath, FileName);
-                                    OurLoaderEntry->UseGraphicsMode =                                     FALSE;
-                                }
-
-                                // Break out of 'for' loop
-                                break;
-                            }
-                        } // for
-
-                        // Reset 'FoundTool' if 'OurLoaderEntry' is NULL
-                        if (FoundTool && OurLoaderEntry == NULL) {
-                            FoundTool = FALSE;
-                        }
-
-                        MY_FREE_POOL(FileName);
-                    } // while
-
-                    MY_FREE_POOL(FilePath);
-                } // while
-
-                if (!FoundTool) {
-                    #if REFIT_DEBUG > 0
-                    MsgStr = PoolPrint (L"Could *NOT* Find Tool:- '%s'", TypeStr);
-                    ALT_LOG(1, LOG_THREE_STAR_END, L"%s", MsgStr);
-                    LOG_MSG("\n\n");
-                    LOG_MSG("** WARN : %s ... Return to Main Menu", MsgStr);
-                    LOG_MSG("\n\n");
-                    MY_FREE_POOL(MsgStr);
-                    #endif
-
-                    // Early Exit
-                    break;
-                }
-
-                #if REFIT_DEBUG > 0
-                LOG_MSG("%s  - Load Tool to %s", OffsetNext, TypeStr);
-                LOG_MSG("\n\n");
-                #endif
-
-                // DA-TAG: Disable Misc Protected OpenCore nvRAM Variables
-                SetHardwareNvramVariable ( // "scan-policy"
-                    L"scan-policy", &OpenCoreVendorGuid,
-                    AccessFlagsBoot, 0, NULL
-                );
-                SetHardwareNvramVariable ( // "boot-redirect" (RequestBootVarRouting)
-                    L"boot-redirect", &OpenCoreVendorGuid,
-                    AccessFlagsBoot, 0, NULL
-                );
-                SetHardwareNvramVariable ( // "boot-protect"
-                    L"boot-protect", &OpenCoreVendorGuid,
-                    AccessFlagsFull, 0, NULL
-                );
-                if (AppleFirmware) {
-                    // Only Clear "CurrentPolicy" on Apple Firmware
-                    SetHardwareNvramVariable ( // "CurrentPolicy"
-                        L"CurrentPolicy", &MicrosoftVendorGuid,
-                        AccessFlagsBoot, 0, NULL
-                    );
-                    SetHardwareNvramVariable ( // "CurrentActivePolicy"
-                        L"CurrentActivePolicy", &MicrosoftVendorGuid,
-                        AccessFlagsFull, 0, NULL
-                    );
-                }
-
-                // No end dash line ... Handled in 'Reboot' below
-                StartTool (OurLoaderEntry);
-
-                #if REFIT_DEBUG > 0
-                MY_MUTELOGGER_SET;
-                #endif
-
-                i = 0;
-                VarNVram = NULL;
-                Status = (gVarsDir != NULL) ? EFI_SUCCESS : FindVarsDir();
-                while ((VarNVram = FindCommaDelimited (RP_NVRAM_VARIABLES, i++)) != NULL) {
-                    // Clear Emulated Variable Storage
-                    if (!EFI_ERROR(Status)) {
-                        egSaveFile (
-                            gVarsDir, VarNVram,
-                            NULL, 0
-                        );
-                    }
-
-                    // Clear Hardware Variable Storage (RefindPlusGuid)
-                    SetHardwareNvramVariable (
-                        VarNVram, &RefindPlusGuid,
-                        AccessFlagsFull, 0, NULL
-                    );
-
-                    // Clear Hardware Variable Storage (RefindPlusOldGuid)
-                    SetHardwareNvramVariable (
-                        VarNVram, &RefindPlusOldGuid,
-                        AccessFlagsFull, 0, NULL
-                    );
-
-                    MY_FREE_POOL(VarNVram);
-                } // while
-
-                // Force nvram garbage collection on Macs
-                if (AppleFirmware) {
-                    ResetNVRam = 1;
-                    REFIT_CALL_5_WRAPPER(
-                        gRT->SetVariable, L"ResetNVRam",
-                        &AppleBootGuid, AccessFlagsFull,
-                        sizeof (ResetNVRam), &ResetNVRam
-                    );
-                }
-
-                #if REFIT_DEBUG > 0
-                MY_MUTELOGGER_OFF;
-
-                LOG_MSG("INFO: Cleaned nvRAM");
-                LOG_MSG("\n\n");
-                #endif
-
-            // No break ... Drop into TAG_REBOOT
-            case TAG_REBOOT:    // Reboot
-                ResetCall (L"System Restart", TRUE);
-
-                // Just in case we get this far
-                MainLoopRunning = FALSE;
-
-            break;
-            case TAG_SHUTDOWN: // Shut Down
-                ResetCall (L"System Shutdown", FALSE);
-
-                // Just in case we get this far
-                MainLoopRunning = FALSE;
-
-            break;
-            case TAG_ABOUT:    // About RefindPlus
-                #if REFIT_DEBUG > 0
-                LOG_MSG("Received User Input:");
-                LOG_MSG("%s  - Show 'About RefindPlus'", OffsetNext);
-                LOG_MSG("\n\n");
-                #endif
-
-                // No end dash line ... Expected to return
-                AboutRefindPlus();
-
-                #if REFIT_DEBUG > 0
-                LOG_MSG("Received User Input:");
-                LOG_MSG("%s  - Exit 'About RefindPlus'", OffsetNext);
-                LOG_MSG("\n\n");
-                #endif
+            case TAG_SHELL:
+            case TAG_GDISK:
+            case TAG_GPTSYNC:
+            case TAG_MEMTEST:
+            case TAG_NETBOOT:
+            case TAG_MOK_TOOL:
+            case TAG_FWUPDATE_TOOL:
+            case TAG_RECOVERY_MAC:
+            case TAG_RECOVERY_WIN:
+                PrepToolMenu (ChosenOption->Tag);
 
             break;
             case TAG_LOADER:   // Boot OS via *.efi File
@@ -4550,11 +5631,27 @@ EFI_STATUS EFIAPI efi_main (
                 #endif
 
             break;
-            case TAG_HIDDEN:  // Manage hidden tag entries
+            case TAG_ABOUT:    // About RefindPlus
+                #if REFIT_DEBUG > 0
+                LOG_MSG("Received User Input:");
+                LOG_MSG("%s  - Show '%s' Screen", OffsetNext, LABEL_ABOUT);
+                LOG_MSG("\n\n");
+                #endif
+
+                // No end dash line ... Expected to return
+                AboutRefindPlus();
 
                 #if REFIT_DEBUG > 0
                 LOG_MSG("Received User Input:");
-                LOG_MSG("%s  - %s", OffsetNext, LABEL_HIDDEN);
+                LOG_MSG("%s  - Exit '%s' Screen", OffsetNext, LABEL_ABOUT);
+                LOG_MSG("\n\n");
+                #endif
+
+            break;
+            case TAG_HIDDEN:  // Manage hidden tag entries
+                #if REFIT_DEBUG > 0
+                LOG_MSG("Received User Input:");
+                LOG_MSG("%s  - Show '%s' Screen", OffsetNext, LABEL_HIDDEN);
                 LOG_MSG("\n\n");
                 #endif
 
@@ -4563,7 +5660,7 @@ EFI_STATUS EFIAPI efi_main (
 
                 #if REFIT_DEBUG > 0
                 LOG_MSG("Received User Input:");
-                LOG_MSG("%s  - Exit '%s'", OffsetNext, LABEL_HIDDEN);
+                LOG_MSG("%s  - Exit '%s' Screen", OffsetNext, LABEL_HIDDEN);
                 LOG_MSG("\n\n");
                 #endif
 
@@ -4598,7 +5695,7 @@ EFI_STATUS EFIAPI efi_main (
             case TAG_CSR_ROTATE:
                 #if REFIT_DEBUG > 0
                 LOG_MSG("Received User Input:");
-                LOG_MSG("%s  - Rotate CSR", OffsetNext);
+                LOG_MSG("%s  - Show '%s' Screen", OffsetNext, LABEL_CSR_ROTATE);
                 #endif
 
                 // No end dash line ... Expected to return
@@ -4619,7 +5716,7 @@ EFI_STATUS EFIAPI efi_main (
             case TAG_BOOTORDER:
                 #if REFIT_DEBUG > 0
                 LOG_MSG("Received User Input:");
-                LOG_MSG("%s  - Manage BootOrder", OffsetNext);
+                LOG_MSG("%s  - Show '%s' Screen", OffsetNext, LABEL_BOOTORDER);
                 LOG_MSG("\n\n");
                 #endif
 
@@ -4628,9 +5725,144 @@ EFI_STATUS EFIAPI efi_main (
 
                 #if REFIT_DEBUG > 0
                 LOG_MSG("Received User Input:");
-                LOG_MSG("%s  - Exit 'Manage BootOrder'", OffsetNext);
+                LOG_MSG("%s  - Exit '%s' Screen", OffsetNext, LABEL_BOOTORDER);
                 LOG_MSG("\n\n");
                 #endif
+
+            break;
+            case TAG_CLEAN_NVRAM:    // Clean nvRAM
+                TypeStr = L"Clean/Reset nvRAM";
+
+                #if REFIT_DEBUG > 0
+                LOG_MSG("Received User Input:");
+                LOG_MSG("%s  - Show '%s' Screen", OffsetNext, LABEL_CLEAN_NVRAM);
+                LOG_MSG("\n\n");
+                #endif
+
+                RunOurTool = ShowInfoCleanNvram (TypeStr);
+                if (!RunOurTool) {
+                    // Early Exit
+                    break;
+                }
+
+                i = 0;
+                while (
+                    !FoundTool &&
+                    (FilePath = FindCommaDelimited (GlobalConfig.ToolLocations, i++)) != NULL
+                ) {
+                    k = 0;
+                    while (
+                        !FoundTool &&
+                        (FileName = FindCommaDelimited (NVRAMCLEAN_FILES, k++)) != NULL
+                    ) {
+                        for (i = 0; i < VolumesCount; i++) {
+                            FileName = PoolPrint (L"%s\\%s", FilePath, FileName);
+                            if (Volumes[i]->RootDir != NULL &&
+                                FileExists (Volumes[i]->RootDir, FilePath)
+                            ) {
+                                FoundTool = TRUE;
+                                OurLoaderEntry = AllocateZeroPool (sizeof (LOADER_ENTRY));
+                                if (OurLoaderEntry) {
+                                    OurLoaderEntry->me.Title        = StrDuplicate (TypeStr);
+                                    OurLoaderEntry->me.Tag          =        TAG_RESET_NVRAM;
+                                    OurLoaderEntry->Volume          =             Volumes[i];
+                                    OurLoaderEntry->LoaderPath      = PoolPrint (
+                                        L"%s\\%s", FilePath, FileName
+                                    );
+                                }
+
+                                // Break out of 'for' loop
+                                break;
+                            }
+                        } // for
+
+                        // Reset 'FoundTool' if 'OurLoaderEntry' is NULL
+                        if (FoundTool && OurLoaderEntry == NULL) {
+                            FoundTool = FALSE;
+                        }
+
+                        MY_FREE_POOL(FileName);
+                    } // while
+
+                    MY_FREE_POOL(FilePath);
+                } // while
+
+                if (!FoundTool) {
+                    #if REFIT_DEBUG > 0
+                    MsgStr = PoolPrint (L"Could *NOT* Find Tool:- '%s'", TypeStr);
+                    ALT_LOG(1, LOG_THREE_STAR_END, L"%s", MsgStr);
+                    LOG_MSG("** WARN : %s ... Return to Main Menu", MsgStr);
+                    LOG_MSG("\n\n");
+                    MY_FREE_POOL(MsgStr);
+                    #endif
+
+                    // Early Exit
+                    break;
+                }
+
+                // DA-TAG: Disable Misc Protected OpenCore nvRAM Variables
+                SetHardwareNvramVariable (L"scan-policy",  &OpenCoreVendorGuid,  AccessFlagsBoot, 0, NULL);
+                SetHardwareNvramVariable (L"boot-redirect", &OpenCoreVendorGuid, AccessFlagsBoot, 0, NULL);
+                SetHardwareNvramVariable (L"boot-protect",  &OpenCoreVendorGuid, AccessFlagsFull, 0, NULL);
+                if (AppleFirmware) {
+                    // Only Clear "CurrentPolicy" on Apple Firmware
+                    SetHardwareNvramVariable (L"CurrentPolicy",       &MicrosoftVendorGuid, AccessFlagsBoot, 0, NULL);
+                    SetHardwareNvramVariable (L"CurrentActivePolicy", &MicrosoftVendorGuid, AccessFlagsFull, 0, NULL);
+                }
+
+                // No end dash line ... Handled in 'Reboot' below
+                HandleToolRun (TypeStr, RunOurTool, OurLoaderEntry);
+
+                #if REFIT_DEBUG > 0
+                MY_MUTELOGGER_SET;
+                #endif
+
+                i = 0;
+                VarNVram = NULL;
+                Status = (gVarsDir != NULL) ? EFI_SUCCESS : FindVarsDir();
+                while ((VarNVram = FindCommaDelimited (RP_NVRAM_VARIABLES, i++)) != NULL) {
+                    // Clear Emulated Variable Storage
+                    if (!EFI_ERROR(Status)) {
+                        egSaveFile (gVarsDir, VarNVram, NULL, 0);
+                    }
+
+                    // Clear Hardware Variable Storage
+                    SetHardwareNvramVariable (VarNVram, &RefindPlusGuid,    AccessFlagsFull, 0, NULL);
+                    SetHardwareNvramVariable (VarNVram, &RefindPlusOldGuid, AccessFlagsFull, 0, NULL);
+
+                    MY_FREE_POOL(VarNVram);
+                } // while
+
+                // Force nvRAM garbage collection on Macs
+                if (AppleFirmware) {
+                    ResetNVRam = 1;
+                    REFIT_CALL_5_WRAPPER(
+                        gRT->SetVariable, L"ResetNVRam",
+                        &AppleBootGuid, AccessFlagsFull,
+                        sizeof (ResetNVRam), &ResetNVRam
+                    );
+                }
+
+                #if REFIT_DEBUG > 0
+                MY_MUTELOGGER_OFF;
+
+                LOG_MSG("INFO: Cleaned nvRAM");
+                LOG_MSG("\n\n");
+                #endif
+
+            // No break ... Drop into TAG_REBOOT
+            case TAG_REBOOT:    // Reboot
+                ResetCall (L"System Restart", TRUE);
+
+                // Just in case we get this far
+                MainLoopRunning = FALSE;
+
+            break;
+            case TAG_SHUTDOWN: // Shut Down
+                ResetCall (L"System Shutdown", FALSE);
+
+                // Just in case we get this far
+                MainLoopRunning = FALSE;
 
             break;
         } // switch

@@ -3584,6 +3584,21 @@ VOID HideTag (
             }
 
             break;
+        case TAG_SHELL:
+        case TAG_GDISK:
+        case TAG_GPTSYNC:
+        case TAG_MEMTEST:
+        case TAG_NETBOOT:
+        case TAG_MOK_TOOL:
+        case TAG_RECOVERY_MAC:
+        case TAG_RECOVERY_WIN:
+        case TAG_FWUPDATE_TOOL:
+            DisplaySimpleMessage (
+                L"Amend Config File Instead ... Update \"showtools\" Token",
+                L"Hide Entry *IS NOT* Available on This External Tool"
+            );
+
+            break;
         case TAG_EXIT:
         case TAG_ABOUT:
         case TAG_REBOOT:

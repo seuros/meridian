@@ -17,6 +17,13 @@
     - Attempts restart into APFS Recovery via `BootNext`
     - **IMPORTANT**:
       * This implementation is still a work in progress ... feedback required/welcome
+- Improves `Tool` Handling
+  * Now only displays one representative entity per tool type
+    - Allows for uncluttered and aesthetically pleasing interfaces
+    - Can significantly improve loading speeds in applicable instances
+      * Tool instances are processed for display when actively selected
+      * The actual tool instances are then displayed for use if available
+      * The outcomes of such searches are cached for reuse in that session
 
 
 0.14.2.AA (08 OCT 2024):

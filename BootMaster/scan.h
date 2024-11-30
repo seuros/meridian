@@ -86,11 +86,9 @@
 
 #if defined (EFIX64)
 #   define MEMTEST_FILES \
-L"bootx64.efi,memtest86.efi,memtest.efi"
-#   define MEMTEST_FILES_MORE \
-L"memtest86_x64.efi,memtest86x64.efi,memtest86+x64.efi,memtest_x64.efi"
-#   define MEMTEST_FILES_EXTRA \
-L"memtest86p.efi,memtest86p_x64.efi,memtest86px64.efi"
+L"bootx64.efi,memtest86.efi,memtest.efi,\
+memtest86_x64.efi,memtest86x64.efi,memtest86+x64.efi,memtest_x64.efi,\
+memtest86p.efi,memtest86p_x64.efi,memtest86px64.efi"
 #   define SKIPNAME_PATTERNS       L"*ia32*.efi,*aa64*.efi,*mips*.efi"
 #   define FALLBACK_FULLNAME       L"EFI\\BOOT\\bootx64.efi"
 #   define FALLBACK_BASENAME       L"bootx64.efi"
@@ -101,11 +99,8 @@ L"memtest86p.efi,memtest86p_x64.efi,memtest86px64.efi"
 #   define NVRAMCLEAN_FILES        L"CleanNvram.efi,CleanNvram_x64.efi,CleanNvramx64.efi"
 #elif defined (EFI32)
 #   define MEMTEST_FILES \
-L"bootia32.efi,memtest86.efi,memtest.efi"
-#   define MEMTEST_FILES_MORE \
-L"memtest86_ia32.efi,memtest86ia32.efi,memtest86+ia32.efi,memtest_ia32.efi"
-#   define MEMTEST_FILES_EXTRA \
-L"memtest86p.efi,memtest86p_ia32.efi,memtest86pia32.efi"
+L"bootia32.efi,memtest.efi,\
+memtest_ia32.efi,memtestia32.efi"
 #   define SKIPNAME_PATTERNS       L"*x64*.efi,*aa64*.efi,*mips*.efi"
 #   define FALLBACK_FULLNAME       L"EFI\\BOOT\\bootia32.efi"
 #   define FALLBACK_BASENAME       L"bootia32.efi"
@@ -116,11 +111,8 @@ L"memtest86p.efi,memtest86p_ia32.efi,memtest86pia32.efi"
 #   define NVRAMCLEAN_FILES        L"CleanNvram.efi,CleanNvram_ia32.efi,CleanNvramia32.efi"
 #elif defined (EFIAARCH64)
 #   define MEMTEST_FILES \
-L"bootaa64.efi,memtest86.efi,memtest.efi"
-#   define MEMTEST_FILES_MORE \
-L"memtest86_aa64.efi,memtest86aa64.efi,memtest86+aa64.efi,memtest_aa64.efi"
-#   define MEMTEST_FILES_EXTRA \
-L"memtest86p.efi,memtest86p_aa64.efi,memtest86paa64.efi"
+L"bootaa64.efi,memtest.efi,\
+memtest_aa64.efi,memtestaa64.efi"
 #   define SKIPNAME_PATTERNS       L"*x64*.efi,*ia32*.efi,*mips*.efi"
 #   define FALLBACK_FULLNAME       L"EFI\\BOOT\\bootaa64.efi"
 #   define FALLBACK_BASENAME       L"bootaa64.efi"
@@ -130,9 +122,8 @@ L"memtest86p.efi,memtest86p_aa64.efi,memtest86paa64.efi"
 #   define SHELL_FILES             L"shell.efi,shell_aa64.efi,shellaa64.efi"
 #   define NVRAMCLEAN_FILES        L"CleanNvram.efi,CleanNvram_aa64.efi,CleanNvramaa64.efi"
 #else
-#   define MEMTEST_FILES           L"boot.efi"
-#   define MEMTEST_FILES_MORE      L"memtest.efi"
-#   define MEMTEST_FILES_EXTRA     L"memtest86.efi"
+#   define MEMTEST_FILES \
+L"boot.efi,memtest.efi"
 #   define SKIPNAME_PATTERNS       L"*x64*.efi,*ia32*.efi,*aa64*.efi,*mips*.efi"
 #   define FALLBACK_FULLNAME       L"EFI\\BOOT\\boot.efi" // Not really correct
 #   define FALLBACK_BASENAME       L"boot.efi"            // Not really correct
@@ -179,6 +170,12 @@ VOID GenerateSubScreen (
     IN     REFIT_VOLUME *Volume,
     IN     BOOLEAN       GenerateReturn
 );
+VOID ScanFirmwareDefined (
+    IN UINTN     Row,
+    IN CHAR16   *MatchThis  OPTIONAL,
+    IN EG_IMAGE *Icon       OPTIONAL,
+    IN UINTN     TypeTag
+);
 
 CHAR16 * SetVolJoin (
     IN CHAR16  *InstanceName,
@@ -206,6 +203,19 @@ CHAR16 * GetVolumeGroupName (
 BOOLEAN ShouldScan (
     REFIT_VOLUME *Volume,
     CHAR16       *Path
+);
+BOOLEAN IsValidTool (
+    REFIT_VOLUME *BaseVolume,
+    CHAR16       *PathName
+);
+BOOLEAN FindTool (
+    CHAR16  *Locations,
+    CHAR16  *Names,
+    CHAR16  *Description,
+    UINTN    Icon,
+    BOOLEAN  SelfVolOnly,
+    BOOLEAN  ScanMultiple,
+    UINTN    TypeTag
 );
 
 #endif

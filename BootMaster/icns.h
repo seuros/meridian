@@ -79,7 +79,7 @@ EG_IMAGE * BuiltinIcon (IN UINTN Id);
 #define BUILTIN_ICON_TOOL_RESCUE           (11)
 #define BUILTIN_ICON_TOOL_APPLE_RESCUE     (12)
 #define BUILTIN_ICON_TOOL_WINDOWS_RESCUE   (13)
-#define BUILTIN_ICON_TOOL_MOK_TOOL         (14)
+#define BUILTIN_ICON_TOOL_MOK              (14)
 #define BUILTIN_ICON_TOOL_FWUPDATE         (15)
 #define BUILTIN_ICON_TOOL_MEMTEST          (16)
 #define BUILTIN_ICON_TOOL_NETBOOT          (17)

@@ -220,12 +220,10 @@ KeyTool.efi,KeyTool-signed.efi,mm.efi"
 // Directories to search for memtest
 #define MEMTEST_LOCATIONS \
 L"EFI\\tools\\memtest,EFI\\tools\\memtest86,\
-EFI\\tools\\memtest86+,EFI\\tools\\memtest86p"
-#define MEMTEST_LOCATIONS_MORE \
-L"EFI\\memtest,EFI\\memtest86,\
-EFI\\memtest86+,EFI\\memtest86p"
-#define MEMTEST_LOCATIONS_EXTRA \
-L"EFI\\BOOT\\tools\\memtest,EFI\\BOOT\\tools\\memtest86,\
+EFI\\tools\\memtest86+,EFI\\tools\\memtest86p,\
+EFI\\memtest,EFI\\memtest86,\
+EFI\\memtest86+,EFI\\memtest86p,\
+EFI\\BOOT\\tools\\memtest,EFI\\BOOT\\tools\\memtest86,\
 EFI\\BOOT\\tools\\memtest86+,EFI\\BOOT\\tools\\memtest86p"
 
 // Directories to search for tools
