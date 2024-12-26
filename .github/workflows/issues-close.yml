@@ -22,6 +22,8 @@ jobs:
 
     if: github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'stale'
     steps:
+      - name: Repository Checkout
+        uses: actions/checkout@v4
 
       - name: Check Rate Limit
         id: rate-limit-check01

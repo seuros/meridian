@@ -16,10 +16,6 @@ permissions:
 concurrency:
   group: lock
 
-# Workflow-wide environment variable
-env:
-  JOB_CONDITION: ${{ github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock' }}
-
 # Lock Threads - https://github.com/dakanji/lock-threads
 jobs:
 
@@ -27,8 +23,10 @@ jobs:
     name: Lock Resolved Issues
     runs-on: ubuntu-24.04
 
-    if: env.JOB_CONDITION
+    if: github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock'
     steps:
+      - name: Repository Checkout
+        uses: actions/checkout@v4
 
       - id: rate-limit-check01
         uses: ./.github/actions/check-rate-limit
@@ -59,8 +57,11 @@ jobs:
     needs: [lock-threads-01]
     runs-on: ubuntu-24.04
 
-    if: env.JOB_CONDITION
+    if: github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock'
     steps:
+      - name: Repository Checkout
+        uses: actions/checkout@v4
+
       - id: rate-limit-check02
         uses: ./.github/actions/check-rate-limit
         with:
@@ -90,8 +91,11 @@ jobs:
     needs: [lock-threads-02]
     runs-on: ubuntu-24.04
 
-    if: env.JOB_CONDITION
+    if: github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock'
     steps:
+      - name: Repository Checkout
+        uses: actions/checkout@v4
+
       - id: rate-limit-check03
         uses: ./.github/actions/check-rate-limit
         with:
@@ -122,8 +126,11 @@ jobs:
     needs: [lock-threads-03]
     runs-on: ubuntu-24.04
 
-    if: env.JOB_CONDITION
+    if: github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock'
     steps:
+      - name: Repository Checkout
+        uses: actions/checkout@v4
+
       - id: rate-limit-check04
         uses: ./.github/actions/check-rate-limit
         with:
@@ -153,8 +160,11 @@ jobs:
     needs: [lock-threads-04]
     runs-on: ubuntu-24.04
 
-    if: env.JOB_CONDITION
+    if: github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock'
     steps:
+      - name: Repository Checkout
+        uses: actions/checkout@v4
+
       - id: rate-limit-check05
         uses: ./.github/actions/check-rate-limit
         with:
@@ -186,8 +196,11 @@ jobs:
     needs: [lock-threads-05]
     runs-on: ubuntu-24.04
 
-    if: env.JOB_CONDITION
+    if: github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock'
     steps:
+      - name: Repository Checkout
+        uses: actions/checkout@v4
+
       - id: rate-limit-check06
         uses: ./.github/actions/check-rate-limit
         with:

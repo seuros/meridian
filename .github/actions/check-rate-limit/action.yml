@@ -26,44 +26,46 @@ runs:
           CURRENT_TIME=$(date +%s)
           WAIT_PERIOD=$(( RESET_TIME - CURRENT_TIME ))
 
-          if [[ "$REMAINING_CALLS" -gt 9 ]]; then
+          if (( REMAINING_CALLS > 9 )); then
             SLEEP_TIME=0
-          elif [[ "$REMAINING_CALLS" -gt 1 ]]; then
+          elif (( REMAINING_CALLS > 1 )); then
             SLEEP_TIME=$(( WAIT_PERIOD / REMAINING_CALLS ))
           else
             SLEEP_TIME=$(( WAIT_PERIOD + 60 ))
           fi
 
           # Ensure a minimum sleep time to mitigate secondary rate limits.
-          if [[ "$SLEEP_TIME" -lt "$MIN_TIME" ]]; then
+          if (( SLEEP_TIME < MIN_TIME )); then
             SLEEP_TIME=$MIN_TIME
           fi
         }
 
         handle_secondary_rate_limit() {
-          while [[ "$RETRY_COUNT" -lt "$MAX_RETRIES" ]]; do
+          while (( RETRY_COUNT < MAX_RETRIES )); do
             RESPONSE=$(curl -s -I -H "Authorization: Bearer $TOKEN" $RATE_LIMIT_URL)
             RETRY_BASE=$(echo "$RESPONSE" | grep -i 'retry-after' | awk '{print $2}' | tr -d '\r')
 
-            if [[ -n "$RETRY_BASE" ]]; then
-              if [[ "$RETRY_BASE" -lt "$BASE_TIME" ]]; then
-                RETRY_BASE=$BASE_TIME
-              fi
-              SCALE_FACTOR=$(( RETRY_COUNT + 1 ))
-              RETRY_AFTER=$(( RETRY_BASE * SCALE_FACTOR * SCALE_FACTOR ))
-              echo "Secondary Rate Limit is Active"
-              echo "Wait $RETRY_AFTER seconds for reset..."
-              sleep "$RETRY_AFTER"
-              ((RETRY_COUNT++))
-            else
+            if [[ ! -n "$RETRY_BASE" ]]; then
+              break
+            fi
+
+            if (( RETRY_BASE < BASE_TIME )); then
+              RETRY_BASE=$BASE_TIME
+            fi
+
+            SCALE_FACTOR=$(( RETRY_COUNT + 1 ))
+            RETRY_AFTER=$(( RETRY_BASE * SCALE_FACTOR * SCALE_FACTOR ))
+            RETRY_COUNT=$SCALE_FACTOR
+
+            echo "Secondary Rate Limit is Active"
+            echo "Wait $RETRY_AFTER seconds for reset..."
+
+            sleep "$RETRY_AFTER"
+
+            if (( RETRY_COUNT >= MAX_RETRIES )); then
               break
             fi
           done
-
-          if [[ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]]; then
-            echo "Exceeded $MAX_RETRIES max retries for secondary rate limits ... Exiting."
-            exit 1
-          fi
         }
 
         # Check for secondary rate limits
@@ -72,5 +74,5 @@ runs:
         # Calculate sleep time for primary rate limits
         calculate_sleep_time
 
-        echo "::set-output name=sleep_time::$SLEEP_TIME"
+        echo "sleep_time=$SLEEP_TIME" >> $GITHUB_OUTPUT
       shell: bash

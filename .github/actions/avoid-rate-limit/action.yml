@@ -14,3 +14,4 @@ runs:
           echo "${{ inputs.sleep_time }} Second Pause for Rate Limit"
           sleep ${{ inputs.sleep_time }}
         fi
+      shell: bash
