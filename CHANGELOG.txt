@@ -1,4 +1,4 @@
-0.14.2.AB (PRE-RELEASE):
+0.14.2.AB (04 FEB 2025):
 -----------------------
 - Fixes `CleanNVram` Handling
   * Invalid path to external binary was defined
