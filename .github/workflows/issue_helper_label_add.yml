@@ -52,7 +52,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Abandoned'
 
@@ -67,7 +67,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Cancelled'
 
@@ -75,7 +75,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'remove-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Triage'
 
@@ -84,7 +84,7 @@ jobs:
         with:
           actions: 'close-issue'
           close-reason: 'completed'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
 
   label_add_discussion:
@@ -102,7 +102,7 @@ jobs:
         run: |
             # Make a request to the GitHub API to get issue details
             issue=$(curl -s -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.inputs.item_id }})
             echo "$issue" > issue.json
             # Extract title and body using jq
@@ -131,7 +131,7 @@ jobs:
         run: |
             # Make a request to the GitHub API to create a discussion
             response=$(curl -s -X POST -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/${{ github.repository }}/discussions \
             -d @- << EOF
             {
@@ -150,7 +150,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           body: |
             This item has been converted to [THIS DISCUSSION ITEM](${discussion_url}).
@@ -170,7 +170,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           body: |
             This item has been converted to [THIS DISCUSSION ITEM](${discussion_url}).
@@ -180,7 +180,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'remove-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Triage,Not-Planned,Parked,Stale,Queries,Invalid,Prorogued,Duplicate,Incomplete,Known-Issue,Enhancement,Cannot-Replicate'
 
@@ -189,7 +189,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Discussion'
 
@@ -199,7 +199,7 @@ jobs:
         with:
           actions: 'close-issue'
           close-reason: 'completed'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
 
       - name: Label - Add - Discussion - 7
@@ -207,7 +207,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'lock-issue'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
 
   label_add_cannot-replicate:
@@ -221,7 +221,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Cannot-Replicate'
 
@@ -229,7 +229,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'remove-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Triage'
 
@@ -238,7 +238,7 @@ jobs:
         with:
           actions: 'close-issue'
           close-reason: 'completed'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
 
   label_add_incomplete_issue:
@@ -252,7 +252,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           body: |
             Thank you for taking the time to report a problem with RefindPlus.
@@ -265,7 +265,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Incomplete'
 
@@ -273,7 +273,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'remove-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Triage'
 
@@ -288,7 +288,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           body: |
             Thank you for taking the time to suggest improvements to RefindPlus.
@@ -301,7 +301,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Incomplete'
 
@@ -309,7 +309,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'remove-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Triage'
 
@@ -322,7 +322,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Invalid'
 
@@ -335,7 +335,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Triage'
 
@@ -348,7 +348,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Parked'
 
@@ -361,7 +361,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Prorogued'
 
@@ -374,7 +374,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Resolved'
 
@@ -387,7 +387,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Tagged'
 
@@ -400,7 +400,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Queries'
 
@@ -413,7 +413,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Upstream'
 
@@ -426,7 +426,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Enhancement'
 
@@ -441,7 +441,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Enhancement,Not-Planned'
 
@@ -449,7 +449,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'remove-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Triage,Queries'
 
@@ -458,7 +458,7 @@ jobs:
         with:
           actions: 'close-issue'
           close-reason: 'not planned'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
 
   label_add_not-planned:
@@ -472,7 +472,7 @@ jobs:
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Not-Planned'
 
@@ -481,5 +481,5 @@ jobs:
         with:
           actions: 'close-issue'
           close-reason: 'not planned'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}

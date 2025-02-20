@@ -42,7 +42,7 @@ jobs:
           stale-issue-label: 'Tagged'
           any-of-labels: 'Cancelled, Duplicate, Known-Issue, Invalid, Cannot-Replicate, Not-Planned'
           remove-issue-stale-when-updated: false
-          repo-token: ${{ secrets.PAT_TOKEN }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Handle Rate Limits
         uses: ./.github/actions/handle-rate-limits
@@ -68,7 +68,7 @@ jobs:
           stale-issue-label: 'Stale'
           any-of-labels: 'Incomplete'
           remove-issue-stale-when-updated: true
-          repo-token: ${{ secrets.PAT_TOKEN }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Handle Rate Limits
         uses: ./.github/actions/handle-rate-limits
@@ -94,7 +94,7 @@ jobs:
           stale-issue-label: 'Stale'
           any-of-labels: 'Queries'
           remove-issue-stale-when-updated: true
-          repo-token: ${{ secrets.PAT_TOKEN }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Handle Rate Limits
         uses: ./.github/actions/handle-rate-limits

@@ -36,7 +36,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'remove-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Invalid,Resolved,Duplicate,Not-Planned,Incomplete,Known-Issue'
 
@@ -50,7 +50,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'unlock-issue'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
 
   issue_open_unlock3:
@@ -63,7 +63,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'open-issue'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
 
   # Misc Issue Items - https://github.com/actions-cool/issues-helper
@@ -76,7 +76,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'remove-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Queries,Triage,Tagged,Stale'
 
@@ -91,7 +91,7 @@ jobs:
         with:
           actions: 'close-issue'
           close-reason: 'completed'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
 
   issue_close_lock3:
@@ -104,7 +104,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           body: |
             This thread is being locked.
@@ -121,7 +121,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'lock-issue'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
 
   # Misc Issue Items - https://github.com/actions-cool/issues-helper
@@ -134,7 +134,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'open-issue'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
 
   issue_close1:
@@ -146,7 +146,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Tagged'
 
@@ -161,7 +161,7 @@ jobs:
         with:
           actions: 'close-issue'
           close-reason: 'completed'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
 
   issue_comment_delete:
@@ -173,7 +173,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'delete-comment'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           comment-id: ${{ github.event.inputs.item_id }}
 
   issue_thread_lock1:
@@ -185,7 +185,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'remove-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Tagged,Stale'
 
@@ -199,7 +199,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           body: |
             This thread is being locked.
@@ -216,7 +216,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'lock-issue'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
 
   issue_thread_unlock:
@@ -228,5 +228,5 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'unlock-issue'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}

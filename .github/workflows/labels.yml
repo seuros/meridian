@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: dessant/label-actions@v4
         with:
-          github-token: ${{ secrets.PAT_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           config-path: '.github/label-config.yml'
           process-only: ''
 
@@ -38,7 +38,7 @@ jobs:
       - id: handle_enhance_check_main
         uses: mheap/github-action-required-labels@v5
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           mode: exactly
           count: 1
@@ -59,14 +59,14 @@ jobs:
         with:
           actions: 'add-labels'
           labels: 'Tagged'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
 
       - name: Close Item
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'close-issue'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
 
   # Check Labels - https://github.com/mheap/github-action-required-labels
@@ -82,7 +82,7 @@ jobs:
       - id: handle_resolved_check_1_main
         uses: mheap/github-action-required-labels@v5
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           mode: minimum
           count: 1
@@ -102,7 +102,7 @@ jobs:
       - id: handle_resolved_check_2_main
         uses: mheap/github-action-required-labels@v5
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           mode: maximum
           count: 0
@@ -123,7 +123,7 @@ jobs:
         with:
           actions: 'remove-labels'
           labels: 'Acknowledged,Known-Issue'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
 
       - name: Add Label
@@ -131,5 +131,5 @@ jobs:
         with:
           actions: 'add-labels'
           labels: 'Bug'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}

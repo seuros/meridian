@@ -31,7 +31,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-assignees'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           assignees: ${{ github.actor }}
 
@@ -44,6 +44,6 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'remove-assignees'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.inputs.item_id }}
           assignees: ${{ github.actor }}

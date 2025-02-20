@@ -24,7 +24,7 @@ jobs:
       - id: add_label_user_close_check_main
         uses: mheap/github-action-required-labels@v5
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           mode: exactly
           count: 0
@@ -42,7 +42,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           labels: 'Cancelled'
 
@@ -55,7 +55,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           labels: 'Enhancement'
 
@@ -70,7 +70,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           labels: 'Triage'
 
@@ -84,7 +84,7 @@ jobs:
     steps:
       - uses: actions-cool/issues-similarity-analysis@v1
         with:
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           since-days: 450
           filter-threshold: 0.51
           comment-title: '### Similar Items:'
@@ -100,7 +100,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'remove-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           labels: 'Not-Planned,Tagged,Stale,Cannot-Replicate,Known-Issue,Incomplete,Uncertain,Resolved,Unclear,Invalid,Unclear'
 
@@ -113,7 +113,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'add-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           labels: 'Triage'
 
@@ -127,7 +127,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'remove-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           labels: 'Cancelled'
 
@@ -140,7 +140,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'remove-labels'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           labels: 'Stale,Tagged,Triage,Cannot-Replicate,Known-Issue,Incomplete,Uncertain,Unclear,Invalid,Queries,Unclear'
 
@@ -156,7 +156,7 @@ jobs:
       - id: bounce_bug_check1_main
         uses: mheap/github-action-required-labels@v5
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           mode: exactly
           count: 1
@@ -174,7 +174,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'open-issue'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
 
   # Reopen Issue - https://github.com/actions-cool/issues-helper
@@ -188,7 +188,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           body: |
             Please do not close confirmed bug items in future.
@@ -206,7 +206,7 @@ jobs:
       - id: bounce_enhance_check1_main
         uses: mheap/github-action-required-labels@v5
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           mode: exactly
           count: 1
@@ -223,7 +223,7 @@ jobs:
     steps:
       - uses: mheap/github-action-required-labels@v5
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           mode: exactly
           count: 1
@@ -240,7 +240,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'open-issue'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
 
   # Reopen Issue - https://github.com/actions-cool/issues-helper
@@ -254,7 +254,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           body: |
             Please do not close accepted enhancement items in future.
