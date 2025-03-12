@@ -3,6 +3,16 @@
 - Fixes `HelpIcon` Handling
   * New deduplication code disabled loader icon caching
   * This bug was introduced in v0.14.2.AB (Commit 09e0f29)
+- Fixes Manually Configured `UseGraphicsMode` Handling
+  * Setting `graphics on` token in manual stanzas had no effect if:
+    - The token line was before the `loader` token line, and
+    - The `OSType` was an internally recognised type, and
+    - The `use_graphics_for` token was not set for that type
+  * This bug was inherited from upstream code
+    - Only seen as a 'bug' in RefindPlus
+      * RefindPlus aims to allow 'open' token positioning
+      * The `volume` token is also 'open' on positioning
+      * RefindPlus now also allows switching graphics off
 - Amends `Misc` Handling
   * Addresses misc missed Graphics Screen boot modes
   * Adds identification for `Non-Folded` Linux kernel loaders

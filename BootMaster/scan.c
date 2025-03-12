@@ -310,25 +310,24 @@ LOADER_ENTRY * InitializeLoaderEntry (
         return NULL;
     }
 
-    NewEntry->Enabled             =       TRUE;
-    NewEntry->UseGraphicsMode     =      FALSE;
-    NewEntry->EfiLoaderPath       =       NULL;
-    NewEntry->me.Title            =       NULL;
-    NewEntry->me.Tag              = TAG_LOADER;
-    NewEntry->OSType              =          0;
-    NewEntry->EfiBootNum          =          0;
+    NewEntry->OSType          =              0;
+    NewEntry->Enabled         =           TRUE;
+    NewEntry->EfiLoaderPath   =           NULL;
+    NewEntry->me.Title        =           NULL;
+    NewEntry->me.Tag          =     TAG_LOADER;
+    NewEntry->Volume          =  Entry->Volume;
 
     if (Entry == NULL) {
-        NewEntry->Volume          =       NULL;
+        NewEntry->EfiBootNum      =          0;
+        NewEntry->UseGraphicsMode =      FALSE;
         NewEntry->LoaderPath      =       NULL;
-        NewEntry->LoadOptions     =       NULL;
         NewEntry->InitrdPath      =       NULL;
+        NewEntry->LoadOptions     =       NULL;
         NewEntry->EfiLoaderPath   =       NULL;
     }
     else {
         NewEntry->EfiBootNum      =  Entry->EfiBootNum;
         NewEntry->UseGraphicsMode =  Entry->UseGraphicsMode;
-        NewEntry->Volume          = (Entry->Volume        != NULL) ?                      Entry->Volume         : NULL;
         NewEntry->LoaderPath      = (Entry->LoaderPath    != NULL) ? StrDuplicate        (Entry->LoaderPath)    : NULL;
         NewEntry->InitrdPath      = (Entry->InitrdPath    != NULL) ? StrDuplicate        (Entry->InitrdPath)    : NULL;
         NewEntry->LoadOptions     = (Entry->LoadOptions   != NULL) ? StrDuplicate        (Entry->LoadOptions)   : NULL;
@@ -1438,7 +1437,11 @@ VOID SetLoaderDefaults (
 
                 BREAD_CRUMB(L"%a:  5a 1b 2", __func__);
                 Entry->OSType = 'M';
-                Entry->UseGraphicsMode = GlobalConfig.GraphicsFor & GRAPHICS_FOR_OSX;
+                if (!Entry->UseGraphicsMode) {
+                    Entry->UseGraphicsMode = (
+                        GlobalConfig.GraphicsFor & GRAPHICS_FOR_OSX
+                    );
+                }
             }
             BREAD_CRUMB(L"%a:  5a 2", __func__);
         }
@@ -1459,7 +1462,11 @@ VOID SetLoaderDefaults (
 
             BREAD_CRUMB(L"%a:  5b 2", __func__);
             Entry->OSType = 'W';
-            Entry->UseGraphicsMode = GlobalConfig.GraphicsFor & GRAPHICS_FOR_WINDOWS;
+            if (!Entry->UseGraphicsMode) {
+                Entry->UseGraphicsMode = (
+                    GlobalConfig.GraphicsFor & GRAPHICS_FOR_WINDOWS
+                );
+            }
         }
         else if (IsListItemSubstringIn (NameClues, GlobalConfig.LinuxPrefixes)) {
             BREAD_CRUMB(L"%a:  5c 1", __func__);
@@ -1495,7 +1502,11 @@ VOID SetLoaderDefaults (
             BREAD_CRUMB(L"%a:  5c 3", __func__);
             GotFlag = TRUE;
             Entry->OSType = 'L';
-            Entry->UseGraphicsMode = GlobalConfig.GraphicsFor & GRAPHICS_FOR_LINUX;
+            if (!Entry->UseGraphicsMode) {
+                Entry->UseGraphicsMode = (
+                    GlobalConfig.GraphicsFor & GRAPHICS_FOR_LINUX
+                );
+            }
         }
         else if (IsStriStr (NameClues, L"grub")) {
             BREAD_CRUMB(L"%a:  5d 1", __func__);
@@ -1506,7 +1517,11 @@ VOID SetLoaderDefaults (
             BREAD_CRUMB(L"%a:  5d 2", __func__);
             GotFlag       = TRUE;
             Entry->OSType =  'G';
-            Entry->UseGraphicsMode = GlobalConfig.GraphicsFor & GRAPHICS_FOR_GRUB;
+            if (!Entry->UseGraphicsMode) {
+                Entry->UseGraphicsMode = (
+                    GlobalConfig.GraphicsFor & GRAPHICS_FOR_GRUB
+                );
+            }
         }
         else if (MyStriCmp (NameClues, L"opencore.efi")) {
             BREAD_CRUMB(L"%a:  5e 1", __func__);
@@ -1516,7 +1531,12 @@ VOID SetLoaderDefaults (
 
             BREAD_CRUMB(L"%a:  5e 2", __func__);
             GotFlag = TRUE;
-            Entry->UseGraphicsMode = GlobalConfig.GraphicsFor & GRAPHICS_FOR_OPENCORE;
+            Entry->OSType =  'O';
+            if (!Entry->UseGraphicsMode) {
+                Entry->UseGraphicsMode = (
+                    GlobalConfig.GraphicsFor & GRAPHICS_FOR_OPENCORE
+                );
+            }
         }
         else if (MyStriCmp (NameClues, L"clover.efi")) {
             BREAD_CRUMB(L"%a:  5f 1", __func__);
@@ -1526,7 +1546,12 @@ VOID SetLoaderDefaults (
 
             BREAD_CRUMB(L"%a:  5f 2", __func__);
             GotFlag = TRUE;
-            Entry->UseGraphicsMode = GlobalConfig.GraphicsFor & GRAPHICS_FOR_CLOVER;
+            Entry->OSType =  'C';
+            if (!Entry->UseGraphicsMode) {
+                Entry->UseGraphicsMode = (
+                    GlobalConfig.GraphicsFor & GRAPHICS_FOR_CLOVER
+                );
+            }
         }
         else if (IsStriStr (LoaderPath, L"/refindplus")) {
             BREAD_CRUMB(L"%a:  5g 1", __func__);
@@ -1579,7 +1604,11 @@ VOID SetLoaderDefaults (
             Entry->OSType =  'E';
 
             BREAD_CRUMB(L"%a:  5k 2", __func__);
-            Entry->UseGraphicsMode = GlobalConfig.GraphicsFor & GRAPHICS_FOR_ELILO;
+            if (!Entry->UseGraphicsMode) {
+                Entry->UseGraphicsMode = (
+                    GlobalConfig.GraphicsFor & GRAPHICS_FOR_ELILO
+                );
+            }
         }
         else if (MyStriCmp (NameClues, L"xom.efi")) {
             BREAD_CRUMB(L"%a:  5l 1", __func__);
@@ -1590,7 +1619,11 @@ VOID SetLoaderDefaults (
             BREAD_CRUMB(L"%a:  5l 2", __func__);
             GotFlag       = TRUE;
             Entry->OSType =  'X';
-            Entry->UseGraphicsMode = GlobalConfig.GraphicsFor & GRAPHICS_FOR_WINDOWS;
+            if (!Entry->UseGraphicsMode) {
+                Entry->UseGraphicsMode = (
+                    GlobalConfig.GraphicsFor & GRAPHICS_FOR_WINDOWS
+                );
+            }
         }
         else if (IsStriStr (NameClues, L"ipxe")) {
             BREAD_CRUMB(L"%a:  5m 1", __func__);

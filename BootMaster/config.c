@@ -870,6 +870,7 @@ BOOLEAN AddSubmenu (
     REFIT_MENU_SCREEN   *SubScreen;
     LOADER_ENTRY        *SubEntry;
     UINTN                TokenCount;
+    CHAR16              *GraphicsTag;
     CHAR16              *TmpName;
     CHAR16             **TokenList;
     BOOLEAN              TitleVolume;
@@ -935,6 +936,7 @@ BOOLEAN AddSubmenu (
     );
 
     BREAD_CRUMB(L"%a:  6", __func__);
+    GraphicsTag = NULL;
     for (;;) {
         TokenCount = ReadTokenLine (File, &TokenList);
         if (TokenCount == 0 ||
@@ -982,12 +984,14 @@ BOOLEAN AddSubmenu (
             MergeStrings (&SubEntry->LoadOptions, TokenList[1], L' ');
         }
         else if (
-            TokenCount > 1 &&
+            GraphicsTag == NULL &&
             MyStriCmp (TokenList[0], L"graphics")
         ) {
             BREAD_CRUMB(L"%a:  6a 1g", __func__);
-
-            SubEntry->UseGraphicsMode = MyStriCmp (TokenList[1], L"on");
+            // Delay actual processing
+            GraphicsTag = StrDuplicate (
+                (TokenCount > 1) ? TokenList[1] : L"on"
+            );
         }
         else {
             BREAD_CRUMB(L"%a:  6a 1h - WARN ... ''%s' Token is Invalid!!", __func__, TokenList[0]);
@@ -1035,6 +1039,19 @@ BOOLEAN AddSubmenu (
     }
 
     BREAD_CRUMB(L"%a:  9", __func__);
+    if (GraphicsTag != NULL) {
+        BREAD_CRUMB(L"%a:  9a 1", __func__);
+        if (!MyStriCmp (GraphicsTag, L"0")   &&
+            !MyStriCmp (GraphicsTag, L"off") &&
+            !MyStriCmp (GraphicsTag, L"false")
+        ) {
+            BREAD_CRUMB(L"%a:  9a 1a 1", __func__);
+            SubEntry->UseGraphicsMode = TRUE;
+        }
+        MY_FREE_POOL(GraphicsTag);
+    }
+
+    BREAD_CRUMB(L"%a:  10", __func__);
     AddSubMenuEntry (SubScreen, (REFIT_MENU_ENTRY *) SubEntry);
 
     // DA-TAG: Investigate This
@@ -1042,10 +1059,10 @@ BOOLEAN AddSubmenu (
     //BREAD_CRUMB(L"%a:  10", __func__);
     //FreeMenuScreen (&Entry->me.SubScreen);
 
-    BREAD_CRUMB(L"%a:  10", __func__);
+    BREAD_CRUMB(L"%a:  11", __func__);
     Entry->me.SubScreen = SubScreen;
 
-    BREAD_CRUMB(L"%a:  11 - END:- VOID", __func__);
+    BREAD_CRUMB(L"%a:  12 - END:- VOID", __func__);
     LOG_DECREMENT();
     LOG_SEP(L"X");
 
@@ -1067,6 +1084,7 @@ LOADER_ENTRY * InitializeStanza (
     #endif
 
     UINTN           TokenCount;
+    CHAR16         *GraphicsTag;
     CHAR16         *LoadOptions;
     CHAR16         *LoaderToken;
     CHAR16         *BootNumber;
@@ -1129,7 +1147,8 @@ LOADER_ENTRY * InitializeStanza (
     StanzaEntry->Volume        = CurrentVolume;
     StanzaEntry->DiscoveryType = DISCOVERY_TYPE_MANUAL;
 
-    LoaderToken    = LoadOptions = BootNumber =  NULL;
+    LoaderToken    = LoadOptions              =  NULL;
+    GraphicsTag    = BootNumber               =  NULL;
     AddedSubmenu   = DoneLoader               = FALSE;
     GotFirmwareTag = DefaultsSet = DoneIcon   = FALSE;
 
@@ -1144,15 +1163,17 @@ LOADER_ENTRY * InitializeStanza (
         }
 
         // Set options to pass to the loader program - START
-        if (
-            TokenCount > 1 &&
+        if (GraphicsTag == NULL &&
             MyStriCmp (TokenList[0], L"graphics")
         ) {
             #if REFIT_DEBUG > 0
             ALT_LOG(1, LOG_THREE_STAR_MID, L"Handle Token:- 'graphics'");
             #endif
 
-            StanzaEntry->UseGraphicsMode = MyStriCmp (TokenList[1], L"on");
+            // Delay actual processing
+            GraphicsTag = StrDuplicate (
+                (TokenCount > 1) ? TokenList[1] : L"on"
+            );
         }
         else if (
             TokenCount > 1 &&
@@ -1401,6 +1422,16 @@ LOADER_ENTRY * InitializeStanza (
         StanzaEntry->me.Image = DummyImage (
             GlobalConfig.IconSizes[ICON_SIZE_BIG]
         );
+    }
+
+    if (GraphicsTag != NULL) {
+        if (!MyStriCmp (GraphicsTag, L"0")   &&
+            !MyStriCmp (GraphicsTag, L"off") &&
+            !MyStriCmp (GraphicsTag, L"false")
+        ) {
+            StanzaEntry->UseGraphicsMode = TRUE;
+        }
+        MY_FREE_POOL(GraphicsTag);
     }
 
     MY_FREE_POOL(LoadOptions);
