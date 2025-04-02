@@ -23,6 +23,7 @@ jobs:
     name: Issue - Duplicate1
     runs-on: ubuntu-24.04
 
+    if: github.actor == 'dakanji'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -35,8 +36,15 @@ jobs:
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           script: |
-            const fs = require('fs');
+            const issueNumber = context.payload.inputs.item_id;
+            const { data } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber
+            });
             const isLocked = data.locked ? 'true' : 'false';
+
+            const fs = require('fs');
             fs.appendFileSync(process.env.GITHUB_ENV, `islocked=${isLocked}\n`);
 
   issue_duplicate2:
@@ -44,6 +52,7 @@ jobs:
     needs: [issue_duplicate1]
     runs-on: ubuntu-24.04
 
+    if: github.actor == 'dakanji'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -63,6 +72,7 @@ jobs:
     needs: [issue_duplicate2]
     runs-on: ubuntu-24.04
 
+    if: github.actor == 'dakanji'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -86,6 +96,7 @@ jobs:
     needs: [issue_duplicate3]
     runs-on: ubuntu-24.04
 
+    if: github.actor == 'dakanji'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -106,6 +117,7 @@ jobs:
     needs: [issue_duplicate4]
     runs-on: ubuntu-24.04
 
+    if: github.actor == 'dakanji'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -126,6 +138,7 @@ jobs:
     needs: [issue_duplicate5]
     runs-on: ubuntu-24.04
 
+    if: github.actor == 'dakanji'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1

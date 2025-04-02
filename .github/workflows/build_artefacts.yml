@@ -10,7 +10,7 @@ on:
 jobs:
   create-binaries:
     name: Create Binaries
-    runs-on: macos-13
+    runs-on: macos-15
 
     steps:
       - name: Get Repositories
@@ -23,60 +23,75 @@ jobs:
           git clone https://github.com/RefindPlusRepo/RefindPlusUDK.git edk2
 
           # Clone RefindPlus
-          OWNER=$(echo "${{ github.repository }}" | cut -d'/' -f1)
-          git clone https://github.com/${OWNER}/RefindPlus.git Working
+          git clone "https://github.com/${{ github.repository }}.git" Working
           cd Working || exit 1
 
-          # Determine RefindPlus Branch with Target Commit
-          if [ ! -n "${{ github.event.inputs.commit_id }}" ]; then
+          # Find Target Branch
+          if [ -z "${{ github.event.inputs.commit_id }}" ]; then
+            # Use Default Branch
             BRANCH=GOPFix
-            git checkout GOPFix
           else
-            BRANCH=$(git branch -r --contains ${{ github.event.inputs.commit_id }} | grep -v 'HEAD' | head -n 1 | sed 's/origin\///')
-            if [ -z "$BRANCH" ]; then
-              echo "Error: Commit ID not found on any branches!"
+            # Get All Branches
+            git fetch --all
+            RemoteBranches=$(git branch -r | grep -v '\->')
+            for RemoteName in "${RemoteBranches}"; do
+              LocalName="${RemoteName#origin/}"
+              git branch --track "${LocalName}" "${RemoteName}"
+
+              # Redundant update below is delibrate
+              git checkout "${LocalName}"
+              git pull
+            done
+
+            # Get Candidate Branches
+            BranchList=$(git branch -a --contains ${{ github.event.inputs.commit_id }} | grep -v '\->')
+            if [ -z "${BranchList}" ]; then
+              echo "Error: Commit ID not located on any branch!"
               exit 1
             fi
-            git checkout "$BRANCH"
-            git reset --hard ${{ github.event.inputs.commit_id }}
-          fi
 
-          # Save for Later
+            # Use Target Branch Commit
+            BRANCH=$(echo "${BranchList}" | head -n 1 | sed 's/origin\///' | sed 's/remotes\///')
+            git checkout "${BRANCH}"
+            git reset --hard "${{ github.event.inputs.commit_id }}"
+          fi
           echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
 
-      - name: Handle Prerequisites
+      - name: Install Prerequisites
         shell: bash
         run: |
-          brew install nasm && brew install acpica && brew install ocmtoc
+          # Install Final Python 2 Version
           curl -O https://www.python.org/ftp/python/2.7.18/python-2.7.18-macosx10.9.pkg
           sudo installer -pkg python-2.7.18-macosx10.9.pkg -target /
 
-          if [[ "${PATH}" != *"/usr/local/bin"* ]] ; then export PATH="/usr/local/bin:${PATH}"; fi
-          echo "PATH=${PATH}" >> $GITHUB_ENV
-
-      - name: Run Build Script
+          # Install Other Items
+          brew install nasm
+          brew install acpica
+          brew install ocmtoc
+      - name: Main Script
         env:
           TERM: xterm
+        shell: bash
         run: |
           cd ~/Documents/RefindPlus/edk2/000-BuildScript || exit 1
           chmod +x RefindPlusBuilder.sh
-          sh RefindPlusBuilder.sh "${BRANCH}" ALL
+          ./RefindPlusBuilder.sh "${BRANCH}" ALL
 
-      - name: Archive Build Artefacts (RELEASE)
+      - name: Upload Artefact (RELEASE)
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: x64_RefindPlus-Artefacts_REL
           path: ~/Documents/RefindPlus/edk2/Build/RefindPlus/RELEASE_XCODE5/x64/*.efi
 
-      - name: Archive Build Artefacts (DEBUG)
+      - name: Upload Artefact (DEBUG)
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: x64_RefindPlus-Artefacts_DBG
           path: ~/Documents/RefindPlus/edk2/Build/RefindPlus/DEBUG_XCODE5/x64/*.efi
 
-      - name: Archive Build Artefacts (NOOPT)
+      - name: Upload Artefact (NOOPT)
         if: success()
         uses: actions/upload-artifact@v4
         with:

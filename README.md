@@ -8,7 +8,7 @@ A Boot Manager for Mac and PC
 
 [![Release Version](https://img.shields.io/github/v/release/RefindPlusRepo/RefindPlus?style=for-the-badge&color=informational&label=current)](https://github.com/RefindPlusRepo/RefindPlus/releases)[![Release Date](https://img.shields.io/github/release-date/RefindPlusRepo/RefindPlus.svg?display_date=published_at&style=for-the-badge&color=informational&label=)](https://github.com/RefindPlusRepo/RefindPlus/releases)
 
-[![Coverity Scan](https://img.shields.io/coverity/scan/22695)](https://scan.coverity.com/projects/22695)&nbsp;&nbsp;&nbsp;[![Codacy Grade](https://img.shields.io/codacy/grade/3d486c33f276471cbe95735bd28ea3e9?label=codacy)](https://app.codacy.com/gh/RefindPlusRepo/RefindPlus/dashboard)
+[![Coverity Scan](https://scan.coverity.com/projects/22695/badge.svg?flat=1)](https://scan.coverity.com/projects/22695)&nbsp;&nbsp;&nbsp;[![Codacy Grade](https://img.shields.io/codacy/grade/3d486c33f276471cbe95735bd28ea3e9?label=codacy)](https://app.codacy.com/gh/RefindPlusRepo/RefindPlus/dashboard)
 
 [![License Type](https://img.shields.io/badge/GPL%203.0/Later-blue?label=copies)](https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/INFO.txt)
 
@@ -33,8 +33,8 @@ Some features:
 - Identifies and automatically handles `Ventoy` instances if present.
   - Rationalises binaries displayed.
   - Displays an `os_ventoy` icon if available.
-- Adds a debug (DBG) binary that provides extensive logging.
-  - The release (REL) binary is an optimised build for day to day use.
+- Includes troubleshooting (`DBG`/`NPT`) binaries for debugging.
+  - The standard release (`REL`) binary is for day to day use.
 - Fixes inability to print to screen on some Macs.
   - This prevented receiving program messages or using utilities such as uEFI shell.
 - Provides NVMe capability, if required, via an inbuilt `NvmExpress` driver.
@@ -128,8 +128,8 @@ supply_nvme           |Enables an inbuilt NvmExpress driver
 supply_uefi           |Enables feature that emulates UEFI 2.x support on EFI 1.x units
 sync_nvram            |Resets nvRAM settings, such as BlueTooth, on some boot types if required
 sync_trust            |Works around some `Boot Chain of Trust` problems on T2/TPM chipped units
-transient_boot        |Disables feature that highlights the last booted loader by default
-unicode_collation     |Provides fine tuned support for languages that use unicode text
+transient_boot        |Disables feature that selects the last booted loader by default
+unicode_collation     |Provides fine tuned support for languages that require unicode text
 
 ## Modified Functionality
 
@@ -144,7 +144,7 @@ In addition to the new functionality listed above, the following upstream tokens
 - **"showtools":** Additional tool added:
   - `clean_nvram` : Allows resetting nvRAM directly from RefindPlus.
     - When run on Apple firmware, RefindPlus will additionally trigger nvRAM garbage collection
-- **"csr_values":** A value of `0` can be set as the `Enabled` value to allow `Over The Air` (OTA) updates when running Mac OS 11.x (Big Sur), or later, with SIP enabled.
+- **"csr_values":** A value of `0` can be set as the `Enabled` value to allow `Over The Air (OTA)` updates when running Mac OS 11.x (Big Sur) or newer with SIP enabled.
   - This is equivalent to activating the `csr_normalise` token.
 - **"log_level":** Controls the native log format and an implementation of the upstream format.
   - Levels 0, 1, or 2 can be specified.
@@ -172,27 +172,27 @@ Significant visible implementation differences vis-a-vis the upstream base are:
   - > An adaptation of the process for RefindPlus is [provided here](https://github.com/RefindPlusRepo/RefindPlus/discussions/190#discussioncomment-10130431). Modify for newer releases as required.
   - > Refer to [this summation](https://forum.manjaro.org/t/howto-enable-secure-boot-with-refind/121403/6) for futher insight.
 - **GZipped Loaders:** RefindPlus only provides stub support for handling GZipped loaders as this is largely only relevant for units on the ARM architecture.
-  - > This stub support is only used for debug logging in RefindPlus and can be activated using the same `support_gzipped_loaders` configuration token as upstream.
+  - > This stub support is only used for debug logging in RefindPlus and can be activated using the same `support_gzipped_loaders` setting as upstream.
 - **Screenshots:** These are saved in the PNG format with a significantly smaller file size.
   - > Additionally, the file naming is different and files are always saved to the same ESP RefindPlus.
-- **UI Flags:** RefindPlus requires that any desired previously set `hideui` configuration token options are explicitly defined in supplementary/theme configuration files; as whenever the token is found in such files, the token setting is reset by RefindPlus to the specified option(s). The upstream implementation effectively adds new settings to any previously existing ones for this configuration token instead.
+- **UI Flags:** RefindPlus requires that any desired previously set `hideui` setting options are explicitly defined in supplementary/theme configuration files; as whenever the token is found in such files, the token setting is reset by RefindPlus to the specified option(s). The upstream implementation effectively adds new settings to any previously existing ones for this configuration token instead.
   - > RefindPlus maintains consistency with how other configuration tokens are handled.
-- **UI Scaling:** WQHD monitors are correctly determined not to be HiDPI monitors and UI elements are not scaled up on such monitors when the RefindPlus-specific `scale_ui` configuration token is set to automatically detect the screen resolution. RefindPlus also takes vertically orientated screens into account and additionally scales UI elements down when low resolution screens (less than 1025px on the longest edge) are detected.
+- **UI Scaling:** WQHD monitors are correctly determined not to be HiDPI monitors and UI elements are not scaled up on such monitors when the RefindPlus-specific `scale_ui` setting is set to automatically detect the screen resolution. RefindPlus also takes vertically orientated screens into account and additionally scales UI elements down when low resolution screens (less than 1025px on the longest edge) are detected.
   - > Additionally, UI elements on extremely high resultion screens (greater than 5999px on the longest edge) receive a `4X scaling` as opposed to the `2X scaling` applied for standard HiDPI screens.
 - **Loader Icons:** RefindPlus prefers `os_windows` and `boot_windows` icon files, if present, over `os_win` and `boot_win` and the `win8` variants. Separately, RefindPlus defaults to preferring generic icons for loaders ahead of the slower to load custom icons where possible. The upstream icon search implementation involves only loading such icons after a search for custom icons has not turned anything up.
-  - > Activate the RefindPlus-specific `decline_help_icon` configuration token to use the upstream icon search implementation instead of the RefindPlus default.
+  - > Activate the RefindPlus-specific `decline_help_icon` setting to keep the upstream icon search implementation.
 - **GOP Driver Provision:** RefindPlus attempts to ensure that UEFI 2.x GOP drivers are available on EFI 1.x units by attempting to reload such drivers when it detects an absence of GOP on such units to permit the use of modern GPUs on legacy units. This is done using an inbuilt `ReloadGOP` feature.
-  - > Activate the RefindPlus-specific `disable_reload_gop` configuration token to switch this feature off.
+  - > Activate the RefindPlus-specific `disable_reload_gop` setting to switch this feature off.
 - **Apple Framebuffer Provision:** RefindPlus defaults to always providing Apple framebuffers on Macs, when not available under certain circumstances. This is done using an inbuilt `SetAppleFB` feature.
-  - > Activate the RefindPlus-specific `disable_set_applefb` configuration token to switch this feature off.
+  - > Activate the RefindPlus-specific `disable_set_applefb` setting to switch this feature off.
 - **APFS Filesystem Provision:** RefindPlus defaults to always providing APFS Filesystem capability, when not available but is required, without a need to load an APFS driver. This is done using an inbuilt `SupplyAPFS` feature.
-  - > Activate the RefindPlus-specific `disable_apfs_load` configuration token to switch this feature off.
+  - > Activate the RefindPlus-specific `disable_apfs_load` setting to switch this feature off.
 - **APFS PreBoot Volumes:** RefindPlus always synchronises APFS System and PreBoot partitions transparently such that the Preboot partitions of APFS volumes are always used to boot APFS formatted Mac OS. Hence, a single option for booting Mac OS on APFS volumes is presented in RefindPlus to provide maximum APFS compatibility. This is done using an inbuilt `SyncAPFS` feature.
-  - > Activate the RefindPlus-specific `disable_apfs_sync` configuration token to switch this feature off.
+  - > Activate the RefindPlus-specific `disable_apfs_sync` setting to switch this feature off.
 - **Mac nvRAM Protection:** RefindPlus always prevents UEFI Windows Secure Boot from saving certificates to Mac nvRAM as this can result in damage and, ultimately, an inability to boot anything on some Macs (Typically Pre 2013 Vintage). Blocking these certificates does not impact the operation of UEFI Windows on such Macs. This filtering only happens when Mac firmware is detected and is not applied to other types of firmware. This is done using an inbuilt `ProtectNVRAM` feature.
-  - > Activate the RefindPlus-specific `disable_nvram_protect` configuration token to switch this feature off.
+  - > Activate the RefindPlus-specific `disable_nvram_protect` setting to switch this feature off.
 - **Mac Legacy BIOS Boot:** RefindPlus originally assumed all Macs were capable of legacy BIOS boot based on code that went in upstream back in 2012 when this was a reasonable default. However, some later Intel Macs do not support legacy BIOS boot and RefindPlus now attempts to categorise Macs to enable/disable legacy boot accordingly.
-  - > Activate the RefindPlus-specific `disable_legacy_sync` configuration token to base legacy BIOS boot availability on the old assumption.
+  - > Activate the RefindPlus-specific `disable_legacy_sync` setting to keep the old assumption.
 - **Secondary Configuration Files:** While the upstream documentation prohibits including tertiary configuration files from secondary configuration files, there is no mechanism enforcing this prohibition. Hence, tertiary, quaternary, quinary, and more, configuration files can in fact be included.
   - > RefindPlus enforces the limitation for inclusion to secondary configuration files.
 - **Shortcut Keys:** RefindPlus does not allocate shortcut keys based on the operating system type/name as there is no way of knowing what would actually be loaded in many cases.

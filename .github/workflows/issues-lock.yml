@@ -22,9 +22,11 @@ jobs:
     name: Lock Resolved Issues
     runs-on: ubuntu-24.04
 
-    if: github.actor == 'dakanji' && (github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock')
+    if: github.actor == 'dakanji'
     steps:
-      - id: app-token
+
+      - if: github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock'
+        id: app-token
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ vars.APP_ID }}
@@ -33,12 +35,12 @@ jobs:
       - name: Repository Checkout
         uses: actions/checkout@v4
 
-      - name: Handle Rate Limits
+      - name: Handle Rate Limits1
         uses: ./.github/actions/handle-rate-limits
         with:
           token: ${{ steps.app-token.outputs.token }}
 
-      - name: Handle Thread Lock
+      - name: Handle Thread Lock1
         uses: dakanji/lock-threads@v5
         with:
           github-token: ${{ steps.app-token.outputs.token }}
@@ -52,28 +54,12 @@ jobs:
             Please use the [Discussions Feature](https://github.com/RefindPlusRepo/RefindPlus/discussions/categories/general) for follow-on discussion or raise a new issue if appropriate.
           process-only: 'issues'
 
-  lock-threads-02:
-    name: Lock Invalid/Not-Planned/Misc Issues
-    needs: [lock-threads-01]
-    runs-on: ubuntu-24.04
-
-    if: github.actor == 'dakanji' && (github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock')
-    steps:
-      - id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      - name: Repository Checkout
-        uses: actions/checkout@v4
-
-      - name: Handle Rate Limits
+      - name: Handle Rate Limits2
         uses: ./.github/actions/handle-rate-limits
         with:
           token: ${{ steps.app-token.outputs.token }}
 
-      - name: Handle Thread Lock
+      - name: Handle Thread Lock2
         uses: dakanji/lock-threads@v5
         with:
           github-token: ${{ steps.app-token.outputs.token }}
@@ -87,28 +73,12 @@ jobs:
             Please use the [Discussions Feature](https://github.com/RefindPlusRepo/RefindPlus/discussions/categories/general) for follow-on discussion or raise a new issue if appropriate.
           process-only: 'issues'
 
-  lock-threads-03:
-    name: Lock Incomplete/Abandoned Issues
-    needs: [lock-threads-02]
-    runs-on: ubuntu-24.04
-
-    if: github.actor == 'dakanji' && (github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock')
-    steps:
-      - id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      - name: Repository Checkout
-        uses: actions/checkout@v4
-
-      - name: Handle Rate Limits
+      - name: Handle Rate Limits3
         uses: ./.github/actions/handle-rate-limits
         with:
           token: ${{ steps.app-token.outputs.token }}
 
-      - name: Handle Thread Lock
+      - name: Handle Thread Lock3
         uses: dakanji/lock-threads@v5
         with:
           github-token: ${{ steps.app-token.outputs.token }}
@@ -123,28 +93,12 @@ jobs:
             Trigger: Apparent Abandonment.
           process-only: 'issues'
 
-  lock-threads-04:
-    name: Lock Unclear Issues
-    needs: [lock-threads-03]
-    runs-on: ubuntu-24.04
-
-    if: github.actor == 'dakanji' && (github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock')
-    steps:
-      - id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      - name: Repository Checkout
-        uses: actions/checkout@v4
-
-      - name: Handle Rate Limits
+      - name: Handle Rate Limits4
         uses: ./.github/actions/handle-rate-limits
         with:
           token: ${{ steps.app-token.outputs.token }}
 
-      - name: Handle Thread Lock
+      - name: Handle Thread Lock4
         uses: dakanji/lock-threads@v5
         with:
           github-token: ${{ steps.app-token.outputs.token }}
@@ -158,28 +112,12 @@ jobs:
             Please use the [Discussions Feature](https://github.com/RefindPlusRepo/RefindPlus/discussions/categories/general) for follow-on discussion or raise a new issue if appropriate.
           process-only: 'issues'
 
-  lock-threads-05:
-    name: Lock Inactive Issues
-    needs: [lock-threads-04]
-    runs-on: ubuntu-24.04
-
-    if: github.actor == 'dakanji' && (github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock')
-    steps:
-      - id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      - name: Repository Checkout
-        uses: actions/checkout@v4
-
-      - name: Handle Rate Limits
+      - name: Handle Rate Limits5
         uses: ./.github/actions/handle-rate-limits
         with:
           token: ${{ steps.app-token.outputs.token }}
 
-      - name: Handle Thread Lock
+      - name: Handle Thread Lock5
         uses: dakanji/lock-threads@v5
         with:
           github-token: ${{ steps.app-token.outputs.token }}
@@ -195,28 +133,12 @@ jobs:
             Please use the [Discussions Feature](https://github.com/RefindPlusRepo/RefindPlus/discussions/categories/general) for follow-on discussion or raise a new issue if appropriate.
           process-only: 'issues'
 
-  lock-threads-06:
-    name: Lock Acknowledged/Known Issues
-    needs: [lock-threads-05]
-    runs-on: ubuntu-24.04
-
-    if: github.actor == 'dakanji' && (github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock')
-    steps:
-      - id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      - name: Repository Checkout
-        uses: actions/checkout@v4
-
-      - name: Handle Rate Limits
+      - name: Handle Rate Limits6
         uses: ./.github/actions/handle-rate-limits
         with:
           token: ${{ steps.app-token.outputs.token }}
 
-      - name: Handle Thread Lock
+      - name: Handle Thread Lock6
         uses: dakanji/lock-threads@v5
         with:
           github-token: ${{ steps.app-token.outputs.token }}

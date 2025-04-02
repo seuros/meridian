@@ -43,38 +43,21 @@ jobs:
       - id: issue-get-state
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.PAT_TOKEN }}
+          github-token: ${{ steps.app-token.outputs.token }}
           script: |
-            const fs = require('fs');
-            const isLocked = data.locked ? 'true' : 'false';
+            const issueNumber = context.payload.inputs.item_id;
+            const { data } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber
+            });
             const isClosed = data.state === 'closed' ? 'true' : 'false';
-            fs.appendFileSync(process.env.GITHUB_ENV, `islocked=${isLocked}\n`);
+
+            const fs = require('fs');
             fs.appendFileSync(process.env.GITHUB_ENV, `isclosed=${isClosed}\n`);
 
-  # Misc Issue Items - https://github.com/actions-cool/issues-helper
-  issue_resolve_other_knownissue2:
-    name: Issue - Resolve - Other - KnownIssue2
-    needs: [issue_resolve_other_knownissue1]
-    runs-on: ubuntu-24.04
-
-    if: ${{ success() || failure() }}
-    steps:
-      - id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      - if: ${{ env.islocked == 'true' }}
-        id: part_2_1
-        uses: actions-cool/issues-helper@v3
-        with:
-          actions: 'unlock-issue'
-          token: ${{ steps.app-token.outputs.token }}
-          issue-number: ${{ github.event.inputs.item_id }}
-
       - if: ${{ github.event.inputs.show_build_msg == 'Yes' }}
-        id: part_2_2a
+        id: part_2_1a
         uses: oprypin/find-latest-tag@v1
         with:
           repository: ${{ github.repository }}
@@ -82,7 +65,7 @@ jobs:
           releases-only: true
 
       - if: ${{ github.event.inputs.show_build_msg == 'Yes' && github.event.inputs.show_more_info == 'Yes' && github.event.inputs.type_more_info == 'Note' }}
-        id: part_2_2b
+        id: part_2_1b
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
@@ -97,7 +80,7 @@ jobs:
             > ${{ github.event.inputs.more_info }}
 
       - if: ${{ github.event.inputs.show_build_msg == 'Yes' && github.event.inputs.show_more_info == 'Yes' && github.event.inputs.type_more_info == 'Caution' }}
-        id: part_2_2c
+        id: part_2_1c
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
@@ -112,7 +95,7 @@ jobs:
             > ${{ github.event.inputs.more_info }}
 
       - if: ${{ github.event.inputs.show_build_msg == 'Yes' && github.event.inputs.show_more_info == 'No' }}
-        id: part_2_2d
+        id: part_2_1d
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
@@ -124,7 +107,7 @@ jobs:
             See [BUILDING.md](https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md) for how to access functionality ahead of releases.
 
       - if: ${{ github.event.inputs.show_build_msg == 'No' && github.event.inputs.show_more_info == 'Yes' && github.event.inputs.type_more_info == 'Note' }}
-        id: part_2_3a
+        id: part_2_2a
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
@@ -137,7 +120,7 @@ jobs:
             > ${{ github.event.inputs.more_info }}
 
       - if: ${{ github.event.inputs.show_build_msg == 'No' && github.event.inputs.show_more_info == 'Yes' && github.event.inputs.type_more_info == 'Caution' }}
-        id: part_2_3b
+        id: part_2_2b
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
@@ -150,7 +133,7 @@ jobs:
             > ${{ github.event.inputs.more_info }}
 
       - if: ${{ github.event.inputs.show_build_msg == 'No' && github.event.inputs.show_more_info == 'No' }}
-        id: part_2_3c
+        id: part_2_2c
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'create-comment'
@@ -158,19 +141,6 @@ jobs:
           issue-number: ${{ github.event.inputs.item_id }}
           body: |
             This item has been addressed for the next RefindPlus release.
-
-  issue_resolve_other_knownissue3:
-    name: Issue - Resolve - Other - KnownIssue3
-    needs: [issue_resolve_other_knownissue2]
-    runs-on: ubuntu-24.04
-
-    if: ${{ success() || failure() }}
-    steps:
-      - id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - id: part_3_1
         uses: actions-cool/issues-helper@v3
@@ -188,32 +158,11 @@ jobs:
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Triage,Queries,Parked,Prorogued,Unclear,Uncertain,Unresolved,Acknowledged,Bug'
 
-  issue_resolve_other_knownissue4:
-    name: Issue - Resolve - Other - KnownIssue4
-    needs: [issue_resolve_other_knownissue3]
-    runs-on: ubuntu-24.04
-
-    if: ${{ success() || failure() }}
-    steps:
-      - id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ vars.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
       - if: ${{ env.isclosed == 'false' }}
-        id: part_4_1
+        id: part_4
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'close-issue'
           close-reason: 'completed'
-          token: ${{ steps.app-token.outputs.token }}
-          issue-number: ${{ github.event.inputs.item_id }}
-
-      - if: ${{ env.islocked == 'true' }}
-        id: part_4_2
-        uses: actions-cool/issues-helper@v3
-        with:
-          actions: 'lock-issue'
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.inputs.item_id }}

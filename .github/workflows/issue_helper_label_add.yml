@@ -48,7 +48,7 @@ jobs:
     name: Label - Add - Abandoned
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Abandoned'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Abandoned'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -67,7 +67,7 @@ jobs:
     name: Label - Add - Cancelled
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Cancelled'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Cancelled'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -103,7 +103,7 @@ jobs:
     name: Label - Add - Discussion
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Discussion'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Discussion'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -232,7 +232,7 @@ jobs:
     name: Label - Add - Cannot-Replicate
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Cannot-Replicate'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Cannot-Replicate'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -269,7 +269,7 @@ jobs:
     name: Label - Add - Incomplete - Issues
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Incomplete - Issues'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Incomplete - Issues'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -311,7 +311,7 @@ jobs:
     name: Label - Add - Incomplete - Enhancement
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Incomplete - Enhancement'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Incomplete - Enhancement'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -353,7 +353,7 @@ jobs:
     name: Label - Add - Invalid
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Invalid'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Invalid'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -372,7 +372,7 @@ jobs:
     name: Label - Add - Triage
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Triage'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Triage'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -391,7 +391,7 @@ jobs:
     name: Label - Add - Parked
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Parked'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Parked'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -410,7 +410,7 @@ jobs:
     name: Label - Add - Prorogued
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Prorogued'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Prorogued'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -429,7 +429,7 @@ jobs:
     name: Label - Add - Resolved
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Resolved'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Resolved'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -448,7 +448,7 @@ jobs:
     name: Label - Add - Unresolved
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Unresolved'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Unresolved'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -467,7 +467,7 @@ jobs:
     name: Label - Add - Tagged
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Tagged'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Tagged'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -486,7 +486,7 @@ jobs:
     name: Label - Add - Queries
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Queries'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Queries'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -505,7 +505,7 @@ jobs:
     name: Label - Add - Upstream
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Upstream'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Upstream'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -524,7 +524,7 @@ jobs:
     name: Label - Add - Enhancement - Only
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Enhancement - Only'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Enhancement - Only'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -543,7 +543,7 @@ jobs:
     name: Label - Add - Not-Planned_and_Enhancement
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Not-Planned_and_Enhancement'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Not-Planned_and_Enhancement'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -580,7 +580,7 @@ jobs:
     name: Label - Add - Not-Planned - Only
     runs-on: ubuntu-24.04
 
-    if: github.event.inputs.operation == 'Label - Add - Not-Planned - Only'
+    if: github.actor == 'dakanji' && github.event.inputs.operation == 'Label - Add - Not-Planned - Only'
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1

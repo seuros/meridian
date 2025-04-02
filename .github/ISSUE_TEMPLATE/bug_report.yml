@@ -3,22 +3,22 @@ description: Report a problem with RefindPlus
 body:
   - type: markdown
     attributes:
-      value: |-
-        Thank you for taking the time to report a problem with RefindPlus.
-        Please use the [DISCUSSIONS OPTION](https://github.com/RefindPlusRepo/RefindPlus/discussions/categories/general) instead if you wish to ask a question, make a comment or similar.
+      value: |
+        Thank you for taking the time to report a problem with RefindPlus.\
+        Please use the [DISCUSSIONS FEATURE](https://github.com/RefindPlusRepo/RefindPlus/discussions/categories/general) instead if you wish to ask a question, make a comment or similar.
+
 
         ---
 
-        ## BEFORE YOU PROCEED
 
-        If the problem is that RefindPlus hangs on UEFI-PC, especially with Hewlett Parkard (HP) firmware, try the following steps in the order listed first:
-        - Run RefindPlus with the 'ransom_drives' setting active and the 'disable_rescan_dxe' setting inactive.
-        - Run RefindPlus with 'disable_rescan_dxe' active and 'ransom_drives' inactive if that fails.
-        - Run RefindPlus with both 'ransom_drives' and 'disable_rescan_dxe' active if that fails.
+        Try the steps below first if RefindPlus hangs on UEFI-PC [Especially with Hewlett Parkard (HP) units]:
+        1. Run RefindPlus with the `ransom_drives` config setting active and `disable_rescan_dxe` inactive.
+        2. Run RefindPlus with `disable_rescan_dxe` active and `ransom_drives` inactive if that fails.
+        3. Run RefindPlus with both `ransom_drives` and `disable_rescan_dxe` active if that fails.
+
 
         ---
 
-        ## ISSUE DETAILS
 
   - type: dropdown
     id: version
@@ -59,11 +59,12 @@ body:
       label: Problem Point
       description: Where does the problem manifest itself?
       options:
-        - 'RefindPlus crashes/hangs on start'
-        - 'Before starting a loader or tool'
-        - 'While starting a loader or tool'
-        - 'After starting a loader or tool'
-        - 'Other'
+        - 'Before RefindPlus Screen is Visible'
+        - 'RefindPlus Screen Shows but Hangs'
+        - 'Before Starting a Loader or Tool'
+        - 'While Starting a Loader or Tool'
+        - 'After Starting a Loader or Tool'
+        - 'Another Point or Not Applicable'
     validations:
       required: true
   - type: dropdown
@@ -89,9 +90,9 @@ body:
     id: log-file
     attributes:
       label: Debug Log
-      description: |-
+      description: |
         Please run the RefindPlus 'DBG' efi and add debug logs.\
-        Please attach log files and *DO NOT* paste their contents.\
+        Please attach log files and _DO NOT_ paste their contents.\
         Attach log files by dragging/dropping on the field below.
       placeholder: |
         Reports that do not need log files are typically best as Discussions.
@@ -102,9 +103,9 @@ body:
     id: extra-info
     attributes:
       label: Additional Context
-      description: |-
+      description: |
         Additional details that may further make the problem clear.
       placeholder: |
         You can attach files by dragging/dropping them on this field.
-        You can also use screenshots to shed some light on the problem.
-        Screenshots can be saved in RefindPlus by pressing the F10 key.
+        You can also add screenshots to shed more light on the issue.
+        Screenshot files can be saved by RefindPlus with the F10 key.

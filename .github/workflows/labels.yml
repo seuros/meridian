@@ -37,7 +37,7 @@ jobs:
     needs: [auto_labels]
     runs-on: ubuntu-24.04
 
-    if: ${{ always() && github.actor == 'dakanji' && (github.event.label.name == 'Invalid' || github.event.label.name == 'Not-Planned') }}
+    if: ${{ github.actor == 'dakanji' && (github.event.label.name == 'Invalid' || github.event.label.name == 'Not-Planned') }}
     outputs:
       status: ${{ steps.handle_enhance_check_main.outputs.status }}
     steps:
@@ -93,7 +93,7 @@ jobs:
     needs: [auto_labels]
     runs-on: ubuntu-24.04
 
-    if: ${{ always() && github.actor == 'dakanji' && github.event.label.name == 'Resolved' }}
+    if: ${{ github.actor == 'dakanji' && github.event.label.name == 'Resolved' }}
     outputs:
       status: ${{ steps.handle_resolved_check_1_main.outputs.status }}
     steps:

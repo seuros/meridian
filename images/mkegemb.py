@@ -57,30 +57,35 @@ def encode_plane(rawdata, planename):
     return compdata
 
 
-### main loop
+### Main Loop
 
 print ("mkegemb 0.1a, Copyright (c) 2006 Christoph Pfisterer")
-print ("              Modified 2020 for Python 3 by Dayo Akanji")
-print ("              Modified 2021 for Path Independence by Dayo Akanji")
-print ("              Modified 2022 for Formating by Dayo Akanji")
+print ("              Modified 2020 by Dayo Akanji for Python 3")
+print ("              Modified 2021 by Dayo Akanji for Path Independence")
+print ("              Modified 2022 by Dayo Akanji for Formating")
+print ("              Modified 2025 by Dayo Akanji for Palette Mode Images")
 
 planenames = ( "blue", "green", "red", "alpha", "grey" )
 
 for filename in sys.argv[1:]:
-
+    # Extract image data from PIL object
     origimage = Image.open(filename)
 
     (width, height) = origimage.size
     mode = origimage.mode
     data = origimage.getdata()
 
-    print ("%s: %d x %d %s" % (filename, width, height, mode))
+    print ("")
+    print ("%s: %d x %d in '%s' Mode" % (filename, width, height, mode))
+
+    if mode == "P":
+        print (" Convert PIL 'Palette' image to RGBA")
+        origimage = origimage.convert('RGBA')
+        data = origimage.getdata()
 
     basepath = os.path.basename(filename)
     (basename, extension) = os.path.splitext(basepath)
     identname = basename.replace("-", "_")
-
-    # extract image data from PIL object
 
     planes = [ [], [], [], [] ]
 
@@ -113,11 +118,20 @@ for filename in sys.argv[1:]:
             planes[1].append(pixeldata[0])
             planes[2].append(pixeldata[0])
             planes[3].append(pixeldata[1])
+
+    elif mode == "P":
+        for pixcount in range(0, width*height):
+            pixeldata = data[pixcount]
+            planes[0].append(pixeldata[0])
+            planes[1].append(pixeldata[1])
+            planes[2].append(pixeldata[2])
+            planes[3].append(pixeldata[3])
+
     else:
         print (" Error: Mode '%s' is Not Supported!!" % mode)
         continue
 
-    # special treatment for fonts
+    # Special treatment for fonts
 
     if basename[0:4] == "font":
         if planes[0] != planes[1] or planes[0] != planes[2]:
@@ -130,7 +144,7 @@ for filename in sys.argv[1:]:
         planes[1] = []
         planes[2] = []
 
-    # encode planes
+    # Encode planes
 
     imagedata = []
     pixelformat = "EG_EIPIXELMODE"
@@ -154,7 +168,7 @@ for filename in sys.argv[1:]:
             imagedata.extend(encode_plane(planes[3], planenames[3]))
             pixelformat = pixelformat + "_ALPHA"
 
-    # generate compilable header file
+    # Generate compilable header file
 
     output = "static const UINT8 egemb_%s_data[%d] = {\n" % (identname, len(imagedata))
     for i in range(0, len(imagedata)):
@@ -176,4 +190,5 @@ for filename in sys.argv[1:]:
     f.write(output)
     f.close()
 
+print ("")
 print ("Done!!")
