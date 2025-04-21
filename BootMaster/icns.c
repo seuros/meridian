@@ -268,7 +268,7 @@ EG_IMAGE * LoadIndexedIcon (
     );
     #endif
 
-    return TableBuiltinIconOS[Id].Image;
+    return egCopyImage (TableBuiltinIconOS[Id].Image);
 } // static EG_IMAGE * LoadIndexedIcon()
 
 static
@@ -489,8 +489,10 @@ EG_IMAGE * LoadOSIcon (
         }
 
         if (Image == NULL) {
-            Image = DummyImageEx (
-                GlobalConfig.IconSizes[ICON_SIZE_BIG]
+            Image = egCopyImage (
+                DummyImageEx (
+                    GlobalConfig.IconSizes[ICON_SIZE_BIG]
+                )
             );
         }
 
@@ -506,10 +508,10 @@ EG_IMAGE * LoadOSIcon (
         GlobalConfig.HelpIcon &&
         TableBuiltinIconOS[OurId].Image == NULL
     ) {
-        TableBuiltinIconOS[OurId].Image = Image;
+        TableBuiltinIconOS[OurId].Image = egCopyImage (Image);
     }
 
-    return egCopyImage (Image);
+    return Image;
 } // EG_IMAGE * LoadOSIcon()
 
 EG_IMAGE * DummyImage (

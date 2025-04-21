@@ -32,7 +32,7 @@
  */
  /*
   * Modified for RefindPlus
-  * Copyright (c) 2024 Dayo Akanji (sf.net/u/dakanji/profile)
+  * Copyright (c) 2025 Dayo Akanji (sf.net/u/dakanji/profile)
   *
   * Modifications distributed under the preceding terms.
   */
@@ -1952,7 +1952,7 @@ extern "C" {
 #endif
 #if !defined(__lzo_loop_forever)
 #  if (LZO_CC_IBMC)
-#    define __lzo_loop_forever()    LZO_BLOCK_BEGIN for (;;) { ; } LZO_BLOCK_END
+#    define __lzo_loop_forever()    LZO_BLOCK_BEGIN while (1) { ; } LZO_BLOCK_END
 #  else
 #    define __lzo_loop_forever()    do { ; } while __lzo_cte(1)
 #  endif
@@ -4200,10 +4200,7 @@ __lzo_align_gap(const lzo_voidp ptr, lzo_uint size)
 #error "__LZO_UINTPTR_T_IS_POINTER is unsupported"
 #else
     lzo_uintptr_t p, n;
-    if (size < 2) {
-        return 0;
-    }
-
+    if (size < 2) return 0;
     p = __lzo_ptr_linear(ptr);
 #if 0
     n = (((p + size - 1) / size) * size) - p;
@@ -4947,7 +4944,7 @@ do_compress ( const lzo_bytep in , lzo_uint  in_len,
     ii = ip;
 
     ip += ti < 4 ? 4 - ti : 0;
-    for (;;)
+    while (1)
     {
         const lzo_bytep m_pos;
 #if !(LZO_DETERMINISTIC)
@@ -5459,7 +5456,7 @@ DO_DECOMPRESS  ( const lzo_bytep in , lzo_uint  in_len,
         goto first_literal_run;
     }
 
-    for (;;)
+    while (1)
     {
         NEED_IP(3);
         t = *ip++;
@@ -5555,7 +5552,7 @@ first_literal_run:
 #endif
         goto match_done;
 
-        for (;;) {
+        while (1) {
 match:
             if (t >= 64)
             {
@@ -6000,7 +5997,7 @@ DO_DECOMPRESS  ( const lzo_bytep in , lzo_uint  in_len,
         goto first_literal_run;
     }
 
-    for (;;)
+    while (1)
     {
         NEED_IP(3);
         t = *ip++;
@@ -6096,7 +6093,7 @@ first_literal_run:
 #endif
         goto match_done;
 
-        for (;;) {
+        while (1) {
 match:
             if (t >= 64)
             {

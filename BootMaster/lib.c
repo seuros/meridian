@@ -1051,7 +1051,7 @@ EFI_STATUS EfivarSetRaw (
                 L"%s %s:- '%r ... %s'%s",
                 NVRAM_LOG_SET, NVRAM_HARDWARE,
                 Status, VariableName,
-                (!Persistent) ? L" (Volatile)" : L""
+                (!Persistent) ? L" ::: Volatile" : L""
             );
         }
         #endif
@@ -1332,10 +1332,12 @@ CHAR16 * FSTypeName (
 
     i = 0;
     FoundVentoy = FALSE;
-    while (
-        !FoundVentoy &&
-        (VentoyName = FindCommaDelimited (VENTOY_NAMES, i++)) != NULL
-    ) {
+    while (!FoundVentoy) {
+        VentoyName = FindCommaDelimited (
+            VENTOY_NAMES, i++
+        );
+        if (VentoyName == NULL) break;
+
         if (MyStrBegins (VentoyName, Volume->VolName)) {
             GlobalConfig.HandleVentoy = FoundVentoy = TRUE;
         }
@@ -2283,11 +2285,12 @@ BOOLEAN VolumeScanAllowed (
         if (!SkipVentoy) {
             i = 0;
             FoundVentoy = FALSE;
-            while (
-                !FoundVentoy              &&
-                GlobalConfig.HandleVentoy &&
-                (VentoyName = FindCommaDelimited (VENTOY_NAMES, i++)) != NULL
-            ) {
+            while (GlobalConfig.HandleVentoy && !FoundVentoy) {
+                VentoyName = FindCommaDelimited (
+                    VENTOY_NAMES, i++
+                );
+                if (VentoyName == NULL) break;
+
                 if (MyStrBegins (VentoyName, Volume->VolName) ||
                     MyStrBegins (VentoyName, Volume->FsName)  ||
                     MyStrBegins (VentoyName, Volume->PartName)
@@ -3282,7 +3285,7 @@ VOID ScanVolumes (VOID) {
                         // Set as 'UnReadable' to boost load speed
                         Volume->IsReadable = FALSE;
 
-                        // Create or add to a list of APFS Recovery volumes
+                        // Create or add to list of APFS Recovery volumes
                         AddListElement (
                             (VOID ***) &RecoveryVolumesAPFS,
                             &RecoveryVolumesAPFSCount, Volume
@@ -3292,14 +3295,14 @@ VOID ScanVolumes (VOID) {
                         // Set as 'UnReadable' to boost load speed
                         Volume->IsReadable = FALSE;
 
-                        // Create or add to a list representing APFS VolumeGroups
+                        // Create or add to list representing APFS VolumeGroups
                         AddListElement (
                             (VOID ***) &DataVolumes,
                             &DataVolumesCount, Volume
                         );
                     }
                     else if (Volume->VolRole == APFS_VOLUME_ROLE_PREBOOT) {
-                        // Create or add to a list of APFS PreBoot Volumes
+                        // Create or add to list of APFS PreBoot Volumes
                         AddListElement (
                             (VOID ***) &PreBootVolumes,
                             &PreBootVolumesCount, Volume
@@ -3309,14 +3312,14 @@ VOID ScanVolumes (VOID) {
                         Volume->VolRole == APFS_VOLUME_ROLE_SYSTEM ||
                         Volume->VolRole == APFS_VOLUME_ROLE_UNDEFINED
                     ) {
-                        // Create or add to a list of APFS System Volumes
+                        // Create or add to list of APFS System Volumes
                         AddListElement (
                             (VOID ***) &SystemVolumes,
                             &SystemVolumesCount, Volume
                         );
 
                         if (!ShouldScan (Volume, MACOSX_LOADER_DIR)) {
-                            // Create or add to a list of APFS Volumes not to be scanned
+                            // Create or add to list of APFS Volumes not to be scanned
                             AddListElement (
                                 (VOID ***) &SkipApfsVolumes,
                                 &SkipApfsVolumesCount, Volume
@@ -3345,7 +3348,7 @@ VOID ScanVolumes (VOID) {
             if (Volume->FSType == FS_TYPE_HFSPLUS &&
                 MyStriCmp (RoleStr, L" * Part RecoveryHD (HFS)")
             ) {
-                // Create or add to a list of HFS+ Recovery volumes
+                // Create or add to list of HFS+ Recovery volumes
                 AddListElement (
                     (VOID ***) &RecoveryVolumesHFS,
                     &RecoveryVolumesHFSCount, Volume
@@ -3379,11 +3382,12 @@ VOID ScanVolumes (VOID) {
         if (RoleStr == NULL) {
             FoundVentoy = FALSE;
             j = 0;
-            while (
-                !FoundVentoy              &&
-                GlobalConfig.HandleVentoy &&
-                (VentoyName = FindCommaDelimited (VENTOY_NAMES, j++)) != NULL
-            ) {
+            while (GlobalConfig.HandleVentoy && !FoundVentoy) {
+                VentoyName = FindCommaDelimited (
+                    VENTOY_NAMES, j++
+                );
+                if (VentoyName == NULL) break;
+
                 if (MyStrBegins (VentoyName, Volume->VolName)) {
                     RoleStr = L" * Part Ventoy ISO Boot";
                     FoundVentoy = TRUE;
@@ -3787,7 +3791,7 @@ EFI_STATUS DirNextEntry (
     #if REFIT_DEBUG > 0
     FirstRun = TRUE;
     #endif
-    for (;;) {
+    while (1) {
         //LOG_SEP(L"X");
         //BREAD_CRUMB(L"%a:  2a 1 - FOR LOOP:- START", __func__);
         *DirEntry = NULL;
@@ -3946,7 +3950,7 @@ EFI_STATUS DirNextEntry (
         //LOG_SEP(L"X");
 
         // No Filter or Unknown Filter -> Return Everything
-    } // for ;;
+    } // while {Infinite}
 
     //BREAD_CRUMB(L"%a:  3 - END:- return EFI_STATUS Status = '%r'", __func__,
     //    Status
@@ -3955,7 +3959,7 @@ EFI_STATUS DirNextEntry (
     //LOG_SEP(L"X");
 
     return Status;
-} // EFI_STATUS DirNextEntry()
+} // static EFI_STATUS DirNextEntry()
 
 VOID DirIterOpen (
     IN  EFI_FILE_PROTOCOL       *BaseDir,
@@ -4057,7 +4061,7 @@ BOOLEAN DirIterNext (
     }
 
     BREAD_CRUMB(L"%a:  3", __func__);
-    for (;;) {
+    while (1) {
         LOG_SEP(L"X");
         BREAD_CRUMB(L"%a:  3a 1 - FOR LOOP:- START", __func__);
 
@@ -4090,10 +4094,12 @@ BOOLEAN DirIterNext (
         BREAD_CRUMB(L"%a:  3a 5", __func__);
         i     =     0;
         Found = FALSE;
-        while (
-            !Found &&
-            (OnePattern = FindCommaDelimited (FilePattern, i++)) != NULL
-        ) {
+        while (!Found) {
+            OnePattern = FindCommaDelimited (
+                FilePattern, i++
+            );
+            if (OnePattern == NULL) break;
+
             BREAD_CRUMB(L"%a:  3a 5a 1 - WHILE LOOP:- START ... Seek MetaiMatch Pattern", __func__);
             if (RefitMetaiMatch (LastFileInfo->FileName, OnePattern)) {
                 BREAD_CRUMB(L"%a:  3a 5a 1a 1", __func__);
@@ -4117,7 +4123,7 @@ BOOLEAN DirIterNext (
 
         BREAD_CRUMB(L"%a:  3a 8 - FOR LOOP:- END", __func__);
         LOG_SEP(L"X");
-    } // for
+    } // while {Infinite}
     BREAD_CRUMB(L"%a:  4 - END:- return BOOLEAN TRUE", __func__);
     LOG_DECREMENT();
     LOG_SEP(L"X");
@@ -4581,10 +4587,12 @@ BOOLEAN FilenameIn (
 
     i = 0;
     Found = FALSE;
-    while (
-        !Found &&
-        (OneElement = FindCommaDelimited (List, i++)) != NULL
-    ) {
+    while (!Found) {
+        OneElement = FindCommaDelimited (
+            List, i++
+        );
+        if (OneElement == NULL) break;
+
         AnElement = GetSubStrAfter (DEFAULT_STRING_DELIM, OneElement);
         SplitPathName (AnElement, &TargetVolName, &TargetPath, &TargetFilename);
         MY_FREE_POOL(OneElement); // Freed here to avoid potential memory leak

@@ -1926,7 +1926,7 @@ extern "C" {
 #endif
 #if !defined(__lzo_loop_forever)
 #  if (LZO_CC_IBMC)
-#    define __lzo_loop_forever()    LZO_BLOCK_BEGIN for (;;) { ; } LZO_BLOCK_END
+#    define __lzo_loop_forever()    LZO_BLOCK_BEGIN while (1) { ; } LZO_BLOCK_END
 #  else
 #    define __lzo_loop_forever()    do { ; } while __lzo_cte(1)
 #  endif

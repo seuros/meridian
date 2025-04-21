@@ -130,11 +130,16 @@ VOID SetLinuxMatchPatterns (
 
     i = 0;
     PatternSet = NULL;
-    while ((Pattern = FindCommaDelimited (Prefixes, i++)) != NULL) {
+    while (1) {
+        Pattern = FindCommaDelimited (
+            Prefixes, i++
+        );
+        if (Pattern == NULL) break;
+
         MergeStrings (&Pattern, L"*", 0);
         MergeStrings (&PatternSet, Pattern, L',');
         MY_FREE_POOL(Pattern);
-    }
+    } // while {Infinite}
 
     MY_FREE_POOL(GlobalConfig.LinuxMatchPatterns);
     GlobalConfig.LinuxMatchPatterns = PatternSet;
@@ -628,14 +633,13 @@ static
 BOOLEAN GetIsDisabled (
     REFIT_FILE   *File
 ) {
-    UINTN           SubMenus;
-    UINTN           NumToken;
-    CHAR8          *FilePtr08;
-    CHAR16         *FilePtr16;
-    CHAR16        **TokenList;
-    BOOLEAN         IsExitLoop;
-    BOOLEAN         IsDisabled;
-    BOOLEAN         IsContinue;
+    UINTN         SubMenus;
+    UINTN         NumToken;
+    CHAR8        *FilePtr08;
+    CHAR16       *FilePtr16;
+    CHAR16      **TokenList;
+    BOOLEAN       IsExitLoop;
+    BOOLEAN       IsDisabled;
 
 
     SubMenus      =      0;
@@ -646,66 +650,42 @@ BOOLEAN GetIsDisabled (
     FilePtr08 = File->Current8Ptr;
     FilePtr16 = File->Current16Ptr;
 
-    for (;;) {
-        IsContinue = FALSE;
-
+    while (1) {
         NumToken = ReadTokenLine (File, &TokenList);
         if (NumToken == 0) {
             IsExitLoop = TRUE;
         }
-        else if (MyStriCmp (TokenList[0], L"}")) {
-            if (SubMenus < 1) {
-                IsExitLoop = TRUE;
-            }
-            else {
-                SubMenus -= 1;
-                IsContinue = TRUE;
-            }
+        else if (MyStriCmp (TokenList[0], L"disabled")) {
+            IsDisabled = TRUE;
         }
         else if (MyStriCmp (TokenList[0], L"submenuentry")) {
             SubMenus += 1;
-            IsContinue = TRUE;
         }
-        else if (IsDisabled || SubMenus > 0) {
-            IsContinue = TRUE;
-        }
-
-        if (!IsExitLoop &&
-            !IsContinue &&
-            !MyStriCmp (TokenList[0], L"disabled")
-        ) {
-            IsContinue = TRUE;
-        }
-
-        if (IsExitLoop || IsContinue) {
-            FreeTokenLine (&TokenList, &NumToken);
-
-            if (IsExitLoop) {
-                break;
+        else {
+            if (MyStriCmp (TokenList[0], L"}")) {
+                if (SubMenus < 1) {
+                    IsExitLoop = TRUE;
+                }
+                else {
+                    SubMenus -= 1;
+                }
             }
-
-            continue;
-        }
-
-        if (MyStriCmp (TokenList[0], L"disabled")) {
-            IsDisabled = TRUE;
         }
 
         FreeTokenLine (&TokenList, &NumToken);
-    } // for ;;
 
-    if (IsDisabled) {
-        // Return NULL without restoring TokenLine pointers
-        // Continues in Caller from current line
-        return TRUE;
+        if (IsExitLoop) break;
+    } // while {Infinite}
+
+    if (!IsDisabled) {
+        // Restore original TokenLine pointers
+        // Continues in Caller with original line
+        // Continues from current line if disabled
+        File->Current8Ptr  = FilePtr08;
+        File->Current16Ptr = FilePtr16;
     }
 
-    // Restore original TokenLine pointers
-    // Continues in Caller with original line
-    File->Current8Ptr  = FilePtr08;
-    File->Current16Ptr = FilePtr16;
-
-    return FALSE;
+    return IsDisabled;
 } // static BOOLEAN GetIsDisabled()
 
 // Determine volume associated with stanza
@@ -742,7 +722,7 @@ REFIT_VOLUME * GetStanzaVolume (
     FilePtr08 = File->Current8Ptr;
     FilePtr16 = File->Current16Ptr;
 
-    for (;;) {
+    while (1) {
         IsContinue = FALSE;
 
         NumToken = ReadTokenLine (File, &TokenList);
@@ -844,7 +824,7 @@ REFIT_VOLUME * GetStanzaVolume (
         } // if/else !CheckedVolume
 
         FreeTokenLine (&TokenList, &NumToken);
-    } // for ;;
+    } // while {Infinite}
 
     if (IsDisabled) {
         // Return NULL without restoring TokenLine pointers
@@ -937,7 +917,7 @@ BOOLEAN AddSubmenu (
 
     BREAD_CRUMB(L"%a:  6", __func__);
     GraphicsTag = NULL;
-    for (;;) {
+    while (1) {
         TokenCount = ReadTokenLine (File, &TokenList);
         if (TokenCount == 0 ||
             MyStriCmp (TokenList[0], L"}")
@@ -1002,7 +982,7 @@ BOOLEAN AddSubmenu (
 
         BREAD_CRUMB(L"%a:  6a 3 - FOR LOOP:- END", __func__);
         LOG_SEP(L"X");
-    } // for ;;
+    } // while {Infinite}
 
     BREAD_CRUMB(L"%a:  7", __func__);
     MY_FREE_POOL(SubEntry->me.Title);
@@ -1152,7 +1132,7 @@ LOADER_ENTRY * InitializeStanza (
     AddedSubmenu   = DoneLoader               = FALSE;
     GotFirmwareTag = DefaultsSet = DoneIcon   = FALSE;
 
-    for (;;) {
+    while (1) {
         TokenCount = ReadTokenLine (File, &TokenList);
         if (TokenCount == 0 ||
             MyStriCmp (TokenList[0], L"}")
@@ -1322,7 +1302,7 @@ LOADER_ENTRY * InitializeStanza (
         } // Set options to pass to the loader program - End
 
         FreeTokenLine (&TokenList, &TokenCount);
-    } // for ;;
+    } // while {Infinite}
 
     if (!DoneLoader && LoaderToken && StrLen (LoaderToken) > 0) {
         #if REFIT_DEBUG > 0
@@ -1517,7 +1497,7 @@ REFIT_FILE * GenerateOptionsFromEtcFstab (
     Options->Encoding = ENCODING_UTF16_LE;
 
     BREAD_CRUMB(L"%a:  7", __func__);
-    for (;;) {
+    while (1) {
         TokenCount = ReadTokenLine (Fstab, &TokenList);
         if (TokenCount == 0) {
             FreeTokenLine (&TokenList, &TokenCount);
@@ -1605,7 +1585,7 @@ REFIT_FILE * GenerateOptionsFromEtcFstab (
 
         BREAD_CRUMB(L"%a:  7a 3 - FOR LOOP:- END", __func__);
         LOG_SEP(L"X");
-    } // for ;;
+    } // while {Infinite}
 
     BREAD_CRUMB(L"%a:  8", __func__);
     if (Options->Buffer == NULL) {
@@ -2199,7 +2179,7 @@ VOID ScanUserConfigured (
     if (FileExists (SelfDir, FileName)) {
         Status = RefitReadFile (SelfDir, FileName, File, &size);
         if (!EFI_ERROR(Status)) {
-            for (;;) {
+            while (1) {
                 TokenCount = ReadTokenLine (File, &TokenList);
                 if (TokenCount == 0) {
                     FreeTokenLine (&TokenList, &TokenCount);
@@ -2279,7 +2259,7 @@ VOID ScanUserConfigured (
                 }
 
                 FreeTokenLine (&TokenList, &TokenCount);
-            } // for ;;
+            } // while {Infinite}
         }
     } // if FileExists
 
@@ -2359,11 +2339,12 @@ REFIT_FILE * ReadLinuxOptionsFile (
     FullFilename = FindPath (LoaderPath);
 
     i = 0;
-    while (
-        GoOn                 &&
-        FullFilename != NULL &&
-        (OptionsFilename = FindCommaDelimited (LINUX_OPTIONS_FILENAMES, i++)) != NULL
-    ) {
+    while (GoOn && FullFilename != NULL) {
+        OptionsFilename = FindCommaDelimited (
+            LINUX_OPTIONS_FILENAMES, i++
+        );
+        if (OptionsFilename == NULL) break;
+
         LOG_SEP(L"X");
         BaseFilename = StrDuplicate (FullFilename);
 
@@ -2667,7 +2648,7 @@ VOID ReadConfig (
     #endif
 
     MaxLogLevel = (ForensicLogging) ? LOGLEVELMAX + 1 : LOGLEVELMAX;
-    for (;;) {
+    while (1) {
         TokenCount = ReadTokenLine (File, &TokenList);
         if (TokenCount == 0) {
             FreeTokenLine (&TokenList, &TokenCount);
@@ -3114,7 +3095,7 @@ VOID ReadConfig (
             DoneTool = FALSE;
             InvalidEntries = 0;
             i = j = 0;
-            for (;;) {
+            while (1) {
                 // DA-TAG: Start Index is 1 Here ('i' for NUM_TOOLS/TokenList)
                 ++i;
 
@@ -3182,7 +3163,7 @@ VOID ReadConfig (
                 if (!SetShowTools) {
                     SetShowTools = TRUE;
                 }
-            } // for ;;
+            } // while {Infinite}
         }
         else if (MyStriCmp (TokenList[0], L"banner")) {
             #if REFIT_DEBUG > 0
@@ -4438,7 +4419,7 @@ VOID ReadConfig (
         }
 
         FreeTokenLine (&TokenList, &TokenCount);
-    } // for ;;
+    } // while {Infinite}
 
     MY_FREE_FILE(File);
 

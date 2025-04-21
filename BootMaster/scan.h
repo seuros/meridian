@@ -182,20 +182,20 @@ VOID ScanFirmwareDefined (
 
 CHAR16 * GetShowName (IN CHAR16 *LinuxName);
 CHAR16 * SetVolJoin (
-    IN CHAR16  *EntryName,
+    IN CHAR16  *OurItem,
     IN BOOLEAN  ForBoot
 );
 CHAR16 * SetVolKind (
-    IN CHAR16 *EntryName,
+    IN CHAR16 *OurItem,
     IN CHAR16 *VolName,
     IN UINT32  VolFSType
 );
 CHAR16 * SetVolFlag (
-    IN CHAR16 *EntryName,
+    IN CHAR16 *OurItem,
     IN CHAR16 *VolName
 );
 CHAR16 * SetVolType (
-    IN CHAR16 *EntryName OPTIONAL,
+    IN CHAR16 *OurItem OPTIONAL,
     IN CHAR16 *VolName,
     IN UINT32  VolFSType
 );

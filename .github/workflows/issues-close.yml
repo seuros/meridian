@@ -63,11 +63,11 @@ jobs:
           stale-issue-message: |-
             This item has been flagged for closure.
 
-            Trigger: Missing Required Information
+            Trigger: Missing Requirement(s)
           close-issue-message: |-
             This item is being closed.
 
-            Trigger: Missing Required Information
+            Trigger: Missing Requirement(s)
           days-before-stale: 0
           days-before-close: 3
           exempt-assignees: 'dakanji'

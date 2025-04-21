@@ -557,6 +557,7 @@ UINTN ScanDriverDir (
     EFI_GUID                     **ProtocolGuidArray;
     BOOLEAN                        DriverBindingFlag;
     BOOLEAN                        FirstLoop;
+    BOOLEAN                        CheckIter;
     CHAR16                        *FileName;
     CHAR16                        *ErrMsg;
     UINTN                          NumFound;
@@ -585,7 +586,10 @@ UINTN ScanDriverDir (
     DriversArr = NULL;
     DriversArrSize = DriversArrSizeNew = 16;
     ArrayCount = ProtocolIndex = DriversArrNum = NumFound = 0;
-    while (DirIterNext (&DirIter, 2, LOADER_MATCH_PATTERNS, &DirEntry)) {
+    while (1) {
+        CheckIter = DirIterNext (&DirIter, 2, LOADER_MATCH_PATTERNS, &DirEntry);
+        if (!CheckIter) break;
+
         if (DirEntry->FileName[0] == '.') {
             // Skip this
             MY_FREE_POOL(DirEntry);
@@ -659,7 +663,7 @@ UINTN ScanDriverDir (
         #endif
 
         MY_FREE_POOL(FileName);
-    } // while
+    } // while {Infinite}
 
     Status = DirIterClose (&DirIter);
     if (EFI_ERROR(Status) && Status != EFI_NOT_FOUND) {
@@ -788,10 +792,12 @@ BOOLEAN LoadDrivers (VOID) {
 
     DriversListProg = NULL;
     NumFound = CurFound = i = 0;
-    while (
-        CurFound == 0 &&
-        (Directory = FindCommaDelimited (DRIVER_DIRS, i++)) != NULL
-    ) {
+    while (CurFound == 0) {
+        Directory = FindCommaDelimited (
+            DRIVER_DIRS, i++
+        );
+        if (Directory == NULL) break;
+
         CurFound = LoadDriversHelper (
             Directory, SelfDirectory,
             FALSE, &DriversListProg
@@ -816,7 +822,12 @@ BOOLEAN LoadDrivers (VOID) {
         #endif
 
         i = 0;
-        while ((Directory = FindCommaDelimited (GlobalConfig.DriverDirs, i++)) != NULL) {
+        while (1) {
+            Directory = FindCommaDelimited (
+                GlobalConfig.DriverDirs, i++
+            );
+            if (Directory == NULL) break;
+
             // Increment 'NumFound' if drivers found
             NumFound += LoadDriversHelper (
                 Directory, SelfDirectory,
@@ -824,7 +835,7 @@ BOOLEAN LoadDrivers (VOID) {
             );
 
             MY_FREE_POOL(Directory);
-        } // while
+        } // while {Infinite}
     }
     MY_FREE_POOL(SelfDirectory);
 

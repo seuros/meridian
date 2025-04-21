@@ -107,8 +107,6 @@ VOID pdInitialize (VOID) {
         return;
     }
 
-    // Get handles that support the absolute pointer protocol
-    // These are usually touchscreens but some mice also do
     #if REFIT_DEBUG > 0
     MsgStr = StrDuplicate (L"Activate Pointer Devices:");
     ALT_LOG(1, LOG_LINE_NORMAL, L"%s", MsgStr);
@@ -120,6 +118,8 @@ VOID pdInitialize (VOID) {
     #endif
 
     if (GlobalConfig.EnableTouch) {
+        // Get handles that support the absolute pointer protocol
+        // These are usually touchscreens but some mice also do
         NumPointerHandles = 0;
         HandleStatus = REFIT_CALL_5_WRAPPER(
             gBS->LocateHandleBuffer, ByProtocol,
@@ -171,11 +171,11 @@ VOID pdInitialize (VOID) {
     LOG_MSG("%s  - %s", OffsetNext, MsgStr);
     MY_FREE_POOL(MsgStr);
 
-    // Get handles that support the simple pointer protocol (mice)
     EnableStatusMouse = EFI_NOT_STARTED;
     #endif
 
     if (GlobalConfig.EnableMouse) {
+        // Get handles that support the simple pointer protocol (mice)
         NumPointerHandles = 0;
         HandleStatus = REFIT_CALL_5_WRAPPER(
             gBS->LocateHandleBuffer, ByProtocol,
@@ -243,12 +243,19 @@ VOID pdInitialize (VOID) {
     #endif
 
     // Load mouse icon
-    PointerAvailable = ((NumAPointerDevices + NumSPointerDevices) > 0) ? TRUE : FALSE;
-    if (!PointerAvailable || !GlobalConfig.EnableMouse) {
-        MouseTouchActive = FALSE;
+    if (NumAPointerDevices > 0 ||
+        NumSPointerDevices > 0
+    ) {
+        PointerAvailable = TRUE;
     }
     else {
+        PointerAvailable = FALSE;
+    }
+    if (GlobalConfig.EnableMouse && PointerAvailable) {
         MouseImage = BuiltinIcon (BUILTIN_ICON_MOUSE);
+    }
+    else {
+        MouseTouchActive = FALSE;
     }
 
     #if REFIT_DEBUG > 0
@@ -353,7 +360,7 @@ EFI_EVENT pdWaitEvent (
     EFI_EVENT TheEvent;
 
 
-    if (!PointerAvailable                              ||
+    if (!PointerAvailable ||
         Index >= (NumAPointerDevices + NumSPointerDevices)
     ) {
         TheEvent = NULL;

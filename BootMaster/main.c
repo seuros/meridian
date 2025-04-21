@@ -1978,8 +1978,8 @@ BOOLEAN HandleToolSelection (
 
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_LINE_NORMAL,
-        L"Returned '%d' (%s) from Menu Screen Option ... \"%s\" in Function:- '%a'",
-        MenuExit, MenuExitInfo (MenuExit), ChosenOption->Title, __func__
+        L"Returned '%d' (%s) from Menu Screen Option in '%a' Call ... %s",
+        MenuExit, MenuExitInfo (MenuExit), __func__, ChosenOption->Title
     );
     LOG_MSG("\n\n");
     LOG_MSG("Received User Input:");
@@ -2032,7 +2032,7 @@ BOOLEAN ShowInfoRecoveryMac (
         if (ToolInfoMenu == NULL) break;
 
         i = 0;
-        for (;;) {
+        while (1) {
             FileName = FindCommaDelimited (
                 GlobalConfig.MacOSRecoveryFiles, i++
             );
@@ -2076,7 +2076,7 @@ BOOLEAN ShowInfoRecoveryMac (
             } // for VolumeIndex = 0
 
             MY_FREE_POOL(FileName);
-        } // for ;;
+        } // while {Infinite}
 
 
 // DA-TAG: Limit to TianoCore
@@ -2183,7 +2183,7 @@ BOOLEAN ShowInfoRecoveryWin (
 
         for (i = 0; i < RecoveryWinEntryItemsCount; i++) {
             j = 0;
-            for (;;) {
+            while (1) {
                 FileName = FindCommaDelimited (
                     GlobalConfig.WindowsRecoveryFiles, j++
                 );
@@ -2228,7 +2228,7 @@ BOOLEAN ShowInfoRecoveryWin (
 
                 MY_FREE_POOL(RecoverVol);
                 MY_FREE_POOL(FileName);
-            } // for ;;
+            } // while {Infinite}
         } // for i = 0
 
         HandleToolMenu (
@@ -2600,16 +2600,30 @@ BOOLEAN ShowInfoCleanNvram (
         AddMenuInfoLine (ToolInfoMenu, L"",                                                         FALSE);
 
         i = 0;
-        while ((FilePath = FindCommaDelimited (GlobalConfig.ToolLocations, i++)) != NULL) {
+        while (1) {
+            FilePath = FindCommaDelimited (
+                GlobalConfig.ToolLocations, i++
+            );
+            if (FilePath == NULL) break;
+
             j = 0;
-            while ((FileName = FindCommaDelimited (NVRAMCLEAN_FILES, j++)) != NULL) {
-                AddMenuInfoLine (ToolInfoMenu, PoolPrint (L"%s\\%s", FilePath, FileName), TRUE);
+            while (1) {
+                FileName = FindCommaDelimited (
+                    NVRAMCLEAN_FILES, j++
+                );
+                if (FileName == NULL) break;
+
+                AddMenuInfoLine (
+                    ToolInfoMenu,
+                    PoolPrint (L"%s\\%s", FilePath, FileName),
+                    TRUE
+                );
 
                 MY_FREE_POOL(FileName);
-            } // while
+            } // while {Infinite} (Inner)
 
             MY_FREE_POOL(FilePath);
-        } // while
+        } // while {Infinite} (Outer)
 
         AddMenuInfoLine (ToolInfoMenu, L"", FALSE);
 
@@ -2640,8 +2654,8 @@ BOOLEAN ShowInfoCleanNvram (
 
         #if REFIT_DEBUG > 0
         ALT_LOG(1, LOG_LINE_NORMAL,
-            L"Returned '%d' (%s) from Menu Screen Option ... \"%s\" in Function:- '%a'",
-            MenuExit, MenuExitInfo (MenuExit), ChosenOption->Title, __func__
+            L"Returned '%d' (%s) from Menu Screen Option in '%a' Call ... %s",
+            MenuExit, MenuExitInfo (MenuExit), __func__, ChosenOption->Title
         );
         LOG_MSG("Received User Input:");
         LOG_MSG("%s  - %s", OffsetNext, ChosenOption->Title);
@@ -3343,11 +3357,12 @@ VOID AdjustDefaultSelection (VOID) {
     i = 0;
     FoundOnce    =         FormatLog = FALSE;
     PreviousBoot = NewCommaDelimited =  NULL;
-    while (
-        !FoundOnce                             &&
-        GlobalConfig.DefaultSelection != NULL  &&
-        (Element = FindCommaDelimited (GlobalConfig.DefaultSelection, i++)) != NULL
-    ) {
+    while (GlobalConfig.DefaultSelection != NULL && !FoundOnce) {
+        Element = FindCommaDelimited (
+            GlobalConfig.DefaultSelection, i++
+        );
+        if (Element == NULL) break;
+
         Ignore = FALSE;
         if (MyStriCmp (Element, L"+")) {
             if (GlobalConfig.TransientBoot             &&
@@ -5055,11 +5070,12 @@ EFI_STATUS EFIAPI efi_main (
                 else {
                     FoundVentoy = FALSE;
                     i = 0;
-                    while (
-                        !FoundVentoy              &&
-                        GlobalConfig.HandleVentoy &&
-                        (VentoyName = FindCommaDelimited (VENTOY_NAMES, i++)) != NULL
-                    ) {
+                    while (GlobalConfig.HandleVentoy && !FoundVentoy) {
+                        VentoyName = FindCommaDelimited (
+                            VENTOY_NAMES, i++
+                        );
+                        if (VentoyName == NULL) break;
+
                         if (MyStrBegins (VentoyName, EntryVol->VolName)) {
                             FoundVentoy = TRUE;
                         }
@@ -5336,15 +5352,19 @@ EFI_STATUS EFIAPI efi_main (
                 }
 
                 i = 0;
-                while (
-                    !FoundTool &&
-                    (FilePath = FindCommaDelimited (GlobalConfig.ToolLocations, i++)) != NULL
-                ) {
+                while (!FoundTool) {
+                    FilePath = FindCommaDelimited (
+                        GlobalConfig.ToolLocations, i++
+                    );
+                    if (FilePath == NULL) break;
+
                     k = 0;
-                    while (
-                        !FoundTool &&
-                        (FileName = FindCommaDelimited (NVRAMCLEAN_FILES, k++)) != NULL
-                    ) {
+                    while (!FoundTool) { // Delibrate
+                        FileName = FindCommaDelimited (
+                            NVRAMCLEAN_FILES, k++
+                        );
+                        if (FileName == NULL) break;
+
                         for (i = 0; i < VolumesCount; i++) {
                             // Temp string holder
                             MsgStr = PoolPrint (L"%s\\%s", FilePath, FileName);
@@ -5404,9 +5424,13 @@ EFI_STATUS EFIAPI efi_main (
                 #endif
 
                 i = 0;
-                VarNVram = NULL;
                 Status = (gVarsDir != NULL) ? EFI_SUCCESS : FindVarsDir();
-                while ((VarNVram = FindCommaDelimited (RP_NVRAM_VARIABLES, i++)) != NULL) {
+                while (1) {
+                    VarNVram = FindCommaDelimited (
+                        RP_NVRAM_VARIABLES, i++
+                    );
+                    if (VarNVram == NULL) break;
+
                     // Clear Emulated Variable Storage
                     if (!EFI_ERROR(Status)) {
                         egSaveFile (gVarsDir, VarNVram, NULL, 0);
@@ -5417,7 +5441,7 @@ EFI_STATUS EFIAPI efi_main (
                     SetHardwareNvramVariable (VarNVram, &RefindPlusOldGuid, AccessFlagsFull, 0, NULL);
 
                     MY_FREE_POOL(VarNVram);
-                } // while
+                } // while {Infinite}
 
                 // Force nvRAM garbage collection on Macs
                 if (AppleFirmware) {

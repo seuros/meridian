@@ -1,7 +1,7 @@
 # REMOTE BUILD (GITHUB)
 
 RefindPlus can be built by leveraging GitHub's Workflow Artefact creation and storage capabilities.\
-A GitHub `Workflow Action` is provided in this repository to facilitate this.
+A GitHub `Workflow Action` is included in this repository to facilitate this.
 
 - Navigate to https://github.com/RefindPlusRepo/RefindPlus and fork the repository.
 - Navigate to `https://github.com/YOUR_GITHUB_USERNAME_GOES_HERE/RefindPlus.git`.
@@ -18,7 +18,7 @@ A GitHub `Workflow Action` is provided in this repository to facilitate this.
 >
 > Replace `YOUR_GITHUB_USERNAME_GOES_HERE` above with your actual GitHub User Name.
 
-Once the action run is completed, click on the action instance displayed and look for `Artifacts` near the bottom of the page for available builds to download. The artefacts will be automatically removed from your repository fork after a period of time.
+Once the action run is completed, click on the action instance displayed and look for `"Artifacts"` near the bottom of the page for available builds to download. The artefacts will be automatically removed from your repository fork after a period of time.
 
 > [!TIP]
 >
@@ -34,6 +34,7 @@ Once the action run is completed, click on the action instance displayed and loo
 # LOCAL BUILD (DOCKER)
 
 RefindPlus can be built on any operating system environment that supports Docker virtualisation. A Docker image has been created by a third party developer and is available on the DockerHub website (https://hub.docker.com/r/xaionaro2/edk2-builder).
+
 Please refer to that project's repository (https://github.com/xaionaro/edk2-builder-docker) for details and support on this option.
 
 <br><br>
@@ -75,10 +76,10 @@ $ xcode-select --install
 
 While Xcode provides a full development environment as well as a suite of different utilities, it does not provide all the tools required for TianoCore EDK II development as required to build RefindPlus on Mac OS natively.
 
-This guide focuses on using HomeBrew to provide the required tools but equivalent steps can be taken in MacPorts and Fink; which may offer better support for older versions of Mac OS.
+This guide focuses on using HomeBrew to provide the required tools but equivalent steps can be taken in MacPorts and Fink. These may offer better support for older versions of Mac OS.\
 Substitute equivalent commands in as required.
 
-You will find installation instructions on the HomeBrew website (https://brew.sh)
+You will find HomeBrew installation instructions on the project website (https://brew.sh)
 
 ### Install Build Assembler
 
@@ -98,24 +99,27 @@ $ brew install acpica && brew upgrade acpica
 
 ### Install Image Converter
 
-The mtoc/ocmtoc utilities convert the Mac OS Mach-O image format to the PE/COFF format required by the UEFI specifications.
+The mtoc/ocmtoc utilities convert the Mach-O image format generated on Mac OS to the PE/COFF format required by the UEFI specifications.
+
+> [!CAUTION]
+>
+> Only install one of `mtoc` or `ocmtoc` at a time.
+
+On Mac OS 11.x Big Sur/Newer, use...
+```
+$ brew uninstall mtoc && brew install ocmtoc && brew upgrade ocmtoc
+```
 
 On Mac OS 10.15 Catalina/Older, use...
 ```
 $ brew uninstall ocmtoc && brew install mtoc && brew upgrade mtoc
 ```
 
-On Mac OS 11.x Big Sur/Newer or if MTOC fails on Catalina/Older, use...
-```
-$ brew uninstall mtoc && brew install ocmtoc && brew upgrade ocmtoc
-```
-
-> [!CAUTION]
+> [!NOTE]
 >
-> Only install one of `mtoc` or `ocmtoc` at a time.
-
-`mtoc` and `ocmtoc` are only available as packages on HomeBrew.
-Prebuilt versions of `ocmtoc` can be found here: https://github.com/acidanthera/ocmtoc/releases
+> `ocmtoc` and `mtoc` are currently only available as packages on HomeBrew but pre-built versions of `ocmtoc` for other setups can be found here: https://github.com/acidanthera/ocmtoc/releases.
+>
+> `ocmtoc` is only available as an HomeBrew package on Mac OS 11.x Big Sur and newer but the pre-built `ocmtoc` files can be used on Mac OS versions back to 10.9 Mavericks.
 
 ### Install Binutlis (Optional)
 

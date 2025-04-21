@@ -17,7 +17,13 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
+/*
+ * Modified for RefindPlus
+ * Copyright (c) 2020 - 2025 Dayo Akanji (sf.net/u/dakanji/profile)
+ *
+ * Modifications distributed under the preceding terms.
+ */
 
 #ifndef __REFINDPLUS_POINTERDEVICE_H_
 #define __REFINDPLUS_POINTERDEVICE_H_
@@ -34,32 +40,50 @@
 #endif
 
 typedef struct PointerStateStruct {
-    UINTN X, Y;
-    BOOLEAN Press;
+    UINTN         X;
+    UINTN         Y;
+    BOOLEAN   Press;
     BOOLEAN Holding;
 } POINTER_STATE;
 
+#ifdef  INT32_MIN
+#undef  INT32_MIN
+#endif
 #define INT32_MIN    ((INT32) 0x80000000)         // -2,147,483,648
+
+#ifdef  INT32_MAX
+#undef  INT32_MAX
+#endif
 #define INT32_MAX    ((INT32) 0x7FFFFFFF)         //  2,147,483,647
 
+#ifdef  UINTN_MIN
+#undef  UINTN_MIN
+#endif
 #define UINTN_MIN    ((UINTN) 0)                  //  Always 0
+
+#ifdef  UINTN_MAX
+#undef  UINTN_MAX
+#endif
 #if defined(EFI32)
-#   define UINTN_MAX ((UINTN) 0xFFFFFFFF)         //  4,294,967,295
+#define UINTN_MAX    ((UINTN) 0xFFFFFFFF)         //  4,294,967,295
 #else
-#   define UINTN_MAX ((UINTN) 0xFFFFFFFFFFFFFFFF) //  18,446,744,073,709,551,615
+#define UINTN_MAX    ((UINTN) 0xFFFFFFFFFFFFFFFF) //  18,446,744,073,709,551,615
 #endif
 
-VOID pdInitialize();
-VOID pdCleanup();
-BOOLEAN pdAvailable();
-UINTN pdCount();
+
+VOID pdDraw (VOID);
+VOID pdClear (VOID);
+VOID pdCleanup (VOID);
+VOID pdInitialize (VOID);
+
+UINTN pdCount (VOID);
+
+BOOLEAN pdAvailable (VOID);
+
 EFI_EVENT pdWaitEvent(IN UINTN Index);
-EFI_STATUS pdUpdateState();
-POINTER_STATE pdGetState();
 
-VOID pdDraw();
-VOID pdClear();
+EFI_STATUS pdUpdateState (VOID);
+
+POINTER_STATE pdGetState (VOID);
 
 #endif
-
-/* EOF */

@@ -661,12 +661,12 @@ VOID MergeStringsHelper (
         if (UniqueOnly && AddChar) {
             //BREAD_CRUMB(L"%a:  8a 2a 1", __func__);
             i = 0;
-            TestStr = NULL;
+            while (!SkipMerge) {
+                TestStr = FindCommaDelimited (
+                    NewString, i++
+                );
+                if (TestStr == NULL) break;
 
-            while (
-                !SkipMerge &&
-                (TestStr = FindCommaDelimited (NewString, i++)) != NULL
-            ) {
                 //BREAD_CRUMB(L"%a:  8a 2a 1a 1 - WHILE LOOP:- START", __func__);
                 NestedStrStr = TRUE;
                 if (MyStriCmp (TestStr, Second)) {
@@ -834,10 +834,15 @@ VOID MergeUniqueItems (
     }
 
     i = 0;
-    while ((Item = FindCommaDelimited (InString, i++)) != NULL) {
+    while (1) {
+        Item = FindCommaDelimited (
+            InString, i++
+        );
+        if (Item == NULL) break;
+
         MergeUniqueStrings (MergeTo, Item, AddChar);
         MY_FREE_POOL(Item);
-    } // while
+    } // while {Infinite}
 } // VOID MergeUniqueItems()
 
 // Replaces special characters in the input string with a space.
@@ -1017,10 +1022,12 @@ CHAR16 * FindNumbers (
     // Find extra_kernel_version_strings
     EndOfElement = i = 0;
     ExtraFound = NULL;
-    while (
-        ExtraFound == NULL &&
-        (LookFor = FindCommaDelimited (GlobalConfig.ExtraKernelVersionStrings, i++)) != NULL
-    ) {
+    while (ExtraFound == NULL) {
+        LookFor = FindCommaDelimited (
+            GlobalConfig.ExtraKernelVersionStrings, i++
+        );
+        if (LookFor == NULL) break;
+
         ExtraFound = MyStrStr (InString, LookFor);
         if (ExtraFound != NULL) {
             StartOfElement = ExtraFound - InString;
@@ -1281,10 +1288,12 @@ BOOLEAN IsListMatch (
 
     i     =     0;
     Found = FALSE;
-    while (
-        !Found &&
-        (OnePattern = FindCommaDelimited (List, i++)) != NULL
-    ) {
+    while (!Found) {
+        OnePattern = FindCommaDelimited (
+            List, i++
+        );
+        if (OnePattern == NULL) break;
+
         if (RefitMetaiMatch (TestString, OnePattern)) {
             Found = TRUE;
         }
@@ -1302,7 +1311,7 @@ BOOLEAN IsListItem (
 ) {
     UINTN     i;
     BOOLEAN   Found;
-    CHAR16   *OneElement;
+    CHAR16   *OneItem;
 
 
     if (SmallString == NULL || List == NULL) {
@@ -1311,15 +1320,17 @@ BOOLEAN IsListItem (
 
     i = 0;
     Found = FALSE;
-    while (
-        !Found &&
-        (OneElement = FindCommaDelimited (List, i++)) != NULL
-    ) {
-        if (MyStriCmp (OneElement, SmallString)) {
+    while (!Found) {
+        OneItem = FindCommaDelimited (
+            List, i++
+        );
+        if (OneItem == NULL) break;
+
+        if (MyStriCmp (OneItem, SmallString)) {
             Found = TRUE;
         }
 
-        MY_FREE_POOL(OneElement);
+        MY_FREE_POOL(OneItem);
     } // while
 
    return Found;
@@ -1342,10 +1353,12 @@ BOOLEAN IsListItemSubstringIn (
 
     i = 0;
     Found = FALSE;
-    while (
-        !Found &&
-        (OneElement = FindCommaDelimited (List, i++)) != NULL
-    ) {
+    while (!Found) {
+        OneElement = FindCommaDelimited (
+            List, i++
+        );
+        if (OneElement == NULL) break;
+
         ElementLength = StrLen (OneElement);
         if (ElementLength > 0                   &&
             ElementLength <= StrLen (BigString) &&

@@ -555,9 +555,9 @@ inflate_codes_in_window (grub_gzio_t gzio)
   w = gzio->wp;                 /* initialize window position */
 
   /* inflate the coded data */
-  ml = mask_bits[gzio->bl];             /* precompute masks for speed */
+  ml = mask_bits[gzio->bl];     /* precompute masks for speed */
   md = mask_bits[gzio->bd];
-  for (;;)                      /* do until end of block */
+  while (1)                     /* do until end of block */
     {
       if (! gzio->code_state)
         {

@@ -704,10 +704,12 @@ EG_IMAGE * egLoadIconAnyType (
 
     i = 0;
     Image = NULL;
-    while (
-        Image == NULL &&
-        (Extension = FindCommaDelimited (ICON_EXTENSIONS, i++)) != NULL
-    ) {
+    while (Image == NULL) {
+        Extension = FindCommaDelimited (
+            ICON_EXTENSIONS, i++
+        );
+        if (Extension == NULL) break;
+
         if (SubdirName != NULL) {
             FileName = PoolPrint (L"%s\\%s.%s", SubdirName, BaseName, Extension);
         }

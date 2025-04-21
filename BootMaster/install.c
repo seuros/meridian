@@ -366,10 +366,12 @@ EFI_STATUS CreateDirectories (
     TheDir = NULL;
     FileName = NULL;
     Status = EFI_SUCCESS;
-    while (
-        !EFI_ERROR(Status) &&
-        (FileName = FindCommaDelimited (INST_DIRECTORIES, i++)) != NULL
-    ) {
+    while (1) {
+        FileName = FindCommaDelimited (
+            INST_DIRECTORIES, i++
+        );
+        if (FileName == NULL) break;
+
         REFIT_CALL_5_WRAPPER(
             BaseDir->Open, BaseDir,
             &TheDir, FileName,
@@ -380,7 +382,8 @@ EFI_STATUS CreateDirectories (
 
         MY_FREE_POOL(FileName);
         MY_FREE_POOL(TheDir);
-    } // while
+        if (EFI_ERROR(Status)) break;
+    } // while {Infinite}
 
     return Status;
 } // static EFI_STATUS CreateDirectories()
@@ -516,6 +519,7 @@ EFI_STATUS CopyDirectory (
     CHAR16            *DestDirName
 ) {
     EFI_STATUS         Status;
+    BOOLEAN            CheckIter;
     CHAR16            *DestFileName;
     CHAR16            *SourceFileName;
     EFI_FILE_INFO     *DirEntry;
@@ -525,7 +529,10 @@ EFI_STATUS CopyDirectory (
     DirIterOpen (SourceDirPtr, SourceDirName, &DirIter);
 
     Status = EFI_SUCCESS;
-    while (!EFI_ERROR(Status) && DirIterNext (&DirIter, 2, NULL, &DirEntry)) {
+    while (!EFI_ERROR(Status)) {
+        CheckIter = DirIterNext (&DirIter, 2, NULL, &DirEntry);
+        if (!CheckIter) break;
+
         SourceFileName = PoolPrint (L"%s\\%s", SourceDirName, DirEntry->FileName);
         DestFileName   = PoolPrint (L"%s\\%s", DestDirName, DirEntry->FileName);
         Status = CopyOneFile (
@@ -541,11 +548,11 @@ EFI_STATUS CopyDirectory (
     return Status;
 } // static EFI_STATUS CopyDirectory()
 
-// Copy Linux drivers for detected filesystems, but not for undetected filesystems.
-// Note: Does NOT copy HFS+ driver on Apple hardware even if HFS+ is detected;
-// but it DOES copy the HFS+ driver on non-Apple hardware if HFS+ is detected,
-// even though HFS+ is not technically a Linux filesystem, since HFS+ CAN be used
-// as a Linux /boot partition. That is weird, but it does work.
+// Copy Linux drivers for detected, but not for undetected, filesystems.
+// Note: Does *NOT* copy HFS+ drivers on Apple hardware even if HFS+
+//       is detected but copies the drivers on non-Apple hardware if HFS+
+//       is detected as HFS+ *CAN* be used for Linux "/boot" partitions
+//       even though HFS+ is, technically, not a "Linux filesystem".
 static
 EFI_STATUS CopyDrivers (
     EFI_FILE_PROTOCOL *SourceDirPtr,

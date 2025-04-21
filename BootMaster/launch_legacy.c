@@ -1284,11 +1284,12 @@ VOID ScanLegacyVolume (
                 if (!FoundVentoy) {
                     BREAD_CRUMB(L"%a:  5a 1a 1a 2a 1", __func__);
                     i = 0;
-                    while (
-                        ShowVolume &&
-                        GlobalConfig.HandleVentoy &&
-                        (VentoyName = FindCommaDelimited (VENTOY_NAMES, i++)) != NULL
-                    ) {
+                    while (ShowVolume && GlobalConfig.HandleVentoy) {
+                        VentoyName = FindCommaDelimited (
+                            VENTOY_NAMES, i++
+                        );
+                        if (VentoyName == NULL) break;
+
                         BREAD_CRUMB(L"%a:  5a 1a 1a 2a 1a 1 - WHILE LOOP:- START ... Check for Ventoy Partition", __func__);
                         if (MyStrBegins (VentoyName, Volumes[VolumeIndex]->VolName)) {
                             BREAD_CRUMB(L"%a:  5a 1a 1a 2a 1a 1a 1 - Found ... Set Whole Disk 'Skip' Flag", __func__);

@@ -107,7 +107,7 @@ BOOLEAN ReadAllKeyStrokes (VOID) {
     EFI_INPUT_KEY       Key;
 
     GotKeyStrokes = FALSE;
-    for (;;) {
+    while (1) {
         Status = REFIT_CALL_2_WRAPPER(gST->ConIn->ReadKeyStroke, gST->ConIn, &Key);
         if (!EFI_ERROR(Status)) {
             GotKeyStrokes = TRUE;
@@ -115,7 +115,7 @@ BOOLEAN ReadAllKeyStrokes (VOID) {
         }
 
         break;
-    }
+    } // while {Infinite}
     return GotKeyStrokes;
 }
 

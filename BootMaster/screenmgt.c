@@ -926,7 +926,7 @@ BOOLEAN ReadAllKeyStrokes (VOID) {
     EmptyBuffer   = FALSE;
 
     if (FirstCall || !GlobalConfig.DirectBoot) {
-        for (;;) {
+        while (1) {
             Status = REFIT_CALL_2_WRAPPER(
                 gST->ConIn->ReadKeyStroke, gST->ConIn, &key
             );
@@ -1089,7 +1089,7 @@ VOID PauseForKey (VOID) {
         LOG_MSG("INFO: %s", MsgStr);
         #endif
 
-        for (;;) {
+        while (1) {
             WaitOut = WaitForInput (1000);
             if (WaitOut == INPUT_KEY) {
                 #if REFIT_DEBUG > 0
@@ -1235,14 +1235,14 @@ VOID RefitDeadLoop (VOID) {
     #if REFIT_DEBUG > 0
     MY_MUTELOGGER_SET;
     #endif
-    for (;;) {
+    while (1) {
         ReadAllKeyStrokes();
 
         REFIT_CALL_3_WRAPPER(
             gBS->WaitForEvent, 1,
             &gST->ConIn->WaitForKey, &index
         );
-    }
+    } // while {Infinite}
     #if REFIT_DEBUG > 0
     MY_MUTELOGGER_OFF;
     #endif

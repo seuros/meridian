@@ -900,7 +900,7 @@
 # to scan the "somedir" directory only on the filesystem named "myvol". If
 # a specified directory does not exist, it is ignored (no error message).
 #
-# Additionally scans "boot" and "@\boot" when commented out
+# Always scans "boot" and "@\boot" whether commented out or not
 #
 #also_scan_dirs ESP2:EFI/linux/kernels
 #also_scan_dirs @/kernels,@/root/boot

@@ -3,6 +3,15 @@ name: Build Artefacts
 on:
   workflow_dispatch:
     inputs:
+      build_type:
+        type: choice
+        description: 'Required Build Type(s)'
+        options:
+        - 'REL Only'
+        - 'DBG Only'
+        - 'NPT Only'
+        - 'REL and DBG'
+        - 'REL, DBG and NPT'
       commit_id:
         description: "Commit ID (Blank for GOPFix Latest)"
         required: false
@@ -10,7 +19,7 @@ on:
 jobs:
   create-binaries:
     name: Create Binaries
-    runs-on: macos-15
+    runs-on: macos-latest
 
     steps:
       - name: Get Repositories
@@ -55,19 +64,32 @@ jobs:
             git checkout "${BRANCH}"
             git reset --hard "${{ github.event.inputs.commit_id }}"
           fi
-          echo "BRANCH=${BRANCH}" >> $GITHUB_ENV
+          echo "BRANCH=${BRANCH}" >> "${GITHUB_ENV}"
 
       - name: Install Prerequisites
         shell: bash
         run: |
+          # Install Additional Build Tools
+          brew install nasm
+          brew install acpica
+          brew install ocmtoc
+
           # Install Final Python 2 Version
           curl -O https://www.python.org/ftp/python/2.7.18/python-2.7.18-macosx10.9.pkg
           sudo installer -pkg python-2.7.18-macosx10.9.pkg -target /
 
-          # Install Other Items
-          brew install nasm
-          brew install acpica
-          brew install ocmtoc
+      - name: Set Targets
+        shell: bash
+        run: |
+          case "${{ github.event.inputs.build_type }}" in
+            "REL and DBG") BUILD_TYPE="SOME" ;;
+            "REL Only")    BUILD_TYPE="REL" ;;
+            "DBG Only")    BUILD_TYPE="DBG" ;;
+            "NPT Only")    BUILD_TYPE="NPT" ;;
+            *)             BUILD_TYPE="ALL" ;;
+          esac
+          echo "BUILD_TYPE=${BUILD_TYPE}" >> "${GITHUB_ENV}"
+
       - name: Main Script
         env:
           TERM: xterm
@@ -75,24 +97,24 @@ jobs:
         run: |
           cd ~/Documents/RefindPlus/edk2/000-BuildScript || exit 1
           chmod +x RefindPlusBuilder.sh
-          ./RefindPlusBuilder.sh "${BRANCH}" ALL
+          ./RefindPlusBuilder.sh "${BRANCH}" "${BUILD_TYPE}"
 
       - name: Upload Artefact (RELEASE)
-        if: success()
+        if: success() && contains(github.event.inputs.build_type, 'REL')
         uses: actions/upload-artifact@v4
         with:
           name: x64_RefindPlus-Artefacts_REL
           path: ~/Documents/RefindPlus/edk2/Build/RefindPlus/RELEASE_XCODE5/x64/*.efi
 
       - name: Upload Artefact (DEBUG)
-        if: success()
+        if: success() && contains(github.event.inputs.build_type, 'DBG')
         uses: actions/upload-artifact@v4
         with:
           name: x64_RefindPlus-Artefacts_DBG
           path: ~/Documents/RefindPlus/edk2/Build/RefindPlus/DEBUG_XCODE5/x64/*.efi
 
       - name: Upload Artefact (NOOPT)
-        if: success()
+        if: success() && contains(github.event.inputs.build_type, 'NPT')
         uses: actions/upload-artifact@v4
         with:
           name: x64_RefindPlus-Artefacts_NPT

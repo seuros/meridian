@@ -128,8 +128,8 @@ jobs:
             body=$(jq -r '.body' issue.json)
             # Set the title and body as environment variables
             notice="# This Discussion Item is an Automated Converstion of Issue/Enhancement Item #${{ github.event.inputs.item_id }}\n\n$body"
-            echo "title=$title" >> $GITHUB_ENV
-            printf "body=%s\n" "$notice" >> $GITHUB_ENV
+            echo "title=$title" >> "${GITHUB_ENV}"
+            printf "body=%s\n" "${notice}" >> "${GITHUB_ENV}"
 
         # The 'category_id' below was derived from https://docs.github.com/en/graphql/overview/explorer
         # query {
@@ -159,8 +159,8 @@ jobs:
             }
             EOF)
             # Extract the discussion URL from the response
-            discussion_url=$(echo $response | jq -r '.html_url')
-            echo "discussion_url=$discussion_url" >> $GITHUB_ENV
+            discussion_url=$(echo ${response} | jq -r '.html_url')
+            echo "discussion_url=${discussion_url}" >> "${GITHUB_ENV}"
 
       - if: ${{ github.event.inputs.discussion_reason == 'Question/Comment-Only' }}
         name: Label - Add - Discussion - 3a
@@ -286,8 +286,9 @@ jobs:
           issue-number: ${{ github.event.inputs.item_id }}
           body: |
             Thank you for taking the time to report a problem with RefindPlus.
+
             However, at least one required item is missing.
-            This is typically debug log(s).
+            This is typically the debug log(s).
 
             Please kindly amend your post accordingly.
 
@@ -328,6 +329,7 @@ jobs:
           issue-number: ${{ github.event.inputs.item_id }}
           body: |
             Thank you for taking the time to suggest improvements to RefindPlus.
+
             However, at least one required item is missing.
             This is typically background information.
 

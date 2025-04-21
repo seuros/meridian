@@ -53,19 +53,19 @@ jobs:
               break
             fi
           done
-          echo "author=$PR_AUTHOR" >> $GITHUB_ENV
-          echo "closer=$PR_CLOSER" >> $GITHUB_ENV
-          echo "has_accepted=$HAS_ACCEPTED" >> $GITHUB_ENV
+          echo "author=${PR_AUTHOR}" >> "${GITHUB_ENV}"
+          echo "closer=${PR_CLOSER}" >> "${GITHUB_ENV}"
+          echo "has_accepted=${HAS_ACCEPTED}" >> "${GITHUB_ENV}"
 
       - name: Determine Action
         id: determine_action
         run: |
           if [[ "${{ env.closer }}" == "${{ env.author }}" ]]; then
-            echo "action=withdrawn" >> $GITHUB_ENV
+            echo "action=withdrawn" >> "${GITHUB_ENV}"
           elif [[ "${{ env.closer }}" == "${{ github.repository_owner }}" ]]; then
-            echo "action=declined" >> $GITHUB_ENV
+            echo "action=declined" >> "${GITHUB_ENV}"
           else
-            echo "action=merged" >> $GITHUB_ENV
+            echo "action=merged" >> "${GITHUB_ENV}"
           fi
 
       - name: Remove Unwanted Labels

@@ -86,6 +86,7 @@ CHAR16 * FindInitrd (
     CHAR16              *InitrdPostNum;
     CHAR16              *KernelVersion;
     CHAR16              *InitrdVersion;
+    BOOLEAN              CheckIter;
     STRING_LIST         *InitrdNames;
     STRING_LIST         *FinalInitrdName;
     STRING_LIST         *MaxSharedInitrd;
@@ -143,7 +144,10 @@ CHAR16 * FindInitrd (
 
     BREAD_CRUMB(L"%a:  8", __func__);
     InitrdNames = FinalInitrdName = CurrentInitrdName = NULL;
-    while (DirIterNext (&DirIter, 2, L"init*,booster*", &DirEntry)) {
+    while (1) {
+        CheckIter = DirIterNext (&DirIter, 2, L"init*,booster*", &DirEntry);
+        if (!CheckIter) break;
+
         BREAD_CRUMB(L"%a:  8a 0", __func__);
         InitrdVersion = FindNumbers (DirEntry->FileName);
 
@@ -195,7 +199,7 @@ CHAR16 * FindInitrd (
 
         BREAD_CRUMB(L"%a:  8a 3 - WHILE LOOP:- END", __func__);
         LOG_SEP(L"X");
-    } // while
+    } // while {Infinite}
 
     BREAD_CRUMB(L"%a:  9", __func__);
     InitrdName = NULL;
@@ -283,10 +287,10 @@ CHAR16 * FindInitrd (
 // initrd= line or a `%v` variable. Done to enable overriding the default initrd
 // selection in a refindplus_linux.conf or refind_linux.conf file's options list.
 // If a `%v` substring/variable is found in Options, it is replaced with the
-// initrd version string. This is available to allow for more complex customisation
-// of initrd options.
-// Returns a pointer to a new string. The calling function is responsible for
-// freeing its memory.
+// initrd version string to allow more complex customisation of initrd options.
+//
+// Returns a pointer to a new string.
+// The calling function is responsible for freeing allocated memory.
 CHAR16 * AddInitrdToOptions (
     CHAR16 *Options,
     CHAR16 *InitrdPath
@@ -310,7 +314,7 @@ CHAR16 * AddInitrdToOptions (
     BREAD_CRUMB(L"%a:  2", __func__);
     if (InitrdPath != NULL) {
         BREAD_CRUMB(L"%a:  2a 1", __func__);
-        if (FindSubStr (NewOptions, L"%v")) {
+        if (NewOptions != NULL && FindSubStr (NewOptions, L"%v")) {
             BREAD_CRUMB(L"%a:  2a 1a 1", __func__);
             InitrdVersion = FindNumbers (InitrdPath);
 
@@ -320,12 +324,16 @@ CHAR16 * AddInitrdToOptions (
             BREAD_CRUMB(L"%a:  2a 1a 3", __func__);
             MY_FREE_POOL(InitrdVersion);
         }
-        else if (!FindSubStr (NewOptions, L"initrd=")) {
+        else {
             BREAD_CRUMB(L"%a:  2a 1b 1", __func__);
-            MergeStrings (&NewOptions, L"initrd=", L' ');
+            if (NewOptions == NULL || !FindSubStr (NewOptions, L"initrd=")) {
+                BREAD_CRUMB(L"%a:  2a 1b 1a 1", __func__);
+                MergeStrings (&NewOptions, L"initrd=", L' ');
 
+                BREAD_CRUMB(L"%a:  2a 1b 1a 2", __func__);
+                MergeStrings (&NewOptions, InitrdPath, 0);
+            }
             BREAD_CRUMB(L"%a:  2a 1b 2", __func__);
-            MergeStrings (&NewOptions, InitrdPath, 0);
         }
         BREAD_CRUMB(L"%a:  2a 2", __func__);
     }
@@ -420,7 +428,6 @@ VOID ParseReleaseFile (
     UINTN         TokenCount;
     CHAR16      **TokenList;
     CHAR16       *TempName;
-    BOOLEAN       Updated;
     BOOLEAN       Depart;
     REFIT_FILE   *File;
 
@@ -439,7 +446,6 @@ VOID ParseReleaseFile (
 
     FileSize = 0;
     TempName = NULL;
-    Updated  = FALSE;
     Depart   = FALSE;
 
     Status = RefitReadFile (
@@ -447,39 +453,40 @@ VOID ParseReleaseFile (
         File, &FileSize
     );
     if (!EFI_ERROR(Status)) {
-        for (;;) {
+        while (1) {
             TokenCount = ReadTokenLine (File, &TokenList);
             if (TokenCount == 0) {
                 // Flag to exit loop
                 Depart = TRUE;
             }
-            else if (
-                TokenCount > 1 &&
-                (
-                    MyStriCmp (TokenList[0], L"ID") ||
-                    MyStriCmp (TokenList[0], L"NAME") ||
-                    MyStriCmp (TokenList[0], L"DISTRIB_ID")
-                )
-            ) {
-                if (FirstOnly &&
-                    MyStriCmp (TokenList[0], L"ID")
+            else {
+                if (TokenCount > 1 &&
+                    (
+                        MyStriCmp (TokenList[0], L"ID") ||
+                        MyStriCmp (TokenList[0], L"NAME") ||
+                        MyStriCmp (TokenList[0], L"DISTRIB_ID")
+                    )
                 ) {
-                    // Exit loop on 'ID' if 'FirstOnly' is true
-                    Updated = TRUE;
-                }
+                    if (FirstOnly &&
+                        (
+                            MyStriCmp (TokenList[0], L"ID") ||
+                            MyStriCmp (TokenList[0], L"DISTRIB_ID")
+                        )
+                    ) {
+                        // Exit on 'ID' or 'DISTRIB_ID' if 'FirstOnly' is true
+                        Depart = TRUE;
+                    }
 
-                MY_FREE_POOL(TempName);
-                TempName = StrDuplicate (TokenList[1]);
-                MergeUniqueWords (OSIconName, TempName, L',');
+                    MY_FREE_POOL(TempName);
+                    TempName = StrDuplicate (TokenList[1]);
+                    MergeUniqueWords (OSIconName, TempName, L',');
+                }
             }
 
             FreeTokenLine (&TokenList, &TokenCount);
 
-            if (Depart || (Updated && FirstOnly)) {
-                // Exit Loop Here
-                break;
-            }
-        } // for ;;
+            if (Depart) break;
+        } // while {Infinite}
     }
 
     MY_FREE_FILE(File);
@@ -578,10 +585,12 @@ VOID GuessLinuxDistribution (
         Found = FALSE;
 
         i = 0;
-        while (
-            !Found &&
-            (LinuxName = FindCommaDelimited (MAIN_LINUX_DISTROS, i++)) != NULL
-        ) {
+        while (!Found) {
+            LinuxName = FindCommaDelimited (
+                MAIN_LINUX_DISTROS, i++
+            );
+            if (LinuxName == NULL) break;
+
             ShowName = GetShowName (LinuxName);
             if (FindSubStr (LoaderPath, ShowName)) {
                 Found = TRUE;
@@ -665,7 +674,7 @@ VOID AddKernelToSubmenu (
 
     BREAD_CRUMB(L"%a:  6", __func__);
     Path = VolName = SubmenuName = NULL;
-    for (;;) {
+    while (1) {
         TokenCount = ReadTokenLine (File, &TokenList);
         if (TokenCount < 2) {
             FreeTokenLine (&TokenList, &TokenCount);
@@ -726,7 +735,7 @@ VOID AddKernelToSubmenu (
 
         BREAD_CRUMB(L"%a: 6a 5 - WHILE LOOP:- END", __func__);
         LOG_SEP(L"X");
-    } // for ;;
+    } // while {Infinite}
 
     BREAD_CRUMB(L"%a:  7", __func__);
     MY_FREE_POOL(KernelVersion);

@@ -136,8 +136,8 @@ VOID LogExit (
     IN  CHAR16     *ChosenOptionTitle
 ) {
     ALT_LOG(1, LOG_LINE_NORMAL,
-        L"Returned '%d' (%s) from Menu Screen Option ... \"%s\" in Function:- '%a'",
-        MenuExit, MenuExitInfo (MenuExit), ChosenOptionTitle, FunctionName
+        L"Returned '%d' (%s) from Menu Screen Option in '%a' Call ... %s",
+        MenuExit, MenuExitInfo (MenuExit), FunctionName, ChosenOptionTitle
     );
 }
 #endif
@@ -579,7 +579,7 @@ VOID SaveScreen (VOID) {
     // Start with BaseWait
     BaseWait = 3750;
     TimeWait = BaseWait;
-    for (;;) {
+    while (1) {
         ++OurIndex;
 
         if (OurIndex > 30) {
@@ -655,7 +655,7 @@ VOID SaveScreen (VOID) {
         ) {
             break;
         }
-    } // for
+    } // while {Infinite}
 
     #if REFIT_DEBUG > 0
     MsgStr = L"Activity Detected ... Halt Screensaver";
@@ -2044,7 +2044,12 @@ INTN FindMenuShortcutEntry (
 
     i = j = 0;
     FoundMatch = FALSE;
-    while ((Shortcut = FindCommaDelimited (Defaults, j++)) != NULL) {
+    while (1) {
+        Shortcut = FindCommaDelimited (
+            Defaults, j++
+        );
+        if (Shortcut == NULL) break;
+
         if (StrLen (Shortcut) > 1) {
             for (i = 0; i < Screen->EntryCount; i++) {
                 if (MyStriCmp (Shortcut, Screen->Entries[i]->Title)) {
@@ -2084,7 +2089,7 @@ INTN FindMenuShortcutEntry (
         if (FoundMatch) {
             return i;
         }
-    } // while
+    } // while {Infinite}
 
     return -1;
 } // INTN FindMenuShortcutEntry()
@@ -2387,7 +2392,7 @@ UINTN DrawMenuScreen (
 
             if (StyleFunc != MainMenuStyle && pdGetState().Press) {
                 // Prevent user from getting stuck on submenus
-                // Only the 'About' screen is currently reachable without a keyboard
+                // Only 'About' screen currently reachable without keyboard
                 MenuExit = MENU_EXIT_ENTER;
                 break;
             }
@@ -3179,11 +3184,18 @@ VOID MainMenuStyle (
     #endif
 
     INTN   i;
-    UINTN  row0Count, row1Count, row1PosX, row1PosXRunning;
+    UINTN  row0Count;
+    UINTN  row1Count;
+    UINTN  row1PosX;
+    UINTN  row1PosXRunning;
 
-    static UINTN  row0PosX, row0PosXRunning, row1PosY, row0Loaders;
-    static UINTN *itemPosX;
-    static UINTN  row0PosY, textPosY;
+    static UINTN  row0PosX        = 0;
+    static UINTN  row0PosXRunning = 0;
+    static UINTN  row1PosY        = 0;
+    static UINTN  row0Loaders     = 0;
+    static UINTN *itemPosX        = 0;
+    static UINTN  row0PosY        = 0;
+    static UINTN  textPosY        = 0;
 
 
     State->ScrollMode = SCROLL_MODE_ICONS;
@@ -3194,7 +3206,6 @@ VOID MainMenuStyle (
             // Layout
             row0Count   = 0;
             row1Count   = 0;
-            row0Loaders = 0;
 
             for (i = 0; i <= State->MaxIndex; i++) {
                 if (Screen->Entries[i]->Row == 1) {
@@ -3292,11 +3303,17 @@ UINTN FindMainMenuItem (
     UINTN  i;
     UINTN  itemRow;
     UINTN  ItemIndex;
-    UINTN  row0Count, row1Count, row1PosX, row1PosXRunning;
+    UINTN  row0Loaders;
+    UINTN  row0Count;
+    UINTN  row1Count;
+    UINTN  row1PosX;
+    UINTN  row1PosXRunning;
 
-    static UINTN  row0PosX, row0PosXRunning, row1PosY, row0Loaders;
-    static UINTN *itemPosX;
-    static UINTN  row0PosY;
+    static UINTN  row0PosX        = 0;
+    static UINTN  row1PosY        = 0;
+    static UINTN  row0PosXRunning = 0;
+    static UINTN *itemPosX        = 0;
+    static UINTN  row0PosY        = 0;
 
 
     row0Count = 0;
@@ -3633,14 +3650,19 @@ VOID ManageHiddenTags (VOID) {
     OneElement    = NULL;
     MenuEntryItem = NULL;
     i = 0;
-    while ((OneElement = FindCommaDelimited (AllTags, i++)) != NULL) {
+    while (1) {
+        OneElement = FindCommaDelimited (
+            AllTags, i++
+        );
+        if (OneElement == NULL) break;
+
         MenuEntryItem  = AllocateZeroPool (sizeof (REFIT_MENU_ENTRY));
         MenuEntryItem->Title = StrDuplicate (OneElement);
         MenuEntryItem->Tag   = TAG_RETURN;
         AddMenuEntry (RestoreItemMenu, MenuEntryItem);
 
         MY_FREE_POOL(OneElement);
-    } // while
+    } // while {Infinite}
 
     do {
         if (!GetMenuEntryReturn (&RestoreItemMenu)) {
@@ -4127,8 +4149,8 @@ UINTN RunMainMenu (
                 BREAD_CRUMB(L"%a:  9a 3a 1b 2", __func__);
                 #if REFIT_DEBUG > 0
                 ALT_LOG(1, LOG_LINE_NORMAL,
-                    L"Returned '%d' (%s) from Sub Screen \"%s\" Option in Function:- '%a'",
-                    MenuExit, MenuExitInfo (MenuExit), TempChosenOption->Title, __func__
+                    L"Returned '%d' (%s) from Sub Screen Option in '%a' Call ... %s",
+                    MenuExit, MenuExitInfo (MenuExit), __func__, TempChosenOption->Title
                 );
                 #endif
 

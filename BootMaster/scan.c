@@ -451,10 +451,12 @@ REFIT_MENU_SCREEN * InitializeSubScreen (
 
             if (CheckFlag) {
                 i = 0;
-                while (
-                    !Found &&
-                    (LinuxName = FindCommaDelimited (MAIN_LINUX_DISTROS, i++)) != NULL
-                ) {
+                while (!Found) {
+                    LinuxName = FindCommaDelimited (
+                        MAIN_LINUX_DISTROS, i++
+                    );
+                    if (LinuxName == NULL) break;
+
                     ShowName = GetShowName (LinuxName);
 
                     SearchName = PoolPrint (L"- %s", ShowName);
@@ -1136,11 +1138,12 @@ VOID SetLoaderDefaults (
                         if (Entry->me.Image == NULL) {
                             BREAD_CRUMB(L"%a:  3a 1b 3b 4a 2a 1a 1", __func__);
                             i = 0;
-                            while (
-                                !FoundVentoy              &&
-                                GlobalConfig.HandleVentoy &&
-                                (VentoyName = FindCommaDelimited (VENTOY_NAMES, i++)) != NULL
-                            ) {
+                            while (GlobalConfig.HandleVentoy && !FoundVentoy) {
+                                VentoyName = FindCommaDelimited (
+                                    VENTOY_NAMES, i++
+                                );
+                                if (VentoyName == NULL) break;
+
                                 BREAD_CRUMB(L"%a:  3a 1b 3b 4a 2a 1a 1a 1 - WHILE LOOP:- START ... Check for Ventoy Partition", __func__);
                                 if (MyStrBegins (VentoyName, Volume->FsName)) {
                                     BREAD_CRUMB(L"%a:  3a 1b 3b 4a 2a 1a 1a 1a 1 - Found ... Set Ventoy Icon", __func__);
@@ -1241,11 +1244,12 @@ VOID SetLoaderDefaults (
 
                                 BREAD_CRUMB(L"%a:  3a 1b 3b 4a 2b 1a 2a 2", __func__);
                                 i = 0;
-                                while (
-                                    !FoundVentoy              &&
-                                    GlobalConfig.HandleVentoy &&
-                                    (VentoyName = FindCommaDelimited (VENTOY_NAMES, i++)) != NULL
-                                ) {
+                                while (GlobalConfig.HandleVentoy && !FoundVentoy) {
+                                    VentoyName = FindCommaDelimited (
+                                        VENTOY_NAMES, i++
+                                    );
+                                    if (VentoyName == NULL) break;
+
                                     BREAD_CRUMB(L"%a:  3a 1b 3b 4a 2b 1a 2a 2a 1 - WHILE LOOP:- START ... Check for Ventoy Volume", __func__);
                                     if (MyStrBegins (VentoyName, TargetName)) {
                                         BREAD_CRUMB(L"%a:  3a 1b 3b 4a 2b 1a 2a 2a 1a 1 - Found Ventoy Volume ... Set Ventoy Icon", __func__);
@@ -1320,11 +1324,12 @@ VOID SetLoaderDefaults (
                     if (Entry->me.Image == NULL) {
                         BREAD_CRUMB(L"%a:  3a 1b 3b 5a 1a 1", __func__);
                         i = 0;
-                        while (
-                            !FoundVentoy              &&
-                            GlobalConfig.HandleVentoy &&
-                            (VentoyName = FindCommaDelimited (VENTOY_NAMES, i++)) != NULL
-                        ) {
+                        while (GlobalConfig.HandleVentoy && !FoundVentoy) {
+                            VentoyName = FindCommaDelimited (
+                                VENTOY_NAMES, i++
+                            );
+                            if (VentoyName == NULL) break;
+
                             BREAD_CRUMB(L"%a:  3a 1b 3b 5a 1a 1a 1 - WHILE LOOP:- START ... Check for Ventoy Partition", __func__);
                             if (MyStrBegins (VentoyName, Volume->PartName)) {
                                 BREAD_CRUMB(L"%a:  3a 1b 3b 5a 1a 1a 1a 1 - Found ... Set Ventoy Icon", __func__);
@@ -1685,10 +1690,12 @@ VOID SetLoaderDefaults (
         ) {
             BREAD_CRUMB(L"%a:  7a 1a 1", __func__);
             i = 0;
-            while (
-                !GotFlag &&
-                (Temp = FindCommaDelimited (OSIconName, i++)) != NULL
-            ) {
+            while (!GotFlag) {
+                Temp = FindCommaDelimited (
+                    OSIconName, i++
+                );
+                if (Temp == NULL) break;
+
                 LOG_SEP(L"X");
                 BREAD_CRUMB(L"%a:  7a 1a 1a 1 - WHILE LOOP:- START", __func__);
                 if (IsListItem (Temp, BASE_LINUX_DISTROS)) {
@@ -2000,10 +2007,12 @@ LOADER_ENTRY * AddLoaderEntry (
             IsStub = FALSE;
             if (!GotGrub && !GotSysD && !GotElilo) {
                 i = 0;
-                while (
-                    !IsStub &&
-                    (SearchName = FindCommaDelimited (GlobalConfig.LinuxPrefixes, i++)) != NULL
-                ) {
+                while (!IsStub) {
+                    SearchName = FindCommaDelimited (
+                        GlobalConfig.LinuxPrefixes, i++
+                    );
+                    if (SearchName == NULL) break;
+
                     if (FindSubStr (LoaderPath, SearchName)) {
                         IsStub = TRUE;
                         LoaderEntry->OSType  = 'L';
@@ -2013,10 +2022,12 @@ LOADER_ENTRY * AddLoaderEntry (
             }
 
             i = 0;
-            while (
-                !Found &&
-                (LinuxName = FindCommaDelimited (MAIN_LINUX_DISTROS, i++)) != NULL
-            ) {
+            while (!Found) {
+                LinuxName = FindCommaDelimited (
+                    MAIN_LINUX_DISTROS, i++
+                );
+                if (LinuxName == NULL) break;
+
                 if (!IsStub) {
                     SearchName = PoolPrint (L"\\%s", LinuxName);
                     if (FindSubStr (LoaderPath, SearchName)) {
@@ -2387,7 +2398,7 @@ VOID CleanUpLoaderList (
 } // static VOID CleanUpLoaderList()
 
 CHAR16 * SetVolKind (
-    IN CHAR16 *EntryName,
+    IN CHAR16 *OurItem,
     IN CHAR16 *VolName,
     IN UINT32  VolFSType
 ) {
@@ -2397,24 +2408,24 @@ CHAR16 * SetVolKind (
     // DA-TAG: Order of Appearance is Important
     //         Do not trivially change this
     if (0);
-    else if (VolFSType == FS_TYPE_FAT32         ) RetVal = L""         ;
-    else if (VolFSType == FS_TYPE_FAT16         ) RetVal = L""         ;
-    else if (VolFSType == FS_TYPE_FAT12         ) RetVal = L""         ;
-    else if (VolFSType == FS_TYPE_EXFAT         ) RetVal = L""         ;
-    else if (MyStriCmp (VolName,   L"EFI"      )) RetVal = L""         ;
-    else if (MyStriCmp (VolName,   L"ESP"      )) RetVal = L""         ;
-    else if (IsStriStr (VolName,   L"Volume"   )) RetVal = L""         ;
-    else if (IsStriStr (VolName,   L"Partition")) RetVal = L""         ;
-    else if (IsStriStr (VolName,   L"XBOOTLDR" )) RetVal = L""         ;
-    else if (IsStriStr (EntryName, L" via "    )) RetVal = L""         ;
-    else if (IsStriStr (EntryName, L"Instance:")) RetVal = L"Volume:- ";
-    else                                          RetVal = L""         ;
+    else if (VolFSType == FS_TYPE_FAT32       ) RetVal = L""         ;
+    else if (VolFSType == FS_TYPE_FAT16       ) RetVal = L""         ;
+    else if (VolFSType == FS_TYPE_FAT12       ) RetVal = L""         ;
+    else if (VolFSType == FS_TYPE_EXFAT       ) RetVal = L""         ;
+    else if (MyStriCmp (VolName, L"EFI"      )) RetVal = L""         ;
+    else if (MyStriCmp (VolName, L"ESP"      )) RetVal = L""         ;
+    else if (IsStriStr (VolName, L"Volume"   )) RetVal = L""         ;
+    else if (IsStriStr (VolName, L"Partition")) RetVal = L""         ;
+    else if (IsStriStr (VolName, L"XBOOTLDR" )) RetVal = L""         ;
+    else if (IsStriStr (OurItem, L" via "    )) RetVal = L""         ;
+    else if (IsStriStr (OurItem, L"Instance:")) RetVal = L"Volume:- ";
+    else                                        RetVal = L""         ;
 
     return RetVal;
 } // CHAR16 * SetVolKind()
 
 CHAR16 * SetVolJoin (
-    IN CHAR16  *EntryName,
+    IN CHAR16  *OurItem,
     IN BOOLEAN  ForBoot
 ) {
     CHAR16 *RetVal;
@@ -2423,24 +2434,24 @@ CHAR16 * SetVolJoin (
     // DA-TAG: Order of Appearance is Important
     //         Do not trivially change this
     if (0);
-    else if (IsStriStr (EntryName, L" Stanza:"   )) RetVal = L""      ;
-    else if (IsStriStr (EntryName, L"Stub Loader")) RetVal = L" | "   ;
-    else if (IsStriStr (EntryName, L" via "      )) RetVal = L" on "  ;
-    else if (MyStriCmp (EntryName, L"Legacy Boot")) RetVal = L" for " ;
-    else if (ForBoot                              ) RetVal = L" from ";
-    else                                            RetVal = L" on "  ;
+    else if (IsStriStr (OurItem, L" Stanza:"   )) RetVal = L""      ;
+    else if (IsStriStr (OurItem, L"Stub Loader")) RetVal = L" | "   ;
+    else if (IsStriStr (OurItem, L" via "      )) RetVal = L" on "  ;
+    else if (MyStriCmp (OurItem, L"Legacy Boot")) RetVal = L" for " ;
+    else if (ForBoot                            ) RetVal = L" from ";
+    else                                          RetVal = L" on "  ;
 
     return RetVal;
 } // CHAR16 * SetVolJoin()
 
 CHAR16 * SetVolFlag (
-    IN CHAR16 *EntryName,
+    IN CHAR16 *OurItem,
     IN CHAR16 *VolName
 ) {
     CHAR16 *RetVal;
 
 
-    if (MyStrStr (EntryName, L" Stanza:")) {
+    if (MyStrStr (OurItem, L" Stanza:")) {
         RetVal = L"";
     }
     else {
@@ -2451,7 +2462,7 @@ CHAR16 * SetVolFlag (
 } // CHAR16 * SetVolFlag()
 
 CHAR16 * SetVolType (
-    IN CHAR16 *EntryName OPTIONAL,
+    IN CHAR16 *OurItem OPTIONAL,
     IN CHAR16 *VolName,
     IN UINT32  VolFSType
 ) {
@@ -2461,31 +2472,34 @@ CHAR16 * SetVolType (
     // DA-TAG: Order of Appearance is Important
     //         Do not trivially change this
     if (0);
-    else if (IsStriStr (EntryName, L" Stanza:" )) RetVal = L""                 ;
-    else if (IsStriStr (VolName,   L"Partition")) RetVal = L""                 ;
-    else if (IsStriStr (VolName,   L"Volume"   )) RetVal = L""                 ;
-    else if (MyStriCmp (VolName,   L"ESP"      )) RetVal = L""                 ;
-    else if (MyStriCmp (VolName,   L"EFI"      )) RetVal = L" System Partition";
+    else if (IsStriStr (OurItem, L" Stanza:"   )) RetVal = L""                 ;
+    else if (IsStriStr (VolName, L"Partition"  )) RetVal = L""                 ;
+    else if (IsStriStr (VolName, L"Volume"     )) RetVal = L""                 ;
+    else if (MyStriCmp (VolName, L"ESP"        )) RetVal = L""                 ;
+    else if (MyStriCmp (VolName, L"EFI"        )) RetVal = L" System Partition";
+    else if (IsStriStr (OurItem, L"Stub Loader")) {
+        RetVal = (IsStriStr (VolName, L"Linux"))
+            ? L" Partition" : L" Linux Partition";
+    }
+    else if (IsStriStr (OurItem, L"Instance:")) RetVal = L"";
+    else if (IsStriStr (OurItem, L"(Legacy"  )) RetVal = L"";
     else if (
-        IsStriStr (EntryName, L"Stub Loader") ||
-        IsStriStr (EntryName, L"vmLinuz-"   ) ||
-        IsStriStr (EntryName, L"bzImage-"   ) ||
-        IsStriStr (EntryName, L"Kernel-"    ) ||
-        IsStriStr (EntryName, L"Image-"     )
+        IsStriStr (OurItem, L"vmLinuz-") ||
+        IsStriStr (OurItem, L"bzImage-") ||
+        IsStriStr (OurItem, L"Kernel-" ) ||
+        IsStriStr (OurItem, L"Image-"  )
     ) {
         RetVal = (IsStriStr (VolName, L"Linux"))
             ? L" Partition" : L" Linux Partition";
     }
-    else if (IsStriStr (EntryName, L"Instance:"  )) RetVal = L""          ;
-    else if (IsStriStr (EntryName, L"(Legacy"    )) RetVal = L""          ;
-    else if (MyStriCmp (EntryName, L"Legacy Boot")) RetVal = L" Partition";
-    else if (MyStriCmp (VolName,   L"BOOTCAMP"   )) RetVal = L" Partition";
-    else if (IsStriStr (VolName,   L"XBOOTLDR"   )) RetVal = L" Partition";
-    else if (VolFSType == FS_TYPE_FAT32           ) RetVal = L" Partition";
-    else if (VolFSType == FS_TYPE_FAT16           ) RetVal = L" Partition";
-    else if (VolFSType == FS_TYPE_FAT12           ) RetVal = L" Partition";
-    else if (VolFSType == FS_TYPE_EXFAT           ) RetVal = L" Partition";
-    else                                            RetVal = L""          ;
+    else if (MyStriCmp (OurItem, L"Legacy Boot")) RetVal = L" Partition";
+    else if (MyStriCmp (VolName, L"BOOTCAMP"   )) RetVal = L" Partition";
+    else if (IsStriStr (VolName, L"XBOOTLDR"   )) RetVal = L" Partition";
+    else if (VolFSType == FS_TYPE_FAT32         ) RetVal = L" Partition";
+    else if (VolFSType == FS_TYPE_FAT16         ) RetVal = L" Partition";
+    else if (VolFSType == FS_TYPE_FAT12         ) RetVal = L" Partition";
+    else if (VolFSType == FS_TYPE_EXFAT         ) RetVal = L" Partition";
+    else                                          RetVal = L""          ;
 
     return RetVal;
 } // CHAR16 * SetVolType()
@@ -2578,7 +2592,12 @@ BOOLEAN ShouldScan (
 
     // See if Volume is in GlobalConfig.DontScanDirs.
     i = 0;
-    while ((DontScanDir = FindCommaDelimited (GlobalConfig.DontScanDirs, i++)) != NULL) {
+    while (1) {
+        DontScanDir = FindCommaDelimited (
+            GlobalConfig.DontScanDirs, i++
+        );
+        if (DontScanDir == NULL) break;
+
         SplitVolumeAndFilename (&DontScanDir, &VolName);
         CleanUpPathNameSlashes (DontScanDir);
         if (VolName == NULL) {
@@ -2596,10 +2615,8 @@ BOOLEAN ShouldScan (
         MY_FREE_POOL(VolName);
         MY_FREE_POOL(DontScanDir);
 
-        if (!ScanIt) {
-            break;
-        }
-    } // while
+        if (!ScanIt) break;
+    } // while {Infinite}
 
     return ScanIt;
 } // BOOLEAN ShouldScan()
@@ -2768,6 +2785,7 @@ BOOLEAN ScanLoaderDir (
     struct LOADER_LIST *LoaderList;
     LOADER_ENTRY       *FirstKernel;
     LOADER_ENTRY       *LatestEntry;
+    BOOLEAN             CheckIter;
     BOOLEAN             IsLinux;
     BOOLEAN             InSelfPath;
     BOOLEAN             SelfPathFlag;
@@ -2818,12 +2836,16 @@ BOOLEAN ScanLoaderDir (
     FallbackDuplicate = FALSE;
     LoaderList = NULL;
 
-    BREAD_CRUMB(L"%a:  3", __func__);
+    BREAD_CRUMB(L"%a:  3 - Run DirIterOpen", __func__);
     // Look through contents of the directory
     DirIterOpen (Volume->RootDir, Path, &DirIter);
 
     BREAD_CRUMB(L"%a:  4", __func__);
-    while (DirIterNext (&DirIter, 2, Pattern, &DirEntry)) {
+    while (1) {
+        BREAD_CRUMB(L"%a:  4a 0 - Run DirIterNext", __func__);
+        CheckIter = DirIterNext (&DirIter, 2, Pattern, &DirEntry);
+        if (!CheckIter) break;
+
         LOG_SEP(L"X");
         BREAD_CRUMB(L"%a:  4a 1 - WHILE LOOP:- START", __func__);
         do {
@@ -2949,7 +2971,7 @@ BOOLEAN ScanLoaderDir (
 
         BREAD_CRUMB(L"%a:  4a 2 - WHILE LOOP:- END", __func__);
         LOG_SEP(L"X");
-    } // while
+    } // while {Infinite}
 
     BREAD_CRUMB(L"%a:  5", __func__);
     if (LoaderList == NULL) {
@@ -3250,6 +3272,7 @@ VOID ScanEfiFiles (
     BOOLEAN                 ScanFallbackLoader;
     BOOLEAN                 FoundBRBackup;
     BOOLEAN                 FoundVentoy;
+    BOOLEAN                 CheckIter;
     EFI_FILE_INFO          *EfiDirEntry;
     REFIT_DIR_ITER          EfiDirIter;
 
@@ -3262,11 +3285,12 @@ VOID ScanEfiFiles (
 
     i = 0;
     FoundVentoy = FALSE;
-    while (
-        !FoundVentoy              &&
-        GlobalConfig.HandleVentoy &&
-        (VentoyName = FindCommaDelimited (VENTOY_NAMES, i++)) != NULL
-    ) {
+    while (GlobalConfig.HandleVentoy && !FoundVentoy) {
+        VentoyName = FindCommaDelimited (
+            VENTOY_NAMES, i++
+        );
+        if (VentoyName == NULL) break;
+
         if (MyStrBegins (VentoyName, Volume->VolName) ||
             MyStrBegins (VentoyName, Volume->FsName)  ||
             MyStrBegins (VentoyName, Volume->PartName)
@@ -3405,7 +3429,11 @@ VOID ScanEfiFiles (
         DirIterOpen (Volume->RootDir, L"\\", &EfiDirIter);
 
         //BREAD_CRUMB(L"%a:  6a 4", __func__);
-        while (DirIterNext (&EfiDirIter, 1, NULL, &EfiDirEntry)) {
+        while (1) {
+            //BREAD_CRUMB(L"%a:  6a 4a 0 - Run DirIterNext", __func__);
+            CheckIter = DirIterNext (&EfiDirIter, 1, NULL, &EfiDirEntry);
+            if (!CheckIter) break;
+
             //LOG_SEP(L"X");
             //BREAD_CRUMB(L"%a:  6a 4a 1 - WHILE LOOP:- START", __func__);
             if (IsGuid (EfiDirEntry->FileName)) {
@@ -3437,7 +3465,7 @@ VOID ScanEfiFiles (
 
             //BREAD_CRUMB(L"%a:  6a 4a 3 - WHILE LOOP:- END", __func__);
             //LOG_SEP(L"X");
-        } // while
+        } // while {Infinite}
 
         //BREAD_CRUMB(L"%a:  6a 5", __func__);
         DirIterClose (&EfiDirIter);
@@ -3534,7 +3562,11 @@ VOID ScanEfiFiles (
     DirIterOpen (Volume->RootDir, L"EFI", &EfiDirIter);
 
     //BREAD_CRUMB(L"%a:  10", __func__);
-    while (DirIterNext (&EfiDirIter, 1, NULL, &EfiDirEntry)) {
+    while (1) {
+        //BREAD_CRUMB(L"%a:  10a 0 - Run DirIterNext", __func__);
+        CheckIter = DirIterNext (&EfiDirIter, 1, NULL, &EfiDirEntry);
+        if (!CheckIter) break;
+
         //LOG_SEP(L"X");
         //BREAD_CRUMB(L"%a:  10a 1 - WHILE LOOP:- START", __func__);
         do {
@@ -3575,7 +3607,7 @@ VOID ScanEfiFiles (
 
         //BREAD_CRUMB(L"%a:  10a 3 - WHILE LOOP:- END", __func__);
         //LOG_SEP(L"X");
-    } // while
+    } // while {Infinite}
 
     //BREAD_CRUMB(L"%a:  11", __func__);
     Status = DirIterClose (&EfiDirIter);
@@ -3621,10 +3653,12 @@ VOID ScanEfiFiles (
     // Scan user-specified (or additional default) directories.
     i = 0;
     VolName = NULL;
-    while (
-        ScanFallbackLoader &&
-        (Directory = FindCommaDelimited (GlobalConfig.AlsoScan, i++)) != NULL
-    ) {
+    while (ScanFallbackLoader) {
+        Directory = FindCommaDelimited (
+            GlobalConfig.AlsoScan, i++
+        );
+        if (Directory == NULL) break;
+
         //LOG_SEP(L"X");
         //BREAD_CRUMB(L"%a:  14a 1 - WHILE LOOP:- START", __func__);
         if (ShouldScan (Volume, Directory)) {
@@ -3839,7 +3873,13 @@ BOOLEAN HidePreboot (
 
     i = 0;
     FlagDontScan = FALSE;
-    while ((OurItem = FindCommaDelimited (OurSkipList, i)) != NULL) {
+    while (1) {
+        // DA-TAG: Do *NOT* Iterate 'i' here
+        OurItem = FindCommaDelimited (
+            OurSkipList, i
+        );
+        if (OurItem == NULL) break;
+
         if (!MyStriCmp (OurItem, L"PreBoot") &&
             !FindSubStr (OurItem, L"PreBoot:")
         ) {
@@ -3851,7 +3891,7 @@ BOOLEAN HidePreboot (
         }
 
         MY_FREE_POOL(OurItem);
-    } // while
+    } // while {Infinite}
 
     return FlagDontScan;
 } // static BOOLEAN HidePreboot()
@@ -4053,10 +4093,12 @@ BOOLEAN FindTool (
     MemTestRun = IsStriStr (Locations, L"\\memtest");
 
     i = 0;
-    while (
-        !BreakLoop &&
-        (DirName = FindCommaDelimited (Locations, i++)) != NULL
-    ) {
+    while (!BreakLoop) {
+        DirName = FindCommaDelimited (
+            Locations, i++
+        );
+        if (DirName == NULL) break;
+
         if (MemTestRun) {
             if (MyStriCmp (Locations, MEMTEST_LOCATIONS)) {
                 if (MyStrBegins (SelfDirPath, DirName)) {
@@ -4085,10 +4127,12 @@ BOOLEAN FindTool (
         }
 
         j = 0;
-        while (
-            !BreakLoop &&
-            (FileName = FindCommaDelimited (Names, j++)) != NULL
-        ) {
+        while (!BreakLoop) {
+            FileName = FindCommaDelimited (
+                Names, j++
+            );
+            if (FileName == NULL) break;
+
             if (MyStriCmp (FileName, FALLBACK_BASENAME)) {
                 if (!MemTestRun ||
                     !IsStriStr (DirName, L"\\memtest")
@@ -4265,11 +4309,13 @@ VOID ScanFirmwareDefined (
         }
         else {
             index = 0;
-            while (
-                !ScanIt &&
-                (OneItem = FindCommaDelimited (MatchThis, index++)) != NULL
-            ) {
-                if (StriSubCmp (OneItem, ThisEntry->BootEntry.Label) &&
+            while (!ScanIt) {
+                OneItem = FindCommaDelimited (
+                    MatchThis, index++
+                );
+                if (OneItem == NULL) break;
+
+                if (IsStriStr (ThisEntry->BootEntry.Label, OneItem) &&
                     !IsListItemSubstringIn (ThisEntry->BootEntry.Label, SkipThese)
                 ) {
                     ScanIt = TRUE;
@@ -4423,10 +4469,12 @@ BOOLEAN IsValidTool (
     SplitPathName (PathName, &TestVolName, &TestPathName, &TestFileName);
 
     i = 0;
-    while (
-        retval &&
-        (DontScanThis = FindCommaDelimited (DontScanTools, i++)) != NULL
-    ) {
+    while (retval) {
+        DontScanThis = FindCommaDelimited (
+            DontScanTools, i++
+        );
+        if (DontScanThis == NULL) break;
+
         SplitPathName (DontScanThis, &DontVolName, &DontPathName, &DontFileName);
 
         if (MyStriCmp (TestFileName, DontFileName) &&
