@@ -339,9 +339,9 @@ VOID UnexpectedReturn (
     CHAR16 *MsgStr;
 
 
-    MsgStr = PoolPrint (L"WARN: Unexpected Return from %s", ItemType);
+    MsgStr = PoolPrint (L"Unexpected Return from %s", ItemType);
     ALT_LOG(1, LOG_STAR_SEPARATOR, L"%s", MsgStr);
-    LOG_MSG("*** %s", MsgStr);
+    LOG_MSG("** WARN: %s", MsgStr);
     LOG_MSG("\n\n");
     MY_FREE_POOL(MsgStr);
 } // static VOID UnexpectedReturn()
@@ -3653,7 +3653,7 @@ VOID ResetCall (
     #if REFIT_DEBUG > 0
     MsgStr = PoolPrint (L"%s Failed", TypeStr);
     ALT_LOG(1, LOG_LINE_NORMAL, L"%s!!", MsgStr);
-    LOG_MSG("WARN: %s", MsgStr);
+    LOG_MSG("** WARN: %s", MsgStr);
     MY_FREE_POOL(MsgStr);
     #endif
 } // static VOID ResetCall()
@@ -3893,14 +3893,21 @@ EFI_STATUS EFIAPI efi_main (
         ConfigWarn = TRUE;
 
         #if REFIT_DEBUG > 0
-        LOG_MSG("** WARN: Could not find RefindPlus configuration file:- 'config.conf'\n");
-        LOG_MSG("         Trying the rEFInd configuration file instead:- 'refind.conf'\n");
-        LOG_MSG("         Please provide a 'config.conf' file to silence this warning \n");
-        LOG_MSG("         A 'refind.conf' file can be renamed as 'config.conf'        \n");
-        LOG_MSG("         NB: Will not contain all RefindPlus settings              \n\n");
+        LOG_MSG("** WARN: Could not find RefindPlus configuration file:- 'config.conf'  \n"            );
+        LOG_MSG("%s         Trying the rEFInd configuration file instead:- 'refind.conf'\n", OffsetNext);
+        LOG_MSG("%s         Please provide a 'config.conf' file to silence this warning \n", OffsetNext);
+        LOG_MSG("%s         A 'refind.conf' file can be renamed as 'config.conf'        \n", OffsetNext);
+        LOG_MSG("%s         NB: Will not contain all RefindPlus settings              \n\n", OffsetNext);
         #endif
 
         GlobalConfig.ConfigFilename = L"refind.conf";
+
+        if (!FileExists (SelfDir, GlobalConfig.ConfigFilename)) {
+            #if REFIT_DEBUG > 0
+            LOG_MSG("** WARN: Could not find rEFInd configuration file:- 'refind.conf'\n"            );
+            LOG_MSG("%s         NB: RefindPlus is being loaded with default settings\n\n", OffsetNext);
+            #endif
+        }
     }
 
     /* Load Config Tokens */
@@ -4296,6 +4303,7 @@ EFI_STATUS EFIAPI efi_main (
         LOG_MSG("D I S P L A Y   U S E R   N O T I C E");
         MsgStr = StrDuplicate (L"Inconsistent UEFI 2.x Implementation");
         ALT_LOG(1, LOG_LINE_THIN_SEP, L"Display %s Warning", MsgStr);
+        LOG_MSG("\n");
         LOG_MSG("INFO: User Warning:- '%s'", MsgStr);
         MY_FREE_POOL(MsgStr);
 
@@ -4353,6 +4361,7 @@ EFI_STATUS EFIAPI efi_main (
         LOG_MSG("D I S P L A Y   U S E R   N O T I C E");
         MsgStr = StrDuplicate (L"Missing Config File");
         ALT_LOG(1, LOG_LINE_THIN_SEP, L"Display '%s' Warning", MsgStr);
+        LOG_MSG("\n");
         LOG_MSG("INFO: User Warning:- '%s'", MsgStr);
         MY_FREE_POOL(MsgStr);
 
@@ -4413,6 +4422,7 @@ EFI_STATUS EFIAPI efi_main (
         LOG_MSG("D I S P L A Y   U S E R   N O T I C E");
         MsgStr = StrDuplicate (L"Chainloaded via OpenCore");
         ALT_LOG(1, LOG_LINE_THIN_SEP, L"Display '%s' Warning", MsgStr);
+        LOG_MSG("\n");
         LOG_MSG("INFO: User Warning:- '%s'", MsgStr);
         MY_FREE_POOL(MsgStr);
 
@@ -4468,6 +4478,7 @@ EFI_STATUS EFIAPI efi_main (
         LOG_MSG("D I S P L A Y   U S E R   N O T I C E");
         MsgStr = StrDuplicate (L"Secure Boot Failure");
         ALT_LOG(1, LOG_LINE_THIN_SEP, L"Display %s Warning", MsgStr);
+        LOG_MSG("\n");
         LOG_MSG("INFO: User Warning:- '%s'", MsgStr);
         MY_FREE_POOL(MsgStr);
 
@@ -4742,6 +4753,62 @@ EFI_STATUS EFIAPI efi_main (
                     }
                 }
                 else if (
+                    // DA_TAG: Handle OpenCore Early
+                    //         To manage validity issues
+                    OurLoaderEntry->OSType == 'O'                             ||
+                    (SubScreenBoot && IsStriStr (SelectionName, L"OpenCore")) ||
+                    IsStriStr (OurLoaderEntry->Title,           L"OpenCore")  ||
+                    IsStriStr (OurLoaderEntry->LoaderPath,      L"\\OC_"   )  ||
+                    IsStriStr (OurLoaderEntry->LoaderPath,      L"\\OC\\"  )  ||
+                    IsStriStr (OurLoaderEntry->LoaderPath,    L"\\OpenCore")
+                ) {
+                    #if REFIT_DEBUG > 0
+                    // DA-TAG: Using separate instances of 'Received User Input'
+                    LOG_MSG(
+                        "Received %sUser Input:",
+                        (RunningOC) ? L"*INVALID* " : L""
+                    );
+                    MsgStr = PoolPrint (
+                        L"Load %sInstance: OpenCore",
+                        (RunningOC) ? L"*INVALID* " : L""
+                    );
+                    ALT_LOG(1, LOG_THREE_STAR_SEP, L"%s", MsgStr);
+                    LOG_MSG(
+                        "%s  - %s:- '%s'",
+                        OffsetNext, MsgStr, OurLoaderEntry->LoaderPath
+                    );
+                    MY_FREE_POOL(MsgStr);
+                    #endif
+
+                    if (RunningOC) {
+                        #if REFIT_DEBUG > 0
+                        LOG_MSG("\n");
+                        LOG_MSG("Rejected *INVALID* User Input");
+                        LOG_MSG("\n\n");
+                        #endif
+
+                        egDisplayMessage (
+                            L"OpenCore Load Attempt is *INVALID* ... Already Started",
+                            &BGColorWarn, CENTER, 4, L"PauseSeconds"
+                        );
+                        break;
+                    }
+
+                    if (!OurLoaderEntry->UseGraphicsMode) {
+                        OurLoaderEntry->UseGraphicsMode = (
+                            GlobalConfig.GraphicsFor & GRAPHICS_FOR_OPENCORE
+                        );
+                    }
+
+                    // Sync nvRAM
+                    RunNVramSync (SelectionName, FALSE);
+
+                    SkipTrustChain = TRUE;
+                    if (GlobalConfig.SyncTrust & ENFORCE_TRUST_OPENCORE) {
+                        KeepTrustChain = TRUE;
+                    }
+                }
+                else if (
                     OurLoaderEntry->OSType == 'M' ||
                     (
                         SubScreenBoot &&
@@ -4943,62 +5010,6 @@ EFI_STATUS EFIAPI efi_main (
 
                     MY_FREE_POOL(MsgStr);
                     #endif
-                }
-                else if (
-                    OurLoaderEntry->OSType == 'O'                            ||
-                    (SubScreenBoot && MyStrStr (SelectionName, L"OpenCore")) ||
-                    MyStrStr (OurLoaderEntry->Title,           L"OpenCore")  ||
-                    MyStrStr (OurLoaderEntry->LoaderPath,      L"\\OC_"   )  ||
-                    MyStrStr (OurLoaderEntry->LoaderPath,      L"\\OC\\"  )  ||
-                    MyStrStr (OurLoaderEntry->LoaderPath,    L"\\OpenCore")
-                ) {
-                    #if REFIT_DEBUG > 0
-                    // DA-TAG: Using separate instances of 'Received User Input'
-                    LOG_MSG(
-                        "Received %sUser Input:",
-                        (RunningOC) ? L"*INVALID* " : L""
-                    );
-                    MsgStr = PoolPrint (
-                        L"Load %sInstance: OpenCore",
-                        (RunningOC) ? L"*INVALID* " : L""
-                    );
-                    ALT_LOG(1, LOG_THREE_STAR_SEP, L"%s", MsgStr);
-                    LOG_MSG(
-                        "%s  - %s:- '%s'",
-                        OffsetNext,
-                        MsgStr,
-                        OurLoaderEntry->LoaderPath
-                    );
-                    MY_FREE_POOL(MsgStr);
-                    #endif
-
-                    if (RunningOC) {
-                        #if REFIT_DEBUG > 0
-                        LOG_MSG("\n");
-                        LOG_MSG("Rejected *INVALID* User Input");
-                        LOG_MSG("\n\n");
-                        #endif
-
-                        egDisplayMessage (
-                            L"OpenCore Load Attempt is *INVALID* ... Already Started",
-                            &BGColorWarn, CENTER, 4, L"PauseSeconds"
-                        );
-                        break;
-                    }
-
-                    if (!OurLoaderEntry->UseGraphicsMode) {
-                        OurLoaderEntry->UseGraphicsMode = (
-                            GlobalConfig.GraphicsFor & GRAPHICS_FOR_OPENCORE
-                        );
-                    }
-
-                    // Sync nvRAM
-                    RunNVramSync (SelectionName, FALSE);
-
-                    SkipTrustChain = TRUE;
-                    if (GlobalConfig.SyncTrust & ENFORCE_TRUST_OPENCORE) {
-                        KeepTrustChain = TRUE;
-                    }
                 }
                 else if (
                     OurLoaderEntry->OSType == 'C'                          ||
