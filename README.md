@@ -24,6 +24,7 @@ RefindPlus is particularly useful for those with additional configuration needs 
 
 Some features:
 - Maintains feature and configuration parity with `Upstream v0.14.2` base.
+- Provides options to flag faulty RAM regions as unusable to extend useful life.
 - Provides protection against damage to vulnerable Mac nvRAM by UEFI Windows boot.
 - Provides mitigation against boot failures and related issues on T2/TPM chipped units.
 - Emulates UEFI 2.x on EFI 1.x units to permit running UEFI 2.x utilities on such units.
@@ -85,6 +86,9 @@ These tokens are included in `Section 1` of the sample RefindPlus configuration 
 
 Token | Functionality
 ----- | -----
+badram_fix_list       |Allows providing a list of faulty memory regions to be marked as `unusable`
+badram_fix_type       |Controls whether and how faulty memory regions are managed by the program
+badram_fix_wide       |Allows lifting program limits on types of faulty memory regions managed
 continue_on_warning   |Proceed as if a key was pressed after screen warnings (for unattended boot)
 csr_dynamic           |Actively sets or unsets Apple's `Configurable Security Restrictions (CSR)`
 csr_normalise         |Removes the `APPLE_INTERNAL` bit, when present, to permit OTA updates

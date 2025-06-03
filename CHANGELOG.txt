@@ -1,5 +1,6 @@
-0.14.2.AC (PRE-RELEASE):
+0.14.2.AC (03 JUN 2025):
 -----------------------
+- Adds Misc Fixes and Optimisation
 - Adds `TagBadRAM` Feature
   * Faulty memory regions can be flagged as unusable by RefindPlus
   * Such flagged regions will not be used by the firmware after

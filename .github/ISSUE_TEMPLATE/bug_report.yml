@@ -48,7 +48,7 @@ body:
       label: RefindPlus Version
       description: Which version of RefindPlus is affected?
       options:
-        - 'v0.14.2.AB Release'
+        - 'Official v0.14.2.AC Release'
         - 'Official Older Released Version'
         - 'Official Pre-Release Code Build'
         - 'Unofficially Modified Code Build'
@@ -126,7 +126,9 @@ body:
     id: vet-debug
     attributes:
       label: Log Requirement
-      description: Provided or not required but not feature request or discussion item.
+      description: |
+          Items without logs should typically be Feature Requests or Discussion Items.\
+          Confirm log files are provided or that you are certain this is not required.
       options:
         - label: Confirmed
     validations:
