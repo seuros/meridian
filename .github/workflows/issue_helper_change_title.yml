@@ -33,7 +33,7 @@ jobs:
 
   issue_change_title:
     name: Issue - Change - Title
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
       # Generate App Token - https://github.com/actions/create-github-app-token
@@ -102,7 +102,7 @@ jobs:
           actions: 'remove-labels'
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.inputs.item_id }}
-          labels: 'Triage,Queries,Noted,Incomplete,Tagged,Stale'
+          labels: 'Triage,No-Log,Queries,Noted,Incomplete,Tagged,Stale'
 
       # Add 'Invalid' Label
       - if: github.event.inputs.provenance_known == 'NO'

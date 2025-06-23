@@ -33,13 +33,16 @@ body:
         <br><br>
         <h1 align="center">BUG REPORT DETAILS</h1>
 
-  - type: checkboxes
+  - type: dropdown
     id: issue-screened
     attributes:
       label: Issue Screened
-      description: The conditions above do not apply or specified tests done.
+      description: |
+          Confirm the items above have been read and applied as required.
+      multiple: true
       options:
-        - label: Confirmed
+        - 'SUGGESTED TESTS IGNORED although a condition above applies'
+        - 'SUGGESTED TESTS EXECUTED or none of conditions above apply'
     validations:
       required: true
   - type: dropdown
@@ -47,6 +50,7 @@ body:
     attributes:
       label: RefindPlus Version
       description: Which version of RefindPlus is affected?
+      multiple: true
       options:
         - 'Official v0.14.2.AC Release'
         - 'Official Older Released Version'
@@ -58,7 +62,7 @@ body:
     id: hardware
     attributes:
       label: Device Type
-      description: You can make more than one selection
+      description: Which device type?
       multiple: true
       options:
         - 'UEFI PC'
@@ -81,6 +85,7 @@ body:
     attributes:
       label: Problem Point
       description: Where does the problem manifest itself?
+      multiple: true
       options:
         - 'Before RefindPlus Screen is Visible'
         - 'RefindPlus Screen Shows but Hangs'
@@ -94,7 +99,7 @@ body:
     id: os-type
     attributes:
       label: Affected Items
-      description: You can make more than one selection
+      description: What item is affected?
       multiple: true
       options:
         - 'One/More Tools (2nd Row Items)'
@@ -122,15 +127,17 @@ body:
         Reports without log files will be automatically closed in most cases.
     validations:
       required: true
-  - type: checkboxes
+  - type: dropdown
     id: vet-debug
     attributes:
       label: Log Requirement
       description: |
-          Items without logs should typically be Feature Requests or Discussion Items.\
+          Debug logs are avaialbe by running the 'DBG' efi and almost always required.\
           Confirm log files are provided or that you are certain this is not required.
+      multiple: true
       options:
-        - label: Confirmed
+        - 'DEBUG LOGS NOT PROVIDED - ignoring all guidance above'
+        - 'DEBUG LOGS ARE PROVIDED or omission clearly justified'
     validations:
       required: true
   - type: textarea

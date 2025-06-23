@@ -12,20 +12,21 @@ on:
         - 'Label - Add - Config'
         - 'Label - Add - Cannot-Replicate'
         - 'Label - Add - Discussion'
+        - 'Label - Add - Enhancement - Only'
         - 'Label - Add - Incomplete - Issues'
         - 'Label - Add - Incomplete - Enhancement'
         - 'Label - Add - Invalid'
-        - 'Label - Add - Triage'
-        - 'Label - Add - Parked'
-        - 'Label - Add - Prorogued'
-        - 'Label - Add - Resolved'
-        - 'Label - Add - Unresolved'
-        - 'Label - Add - Tagged'
-        - 'Label - Add - Queries'
-        - 'Label - Add - Upstream'
-        - 'Label - Add - Enhancement - Only'
         - 'Label - Add - Not-Planned_and_Enhancement'
         - 'Label - Add - Not-Planned - Only'
+        - 'Label - Add - Parked'
+        - 'Label - Add - Prorogued'
+        - 'Label - Add - Queries'
+        - 'Label - Add - Resolved'
+        - 'Label - Add - Stale'
+        - 'Label - Add - Tagged'
+        - 'Label - Add - Triage'
+        - 'Label - Add - Unresolved'
+        - 'Label - Add - Upstream'
         default: 'Label - Add - Invalid'
       item_id:
         description: 'Item ID'
@@ -52,7 +53,7 @@ jobs:
   # Misc Issue Items - https://github.com/actions-cool/issues-helper
   label_add_abandoned:
     name: Label - Add - Abandoned
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Abandoned'
     steps:
@@ -71,7 +72,7 @@ jobs:
 
   label_add_cancelled:
     name: Label - Add - Cancelled
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Cancelled'
     steps:
@@ -95,7 +96,7 @@ jobs:
           actions: 'remove-labels'
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.inputs.item_id }}
-          labels: 'Triage'
+          labels: 'Triage,No-Log'
 
       - name: Label - Add - Cancelled - 3
         uses: actions-cool/issues-helper@v3
@@ -107,7 +108,7 @@ jobs:
 
   label_add_discussion:
     name: Label - Add - Discussion
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Discussion'
     steps:
@@ -118,6 +119,7 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Label - Add - Discussion - 0
+        shell: bash
         run: sudo apt install jq -y
 
       - name: Label - Add - Discussion - 1
@@ -136,12 +138,12 @@ jobs:
           body=$(jq -r '.body' issue.json)
           notice="# This Discussion Item is an Automated Converstion of Issue/Enhancement Item #${ENV_ITEM_ID}\n\n${body}"
 
-          # Safe multiline write
+          # Safe Multiline Write
           echo "title<<EOF" >> "${GITHUB_ENV}"
           echo "${title}" >> "${GITHUB_ENV}"
           echo "EOF" >> "${GITHUB_ENV}"
 
-          # Safe multiline write
+          # Safe Multiline Write
           echo "body<<EOF" >> "${GITHUB_ENV}"
           echo "${notice}" >> "${GITHUB_ENV}"
           echo "EOF" >> "${GITHUB_ENV}"
@@ -165,7 +167,7 @@ jobs:
           ENV_REPO: ${{ github.repository }}
         shell: bash
         run: |
-            # Make a request to the GitHub API to create a discussion
+            # GitHub API Request to Create Discussion Item
             response=$(curl -s -X POST -H "Accept: application/vnd.github.v3+json" \
             -H "Authorization: token ${{ steps.app-token.outputs.token }}" \
             https://api.github.com/repos/${ENV_REPO}/discussions \
@@ -176,7 +178,8 @@ jobs:
                 "category_id": "MDE4OkRpc2N1c3Npb25DYXRlZ29yeTMyMDE4Mjgy"
             }
             EOF)
-            # Extract the discussion URL from the response
+
+            # Extract Discussion Item URL from Response
             discussion_url=$(echo ${response} | jq -r '.html_url')
             echo "discussion_url=${discussion_url}" >> "${GITHUB_ENV}"
 
@@ -196,7 +199,7 @@ jobs:
             > The template indicates these should be under Discussions.
             > The guidance in the template appears to have been ignored.
 
-            Please use the Discussions Option for similar items in future.
+            Please use the Discussions Feature for similar items in future.
 
             ${{ github.event.inputs.comment_data }}
 
@@ -222,7 +225,7 @@ jobs:
           actions: 'remove-labels'
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.inputs.item_id }}
-          labels: 'Triage,Not-Planned,Parked,Stale,Queries,Invalid,Prorogued,Duplicate,Incomplete,Known-Issue,Enhancement,Cannot-Replicate'
+          labels: 'Triage,No-Log,Not-Planned,Parked,Stale,Queries,Invalid,Prorogued,Duplicate,Incomplete,Known-Issue,Enhancement,Cannot-Replicate'
 
       - name: Label - Add - Discussion - 5
         id: add-labels
@@ -252,7 +255,7 @@ jobs:
 
   label_add_noted:
     name: Label - Add - Noted
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Noted'
     steps:
@@ -288,7 +291,7 @@ jobs:
           actions: 'remove-labels'
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.inputs.item_id }}
-          labels: 'Triage, Queries, Confirmed'
+          labels: 'Triage, No-Log, Queries, Confirmed'
 
       - name: Label - Add - Noted - 3
         uses: actions-cool/issues-helper@v3
@@ -300,7 +303,7 @@ jobs:
 
   label_add_config:
     name: Label - Add - Config
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Config'
     steps:
@@ -343,7 +346,7 @@ jobs:
           actions: 'remove-labels'
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.inputs.item_id }}
-          labels: 'Triage, Queries, Confirmed'
+          labels: 'Triage, No-Log, Queries, Confirmed'
 
       - name: Label - Add - Config - 3
         uses: actions-cool/issues-helper@v3
@@ -355,7 +358,7 @@ jobs:
 
   label_add_cannot-replicate:
     name: Label - Add - Cannot-Replicate
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Cannot-Replicate'
     steps:
@@ -380,7 +383,7 @@ jobs:
           actions: 'remove-labels'
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.inputs.item_id }}
-          labels: 'Triage, Queries, Confirmed'
+          labels: 'Triage, No-Log, Queries, Confirmed'
 
       - name: Label - Add - Cannot-Replicate - 3
         uses: actions-cool/issues-helper@v3
@@ -392,7 +395,7 @@ jobs:
 
   label_add_incomplete_issue:
     name: Label - Add - Incomplete - Issues
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Incomplete - Issues'
     steps:
@@ -401,7 +404,6 @@ jobs:
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
 
       - name: Label - Add - Incomplete - Issues - 1
         uses: actions-cool/issues-helper@v3
@@ -415,9 +417,13 @@ jobs:
             However, at least one required item is missing.
             This is typically debug log(s) or suggested initial tests.
 
+            On debug logs, note that...
+            - They are invariably required.
+            - They are always produced when running the 'DBG' file.
+
             ${{ github.event.inputs.comment_data }}
 
-            Please amend your post accordingly.
+            Please rectify the oversight.
 
       - name: Label - Add - Incomplete - Issues - 2
         uses: actions-cool/issues-helper@v3
@@ -433,11 +439,11 @@ jobs:
           actions: 'remove-labels'
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.inputs.item_id }}
-          labels: 'Triage'
+          labels: 'Triage,No-Log'
 
   label_add_incomplete_enhancement:
     name: Label - Add - Incomplete - Enhancement
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Incomplete - Enhancement'
     steps:
@@ -446,7 +452,6 @@ jobs:
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
 
       - name: Label - Add - Incomplete - Enhancement - 1
         uses: actions-cool/issues-helper@v3
@@ -458,7 +463,7 @@ jobs:
             Thank you for taking the time to suggest improvements to RefindPlus.
 
             However, at least one required item is missing.
-            This is typically background information.
+            This is typically useful background information.
 
             ${{ github.event.inputs.comment_data }}
 
@@ -478,11 +483,11 @@ jobs:
           actions: 'remove-labels'
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.inputs.item_id }}
-          labels: 'Triage'
+          labels: 'Triage,No-Log'
 
   label_add_invalid:
     name: Label - Add - Invalid
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Invalid'
     steps:
@@ -501,7 +506,7 @@ jobs:
 
   label_add_pending:
     name: Label - Add - Triage
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Triage'
     steps:
@@ -520,7 +525,7 @@ jobs:
 
   label_add_parked:
     name: Label - Add - Parked
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Parked'
     steps:
@@ -539,7 +544,7 @@ jobs:
 
   label_add_prorogued:
     name: Label - Add - Prorogued
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Prorogued'
     steps:
@@ -558,7 +563,7 @@ jobs:
 
   label_add_resolved:
     name: Label - Add - Resolved
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Resolved'
     steps:
@@ -584,7 +589,7 @@ jobs:
 
   label_add_unresolved:
     name: Label - Add - Unresolved
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Unresolved'
     steps:
@@ -608,9 +613,28 @@ jobs:
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Resolved'
 
+  label_add_stale:
+    name: Label - Add - Stale
+    runs-on: ubuntu-latest
+
+    if: github.event.inputs.operation == 'Label - Add - Stale'
+    steps:
+      - id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'add-labels'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.inputs.item_id }}
+          labels: 'Stale'
+
   label_add_tagged:
     name: Label - Add - Tagged
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Tagged'
     steps:
@@ -629,7 +653,7 @@ jobs:
 
   label_add_queries:
     name: Label - Add - Queries
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Queries'
     steps:
@@ -648,7 +672,7 @@ jobs:
 
   label_add_upstream:
     name: Label - Add - Upstream
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Upstream'
     steps:
@@ -667,7 +691,7 @@ jobs:
 
   label_add_enhancement:
     name: Label - Add - Enhancement - Only
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Enhancement - Only'
     steps:
@@ -686,7 +710,7 @@ jobs:
 
   label_add_not-planned_enhancement:
     name: Label - Add - Not-Planned_and_Enhancement
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Not-Planned_and_Enhancement'
     steps:
@@ -711,7 +735,7 @@ jobs:
           actions: 'remove-labels'
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.inputs.item_id }}
-          labels: 'Triage,Queries'
+          labels: 'Triage,No-Log,Queries'
 
       - name: Label - Add - Not-Planned_and_Enhancement - 3
         uses: actions-cool/issues-helper@v3
@@ -723,7 +747,7 @@ jobs:
 
   label_add_not-planned:
     name: Label - Add - Not-Planned - Only
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Add - Not-Planned - Only'
     steps:
@@ -732,7 +756,6 @@ jobs:
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
 
       - name: Label - Add - Not-Planned - Only - 1
         uses: actions-cool/issues-helper@v3

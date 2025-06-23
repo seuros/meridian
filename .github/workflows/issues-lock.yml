@@ -9,7 +9,7 @@ on:
         required: true
         default: 'all'
   schedule:
-    - cron: '15 15 */5 * *'
+    - cron: '15 15 */3 * *'
 
 permissions:
   issues: write
@@ -20,8 +20,8 @@ concurrency:
 # Lock Threads - https://github.com/dakanji/lock-threads
 jobs:
   lock-threads-01:
-    name: Lock Resolved Issues
-    runs-on: ubuntu-24.04
+    name: Lock Misc Issues
+    runs-on: ubuntu-latest
 
     if: github.repository == 'RefindPlusRepo/RefindPlus' && (github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'lock')
     steps:
@@ -46,7 +46,8 @@ jobs:
           issue-lock-reason: ''
           issue-inactive-days: '1'
           include-any-issue-labels: 'Resolved'
-          remove-issue-labels: 'Triage, Stale, Tagged, Queries, Unresolved, Uncertain, Accepted'
+          exclude-any-issue-labels: 'Stale'
+          remove-issue-labels: 'Triage, No-Log, Tagged, Queries, Unresolved, Uncertain, Accepted'
           issue-comment: |-
             This thread is being locked.
 
@@ -65,7 +66,8 @@ jobs:
           issue-lock-reason: ''
           issue-inactive-days: '2'
           include-any-issue-labels: 'Invalid, Not-Planned, Duplicate, Cannot-Replicate, Cancelled, Config'
-          remove-issue-labels: 'Stale, Tagged, Queries, Unresolved, Uncertain, Accepted'
+          exclude-any-issue-labels: 'Stale'
+          remove-issue-labels: 'Tagged, Queries, Unresolved, Uncertain, Accepted'
           issue-comment: |-
             This thread is being locked.
 
@@ -84,7 +86,7 @@ jobs:
           issue-lock-reason: ''
           add-issue-labels: 'Abandoned'
           issue-inactive-days: '4'
-          include-any-issue-labels: 'Stale, Incomplete'
+          include-any-issue-labels: 'Stale'
           remove-issue-labels: 'Stale, Tagged, Queries, Uncertain, Accepted'
           issue-comment: |-
             This item is being locked.
@@ -104,7 +106,8 @@ jobs:
           issue-lock-reason: ''
           issue-inactive-days: '7'
           include-any-issue-labels: 'Unclear, Noted'
-          remove-issue-labels: 'Stale, Tagged, Queries, Uncertain, Accepted'
+          exclude-any-issue-labels: 'Stale'
+          remove-issue-labels: 'Tagged, Queries, Uncertain, Accepted'
           issue-comment: |-
             This thread is being locked.
 
@@ -122,10 +125,10 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           issue-lock-reason: ''
           add-issue-labels: 'Resolved'
-          issue-inactive-days: '3'
+          issue-inactive-days: '4'
           include-any-issue-labels: ''
-          exclude-any-issue-labels: 'Triage, Unclear, Parked, Prorogued, Help-Wanted, Confirmed, Known-Issue'
-          remove-issue-labels: 'Stale, Tagged, Queries, Unresolved, Uncertain, Accepted'
+          exclude-any-issue-labels: 'Stale, Incomplete, Queries, Triage, Unclear, Parked, Prorogued, Help-Wanted, Confirmed, Known-Issue'
+          remove-issue-labels: 'Tagged, Queries, Unresolved, Uncertain, Accepted'
           issue-comment: |-
             This thread is being locked.
 
@@ -143,7 +146,7 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           issue-lock-reason: ''
           add-issue-labels: ''
-          issue-inactive-days: '40'
+          issue-inactive-days: '45'
           include-any-issue-labels: 'Confirmed, Known-Issue'
           remove-issue-labels: 'Stale, Tagged, Queries, Uncertain, Accepted'
           issue-comment: |-

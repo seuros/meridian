@@ -9,7 +9,7 @@ on:
         required: true
         default: 'all'
   schedule:
-    - cron: '5 5 */5 * *'
+    - cron: '5 5 */3 * *'
 
 permissions:
   issues: write
@@ -19,7 +19,7 @@ jobs:
   # Handle Stale Threads - https://github.com/actions/stale
   stale:
     name: Flag or Close Issues
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.repository == 'RefindPlusRepo/RefindPlus' && (github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'stale')
     steps:
@@ -68,11 +68,10 @@ jobs:
           close-issue-message: |-
             This item is being closed.
           days-before-stale: 0
-          days-before-close: 3
+          days-before-close: 2
           exempt-assignees: 'dakanji'
           stale-issue-label: 'Stale'
           any-of-labels: 'Incomplete'
-          remove-issue-stale-when-updated: true
           repo-token: ${{ steps.app-token.outputs.token }}
 
       - name: Handle Rate Limits
@@ -91,8 +90,8 @@ jobs:
             Trigger: Failure to Respond
           close-issue-message: |-
             This item is being closed.
-          days-before-stale: 2
-          days-before-close: 3
+          days-before-stale: 1
+          days-before-close: 2
           exempt-assignees: 'dakanji'
           stale-issue-label: 'Stale'
           any-of-labels: 'Queries'
@@ -115,8 +114,8 @@ jobs:
             Trigger: Inactivity Threshold
           close-issue-message: |-
             This item is being closed.
-          days-before-stale: 30
-          days-before-close: 30
+          days-before-stale: 21
+          days-before-close: 21
           exempt-assignees: 'dakanji'
           stale-issue-label: 'Stale'
           remove-issue-stale-when-updated: true

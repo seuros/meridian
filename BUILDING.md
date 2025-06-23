@@ -1,7 +1,7 @@
 # REMOTE BUILD (GITHUB)
 
 RefindPlus can be built by leveraging GitHub's Workflow Artefact creation and storage capabilities.\
-A GitHub `Workflow Action` is included in this repository to facilitate this.
+A `GitHub Workflow Action` is included in this repository to facilitate this.
 
 - Navigate to https://github.com/RefindPlusRepo/RefindPlus and fork the repository.
 - Navigate to `https://github.com/YOUR_GITHUB_USERNAME_GOES_HERE/RefindPlus.git`.
@@ -18,11 +18,15 @@ A GitHub `Workflow Action` is included in this repository to facilitate this.
 >
 > Replace `YOUR_GITHUB_USERNAME_GOES_HERE` above with your actual GitHub User Name.
 
-Once the action run is completed, click on the action instance displayed and look for `"Artifacts"` near the bottom of the page for available builds to download. The artefacts will be automatically removed from your repository fork after a period of time. You might want to `Disable Github Actions` on your fork after downloading the artefacts and only enable this when needed to stop periodic actions for the RefindPlus Repository from running on your fork.
+Once the workflow run is completed, click on the action instance displayed and look for `"Artifacts"` near the bottom of the page for available builds to download. The artefacts will be automatically removed from your repository fork after a period of time.
 
 > [!TIP]
 >
-> If your repository fork has diverged from the `RefindPlusRepo` versions, refer to the [REPOSITORY SYNC](https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#repository-sync) section below for sync options.
+> You might want to `disable Github Actions` on your fork after downloading the artefact builds, and only enable the workflow action when needed, to prevent periodic RefindPlusRepo-specific workflows from running on your fork.
+
+> [!TIP]
+>
+> If your repository fork has `diverged from RefindPlusRepo`, refer to the [REPOSITORY SYNC](https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#repository-sync) section below for sync options.
 
 
 <br><br>
@@ -235,4 +239,4 @@ $ git push
 ## OPTION 3: GitHub Sync
 
 GitHub includes an interface for syncing forks.\
-While, unlike Option 3, Options 1 and 2 will leave your fork with a clean history consistent with the source repositories, some may find the GitHub interface easier to use.
+While, unlike Option 3, Options 1 and 2 will always leave your fork with a clean history consistent with the source repositories, some may find the GitHub interface convenient.

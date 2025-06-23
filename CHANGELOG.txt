@@ -1,9 +1,14 @@
+0.14.2.AD (PRE-RELEASE):
+-----------------------
+- PENDING
+
+
 0.14.2.AC (03 JUN 2025):
 -----------------------
 - Adds Misc Fixes and Optimisation
 - Adds `TagBadRAM` Feature
-  * Faulty memory regions can be flagged as unusable by RefindPlus
-  * Such flagged regions will not be used by the firmware after
+  * Defective memory regions can be flagged by RefindPlus
+  * Such defective memory will not be used by anything after
   * Configurable via three new `badram_fix_XYZ` configuration tokens
 - Fixes `HelpIcon` Handling
   * New deduplication code disabled loader icon caching
@@ -29,7 +34,7 @@
     - All other available boot types must now be explicitly set
   * Avoids potential implicit type conversion issues. Thanks @clague
   * Provides option to create GitHub Build Artefacts. Thanks @startergo
-  * Addresses Potential NULL Pointer Dereferencing. Thnaks @MicroMilo
+  * Addresses Potential NULL Pointer Dereferencing. Thanks @MicroMilo
 
 
 0.14.2.AB (04 FEB 2025):

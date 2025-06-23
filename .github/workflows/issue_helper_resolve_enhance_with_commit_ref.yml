@@ -42,7 +42,7 @@ concurrency:
 jobs:
   issue_resolve_enhance:
     name: Issue - Resolve - Enhance
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
       # Generate App Token - https://github.com/actions/create-github-app-token

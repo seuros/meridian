@@ -15,6 +15,7 @@ on:
         - 'Label - Remove - Incomplete'
         - 'Label - Remove - Invalid'
         - 'Label - Remove - Triage'
+        - 'Label - Remove - NoLog'
         - 'Label - Remove - Parked'
         - 'Label - Remove - Prorogued'
         - 'Label - Remove - Resolved'
@@ -39,7 +40,7 @@ jobs:
   # Misc Issue Items - https://github.com/actions-cool/issues-helper
   label_remove_abandoned:
     name: Label - Remove - Abandoned
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Abandoned'
     steps:
@@ -58,7 +59,7 @@ jobs:
 
   label_remove_cancelled:
     name: Label - Remove - Cancelled
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Cancelled'
     steps:
@@ -77,7 +78,7 @@ jobs:
 
   label_remove_cannot-replicate:
     name: Label - Remove - Cannot-Replicate
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Cannot-Replicate'
     steps:
@@ -96,7 +97,7 @@ jobs:
 
   label_remove_declined:
     name: Label - Remove - Declined
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Duplicate'
     steps:
@@ -115,7 +116,7 @@ jobs:
 
   label_remove_duplicate:
     name: Label - Remove - Duplicate
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Duplicate'
     steps:
@@ -134,7 +135,7 @@ jobs:
 
   label_remove_incomplete:
     name: Label - Remove - Incomplete
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Incomplete'
     steps:
@@ -153,7 +154,7 @@ jobs:
 
   label_remove_invalid:
     name: Label - Remove - Invalid
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Invalid'
     steps:
@@ -170,9 +171,28 @@ jobs:
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Invalid'
 
-  label_remove_pending:
+  label_remove_nolog:
+    name: Label - Remove - NoLog
+    runs-on: ubuntu-latest
+
+    if: github.event.inputs.operation == 'Label - Remove - NoLog'
+    steps:
+      - id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'remove-labels'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.inputs.item_id }}
+          labels: 'No-Log'
+
+  label_remove_triage:
     name: Label - Remove - Triage
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Triage'
     steps:
@@ -187,11 +207,11 @@ jobs:
           actions: 'remove-labels'
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.inputs.item_id }}
-          labels: 'Triage'
+          labels: 'Triage,No-Log'
 
   label_remove_parked:
     name: Label - Remove - Parked
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Parked'
     steps:
@@ -210,7 +230,7 @@ jobs:
 
   label_remove_prorogued:
     name: Label - Remove - Prorogued
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Prorogued'
     steps:
@@ -229,7 +249,7 @@ jobs:
 
   label_remove_resolved:
     name: Label - Remove - Resolved
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Resolved'
     steps:
@@ -248,7 +268,7 @@ jobs:
 
   label_remove_tagged:
     name: Label - Remove - Tagged
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Tagged'
     steps:
@@ -267,7 +287,7 @@ jobs:
 
   label_remove_queries:
     name: Label - Remove - Queries
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Queries'
     steps:
@@ -286,7 +306,7 @@ jobs:
 
   label_remove_upstream:
     name: Label - Remove - Upstream
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Upstream'
     steps:
@@ -305,7 +325,7 @@ jobs:
 
   label_remove_wontfix:
     name: Label - Remove - Not-Planned
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     if: github.event.inputs.operation == 'Label - Remove - Not-Planned'
     steps:

@@ -32,7 +32,7 @@ concurrency:
 jobs:
   issue_outdated_version1:
     name: Issue - Outdated - Version1
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
       # Generate App Token - https://github.com/actions/create-github-app-token
@@ -129,4 +129,4 @@ jobs:
           actions: 'remove-labels'
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.inputs.item_id }}
-          labels: 'Triage,Incomplete,Tagged'
+          labels: 'Triage,No-Log,Incomplete,Tagged'

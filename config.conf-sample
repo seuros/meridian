@@ -210,7 +210,7 @@
 #   Win   - Disable Bootlogo for Windows Loaders
 #   Lin   - Disable Bootlogo for Linux Stub Loaders
 #   All   - Disable Bootlogo for Every Type of Loader
-#   Off   - Disable Bootlogo for None of these Loaders (Default)
+#   Off   - Disable Bootlogo for None of These Loaders (Default)
 #
 # NOTES:
 # 1. The 'All' option takes precedence over others apart from 'Off'

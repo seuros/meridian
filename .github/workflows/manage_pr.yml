@@ -1,20 +1,23 @@
 name: PR Manager
 
 on:
-  pull_request:
+  pull_request_target:
     types:
       - closed
 
 permissions:
   contents: read
   issues: write
+  pull-requests: write
 
 concurrency:
   group: lock
 
 jobs:
-  Add Label:
-    runs-on: ubuntu-24.04
+  handle-labels:
+    runs-on: ubuntu-latest
+
+    if: github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -39,3 +42,11 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.pull_request.number }}
           labels: 'Withdrawn'
+
+      - id: remove-labels
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'remove-labels'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.pull_request.number }}
+          labels: 'Triage,No-Log,Queries,Pending,Prorogued'
