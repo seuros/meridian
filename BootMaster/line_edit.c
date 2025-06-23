@@ -102,7 +102,10 @@ BOOLEAN line_edit (
     );
 
     MsgStr = L"Use Cursor Keys to Edit, 'ESC' to Exit, 'Enter' to Boot with Edited Options";
-    REFIT_CALL_2_WRAPPER(gST->ConOut->OutputString, gST->ConOut, MsgStr);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->OutputString,
+        gST->ConOut, MsgStr
+    );
 
     if (line_in == NULL) {
         line_in = L"";
@@ -133,7 +136,10 @@ BOOLEAN line_edit (
     len    = StrLen (line);
     size   = StrLen (line_in) + 1024; // DA-TAG: Confirm This ... Seems should be '1'
 
-    REFIT_CALL_2_WRAPPER(gST->ConOut->EnableCursor, gST->ConOut, TRUE);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->EnableCursor,
+        gST->ConOut, TRUE
+    );
     while (!exit) {
         i = len - first;
         if (i >= (x_max - 2)) {
@@ -152,7 +158,10 @@ BOOLEAN line_edit (
             gST->ConOut->SetCursorPosition, gST->ConOut,
             0, y_pos
         );
-        REFIT_CALL_2_WRAPPER(gST->ConOut->OutputString, gST->ConOut, print);
+        REFIT_CALL_2_WRAPPER(
+            gST->ConOut->OutputString,
+            gST->ConOut, print
+        );
         REFIT_CALL_3_WRAPPER(
             gST->ConOut->SetCursorPosition, gST->ConOut,
             cursor, y_pos
@@ -161,7 +170,10 @@ BOOLEAN line_edit (
             gBS->WaitForEvent, 1,
             &gST->ConIn->WaitForKey, &index
         );
-        err = REFIT_CALL_2_WRAPPER(gST->ConIn->ReadKeyStroke, gST->ConIn, &key);
+        err = REFIT_CALL_2_WRAPPER(
+            gST->ConIn->ReadKeyStroke,
+            gST->ConIn, &key
+        );
         if (EFI_ERROR(err)) {
             continue;
         }
@@ -328,7 +340,10 @@ BOOLEAN line_edit (
             continue;
         } // switch
     } // while
-    REFIT_CALL_2_WRAPPER(gST->ConOut->EnableCursor, gST->ConOut, FALSE);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->EnableCursor,
+        gST->ConOut, FALSE
+    );
 
     MY_FREE_POOL(print);
     MY_FREE_POOL(line);

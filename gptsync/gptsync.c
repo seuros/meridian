@@ -57,8 +57,16 @@ UINTN check_mbr (VOID) {
     for (i = 0; i < mbr_part_count; i++) {
         // Check for overlap
         for (k = 0; k < mbr_part_count; k++) {
-            if (k != i && !(mbr_parts[i].start_lba > mbr_parts[k].end_lba || mbr_parts[k].start_lba > mbr_parts[i].end_lba)) {
-                Print (L"Status: MBR partition table is invalid, partitions overlap.\n");
+            if (k != i &&
+                !(
+                    mbr_parts[i].start_lba > mbr_parts[k].end_lba ||
+                    mbr_parts[k].start_lba > mbr_parts[i].end_lba
+                )
+            ) {
+                Print (
+                    L"Status: MBR partition table is invalid, partitions overlap.\n"
+                );
+
                 return EFI_UNSUPPORTED;
             }
         }
@@ -72,6 +80,7 @@ UINTN check_mbr (VOID) {
                 L"Status: Extended partition found in MBR table, will not touch this disk.\n",
                 gpt_parts[i].gpt_parttype->name
             );
+
             return EFI_UNSUPPORTED;
         }
 
@@ -113,9 +122,7 @@ UINTN write_mbr (VOID) {
 
     // Read MBR data
     status = read_sector(0, sector);
-    if (status != 0) {
-        return status;
-    }
+    if (status != 0) return status;
 
     // Write partition table
     sig = 0xaa55;
@@ -125,10 +132,9 @@ UINTN write_mbr (VOID) {
     active = 0x80;
     for (i = 0; i < 4; i++) {
         for (k = 0; k < new_mbr_part_count; k++) {
-            if (new_mbr_parts[k].index == i) {
-                break;
-            }
+            if (new_mbr_parts[k].index == i) break;
         }
+
         if (k >= new_mbr_part_count) {
             // Unused entry
             table[i].flags        = 0;
@@ -144,11 +150,11 @@ UINTN write_mbr (VOID) {
         }
         else {
             if (new_mbr_parts[k].active) {
-                table[i].flags    = active;
+                table[i].flags = active;
                 active = 0x00;
             }
             else {
-                table[i].flags    = 0x00;
+                table[i].flags = 0x00;
             }
 
             table[i].type         = new_mbr_parts[k].mbr_type;
@@ -164,14 +170,14 @@ UINTN write_mbr (VOID) {
                 Print (L"Warning: Partition %d starts beyond 2 TiB limit\n", i+1);
                 lba = MAX_MBR_LBA;
             }
-            table[i].start_lba    = (UINT32)lba;
+            table[i].start_lba = (UINT32) lba;
 
             lba = new_mbr_parts[k].end_lba + 1 - new_mbr_parts[k].start_lba;
             if (lba > MAX_MBR_LBA) {
                 Print (L"Warning: Partition %d extends beyond 2 TiB limit\n", i+1);
                 lba = MAX_MBR_LBA;
             }
-            table[i].size         = (UINT32)lba;
+            table[i].size = (UINT32) lba;
         }
     }
 

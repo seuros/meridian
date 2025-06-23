@@ -1442,7 +1442,7 @@ size_t ZSTD_findFrameCompressedSize(const void *src, size_t srcSize)
 
 			if (blockProperties.lastBlock)
 				break;
-		}
+		} // while {Infinite}
 
 		if (fParams.checksumFlag) { /* Frame content checksum */
 			if (remainingSize < 4)
@@ -1510,7 +1510,7 @@ static size_t ZSTD_decompressFrame(ZSTD_DCtx *dctx, void *dst, size_t dstCapacit
 		remainingSize -= cBlockSize;
 		if (blockProperties.lastBlock)
 			break;
-	}
+	} // while {Infinite}
 
 	if (dctx->fParams.checksumFlag) { /* Frame content checksum verification */
 		U32 const checkCalc = (U32)xxh64_digest(&dctx->xxhState);

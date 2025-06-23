@@ -891,7 +891,10 @@ VOID EFIAPI BdsLibConnectAllDriversToAllControllers (
     ReadAllKeyStrokes();
     if (!AppleFirmware) {
         // Always reset the buffer on UEFI PC
-        REFIT_CALL_2_WRAPPER(gST->ConIn->Reset, gST->ConIn, FALSE);
+        REFIT_CALL_2_WRAPPER(
+            gST->ConIn->Reset,
+            gST->ConIn, FALSE
+        );
     }
 
     Status = BdsLibConnectAllDriversToAllControllersEx();

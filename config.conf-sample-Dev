@@ -327,7 +327,7 @@
 #
 #disable_set_applefb
 
-# Some computers, such as some classic MacPros, may have multiple GOP instances:
+# Some computers, such as classic MacPros, may have multiple GOP instances:
 #   - One installed on the Console Out handle
 #   - Others installed on GPU handles.
 # GOP on the Console Out Handle is what everything uses and is provided by

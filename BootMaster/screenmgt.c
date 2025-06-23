@@ -249,7 +249,10 @@ VOID InitScreen (VOID) {
     GraphicsScreenDirty = TRUE;
 
     // Disable cursor
-    REFIT_CALL_2_WRAPPER(gST->ConOut->EnableCursor, gST->ConOut, FALSE);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->EnableCursor,
+        gST->ConOut, FALSE
+    );
 
     // Get size of text console
     if (REFIT_CALL_4_WRAPPER(
@@ -612,7 +615,11 @@ VOID SwitchToText (
 
 
     egSetGraphicsModeEnabled (FALSE);
-    REFIT_CALL_2_WRAPPER(gST->ConOut->EnableCursor, gST->ConOut, CursorEnabled);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->EnableCursor,
+        gST->ConOut,
+        CursorEnabled
+    );
 
     #if REFIT_DEBUG > 0
     TextModeOnEntry = (
@@ -854,11 +861,20 @@ VOID FinishExternalScreen (VOID) {
 
 VOID TerminateScreen (VOID) {
     // Clear text screen
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
-    REFIT_CALL_1_WRAPPER(gST->ConOut->ClearScreen,  gST->ConOut);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_BASIC
+    );
+    REFIT_CALL_1_WRAPPER(
+        gST->ConOut->ClearScreen,
+        gST->ConOut
+    );
 
     // Enable cursor
-    REFIT_CALL_2_WRAPPER(gST->ConOut->EnableCursor, gST->ConOut, TRUE);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->EnableCursor,
+        gST->ConOut, TRUE
+    );
 } // VOID TerminateScreen()
 
 VOID DrawScreenHeader (
@@ -870,13 +886,25 @@ VOID DrawScreenHeader (
     egClearScreen (&DarkBackgroundPixel);
 
     // Then clear in text mode
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
-    REFIT_CALL_1_WRAPPER(gST->ConOut->ClearScreen,  gST->ConOut);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_BASIC
+    );
+    REFIT_CALL_1_WRAPPER(
+        gST->ConOut->ClearScreen,
+        gST->ConOut
+    );
 
     // Paint header background
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BANNER);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_BANNER
+    );
     for (i = 0; i < 3; i++) {
-        REFIT_CALL_3_WRAPPER(gST->ConOut->SetCursorPosition, gST->ConOut, 0, i);
+        REFIT_CALL_3_WRAPPER(
+            gST->ConOut->SetCursorPosition, gST->ConOut,
+            0, i
+        );
         if (BlankLine) {
             Print (BlankLine);
         }
@@ -894,8 +922,14 @@ VOID DrawScreenHeader (
     }
 
     // Reposition cursor
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
-    REFIT_CALL_3_WRAPPER(gST->ConOut->SetCursorPosition, gST->ConOut, 0, 4);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_BASIC
+    );
+    REFIT_CALL_3_WRAPPER(
+        gST->ConOut->SetCursorPosition, gST->ConOut,
+        0, 4
+    );
 } // VOID DrawScreenHeader()
 
 BOOLEAN ReadAllKeyStrokes (VOID) {
@@ -920,7 +954,8 @@ BOOLEAN ReadAllKeyStrokes (VOID) {
     if (FirstCall || !GlobalConfig.DirectBoot) {
         while (1) {
             Status = REFIT_CALL_2_WRAPPER(
-                gST->ConIn->ReadKeyStroke, gST->ConIn, &key
+                gST->ConIn->ReadKeyStroke,
+                gST->ConIn, &key
             );
             switch (Status) {
                 case EFI_SUCCESS:
@@ -931,7 +966,10 @@ BOOLEAN ReadAllKeyStrokes (VOID) {
                 break;
                 case EFI_DEVICE_ERROR:
                     // Ensure the buffer is clear
-                    REFIT_CALL_2_WRAPPER(gST->ConIn->Reset, gST->ConIn, FALSE);
+                    REFIT_CALL_2_WRAPPER(
+                        gST->ConIn->Reset,
+                        gST->ConIn, FALSE
+                    );
 
                 // No Break
                 default:
@@ -946,7 +984,7 @@ BOOLEAN ReadAllKeyStrokes (VOID) {
                 // Exit loop on error ... Buffer is empty
                 break;
             }
-        } // for
+        } // while {Infinite}
     }
 
     #if REFIT_DEBUG > 0
@@ -959,8 +997,10 @@ BOOLEAN ReadAllKeyStrokes (VOID) {
     else if (EmptyBuffer) {
         Status = EFI_ALREADY_STARTED;
     }
-    else if (!GlobalConfig.DirectBoot) {
-        FlushFailedTag = TRUE;
+    else {
+        if (!GlobalConfig.DirectBoot) {
+            FlushFailedTag = TRUE;
+        }
     }
 
     MsgStr = PoolPrint (L"Clear Keystroke Buffer ... %r", Status);
@@ -1111,7 +1151,7 @@ VOID PauseForKey (VOID) {
             if (Breakout) {
                 break;
             }
-        } // for
+        } // while {Infinite}
     }
 
     GraphicsScreenDirty = TRUE;
@@ -1277,9 +1317,15 @@ BOOLEAN CheckFatalError (
 
 
 
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_ERROR);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_ERROR
+    );
     PrintUglyText (Temp, NEXTLINE);
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_BASIC
+    );
     haveError = TRUE;
 
     #if REFIT_DEBUG > 0
@@ -1330,9 +1376,15 @@ BOOLEAN CheckError (
     ALT_LOG(1, LOG_STAR_SEPARATOR, Temp);
     #endif
 
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_ERROR);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_ERROR
+    );
     PrintUglyText (Temp, NEXTLINE);
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_BASIC
+    );
 
     PauseSeconds (6);
 

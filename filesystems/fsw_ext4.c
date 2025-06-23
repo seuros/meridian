@@ -654,7 +654,7 @@ static fsw_status_t fsw_ext4_dir_read(struct fsw_ext4_volume *vol, struct fsw_ex
             (entry.name_len == 2 && entry.name[0] == '.' && entry.name[1] == '.'))
             continue;
         break;
-    }
+    } // while {Infinite}
 
     // setup name
     entry_name.type = FSW_STRING_TYPE_ISO88591;
@@ -701,7 +701,7 @@ static fsw_status_t fsw_ext4_read_dentry(struct fsw_shandle *shand, struct ext4_
 
         // valid, but unused entry, skip it
         shand->pos += entry->rec_len - 8;
-    }
+    } // while {Infinite}
 
     // read file name (variable length)
     buffer_size = entry->name_len;

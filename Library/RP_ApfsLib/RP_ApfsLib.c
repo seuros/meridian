@@ -27,7 +27,6 @@ Modified 2021 - 2023, Dayo Akanji. (sf.net/u/dakanji/profile)
 
 #include "../../include/refit_call_wrapper.h"
 
-extern BOOLEAN AppleFirmware;
 
 EFI_STATUS RefitApfsConnectParentDevice (VOID) {
     EFI_STATUS        Status;

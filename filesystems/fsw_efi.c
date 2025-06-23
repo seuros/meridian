@@ -1005,7 +1005,7 @@ EFI_STATUS fsw_efi_dir_open(
         return EFI_WRITE_PROTECTED;
 
     lookup_path.type = FSW_STRING_TYPE_UTF16;
-    lookup_path.len  = (int)StrLen(FileName);
+    lookup_path.len  = (int)StrLen (FileName);
     lookup_path.size = lookup_path.len * sizeof (fsw_u16);
     lookup_path.data = FileName;
 

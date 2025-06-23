@@ -76,9 +76,9 @@
 #define MENU_FUNCTION_PAINT_TIMEOUT   (4)
 #define MENU_FUNCTION_PAINT_HINTS     (5)
 
-static CHAR16 ArrowUp[2]   = {ARROW_UP, 0};
+static CHAR16 ArrowUp[2]   = {ARROW_UP,   0};
 static CHAR16 ArrowDown[2] = {ARROW_DOWN, 0};
-static UINTN  TileSizes[2] = {144, 64};
+static UINTN  TileSizes[2] = {144,       64};
 
 // Text and icon spacing constants.
 #define TEXT_YMARGIN                  (2)
@@ -88,21 +88,21 @@ static UINTN  TileSizes[2] = {144, 64};
 #define TILE_YSPACING                (16)
 
 // Alignment values for PaintIcon()
-#define ALIGN_RIGHT 1
-#define ALIGN_LEFT  0
+#define ALIGN_LEFT                     0
+#define ALIGN_RIGHT                    1
 
 EG_IMAGE *SelectionImages[2] = {NULL, NULL};
 
-EFI_EVENT *WaitList          = NULL;
-UINT64     MainMenuLoad      = 0;
-UINTN      WaitListLength    = 0;
-UINTN      IconRowPosX       = 0;
-UINTN      IconRowPosY       = 0;
-UINTN      ToolRowPosX       = 0;
-UINTN      ToolRowPosY       = 0;
-UINTN      IconRowCount      = 0;
-UINTN      ToolRowCount      = 0;
-UINTN      IconRowItems      = 0;
+EFI_EVENT *WaitList          =  NULL;
+UINT64     MainMenuLoad      =     0;
+UINTN      WaitListLength    =     0;
+UINTN      IconRowPosX       =     0;
+UINTN      IconRowPosY       =     0;
+UINTN      ToolRowPosX       =     0;
+UINTN      ToolRowPosY       =     0;
+UINTN      IconRowCount      =     0;
+UINTN      ToolRowCount      =     0;
+UINTN      IconRowItems      =     0;
 
 // Pointer variables
 BOOLEAN PointerEnabled       = FALSE;
@@ -375,7 +375,12 @@ VOID UpdateScroll (
 
         break;
         case SCROLL_LINE_UP:
-            if (State->ScrollMode == SCROLL_MODE_ICONS) {
+            if (State->ScrollMode != SCROLL_MODE_ICONS) {
+                if (State->CurrentSelection > 0) {
+                    State->CurrentSelection--;
+                }
+            }
+            else {
                 if (State->CurrentSelection >= State->InitialRow1) {
                     if (State->MaxIndex <= State->InitialRow1) {
                         State->CurrentSelection = State->FirstVisible;
@@ -389,15 +394,15 @@ VOID UpdateScroll (
                     }
                 }
             }
-            else {
-                if (State->CurrentSelection > 0) {
-                    State->CurrentSelection--;
-                }
-            }
 
         break;
         case SCROLL_LINE_DOWN:
-            if (State->ScrollMode == SCROLL_MODE_ICONS) {
+            if (State->ScrollMode != SCROLL_MODE_ICONS) {
+                if (State->CurrentSelection < State->MaxIndex) {
+                    State->CurrentSelection++;
+                }
+            }
+            else {
                 if (State->CurrentSelection <= State->FinalRow0) {
                     if (State->LastVisible <= State->FirstVisible) {
                         State->CurrentSelection = State->InitialRow1;
@@ -409,11 +414,6 @@ VOID UpdateScroll (
                             (State->CurrentSelection - State->FirstVisible) /
                             (State->LastVisible      - State->FirstVisible);
                     }
-                }
-            }
-            else {
-                if (State->CurrentSelection < State->MaxIndex) {
-                    State->CurrentSelection++;
                 }
             }
 
@@ -590,17 +590,17 @@ VOID SaveScreen (VOID) {
             OurIndex = 1;
 
             TimeWait = TimeWait * 2;
-            if (TimeWait > 120000) {
+            if (TimeWait <= 120000) {
+                #if REFIT_DEBUG > 0
+                LoopChange = L"Extend";
+                #endif
+            }
+            else {
                 // Reset TimeWait if greater than 2 minutes
                 TimeWait = BaseWait;
 
                 #if REFIT_DEBUG > 0
                 LoopChange = L"Reset";
-                #endif
-            }
-            else {
-                #if REFIT_DEBUG > 0
-                LoopChange = L"Extend";
                 #endif
             }
 
@@ -688,21 +688,21 @@ CHAR16 * GetScanCodeText (
 
 
     switch (ScanCode) {
-        case SCAN_END:       Retval = L"SCROLL_LAST";   break;
-        case SCAN_HOME:      Retval = L"SCROLL_FIRST";  break;
-        case SCAN_PAGE_UP:   Retval = L"PAGE_UP";       break;
-        case SCAN_PAGE_DOWN: Retval = L"PAGE_DOWN";     break;
-        case SCAN_UP:        Retval = L"ARROW_UP";      break;
-        case SCAN_LEFT:      Retval = L"ARROW_LEFT";    break;
-        case SCAN_DOWN:      Retval = L"ARROW_DOWN";    break;
-        case SCAN_RIGHT:     Retval = L"ARROW_RIGHT";   break;
-        case SCAN_ESC:       Retval = L"ESC-Rescan";    break;
-        case SCAN_DELETE:    Retval = L"DEL-Hide";      break;
-        case SCAN_INSERT:    Retval = L"INS-Details";   break;
-        case SCAN_F2:        Retval = L"F2-Details";    break;
-        case SCAN_F10:       Retval = L"F10-ScrnSht";   break; // 'ScrnSht' limits length
-        case 0x0016:         Retval = L"F12-Eject";     break;
-        default:             Retval = L"KEY_UNKNOWN";   break;
+        case SCAN_END:       Retval = L"SCROLL_LAST" ; break;
+        case SCAN_HOME:      Retval = L"SCROLL_FIRST"; break;
+        case SCAN_PAGE_UP:   Retval = L"PAGE_UP"     ; break;
+        case SCAN_PAGE_DOWN: Retval = L"PAGE_DOWN"   ; break;
+        case SCAN_UP:        Retval = L"ARROW_UP"    ; break;
+        case SCAN_LEFT:      Retval = L"ARROW_LEFT"  ; break;
+        case SCAN_DOWN:      Retval = L"ARROW_DOWN"  ; break;
+        case SCAN_RIGHT:     Retval = L"ARROW_RIGHT" ; break;
+        case SCAN_ESC:       Retval = L"ESC-Rescan"  ; break;
+        case SCAN_DELETE:    Retval = L"DEL-Hide"    ; break;
+        case SCAN_INSERT:    Retval = L"INS-Details" ; break;
+        case SCAN_F2:        Retval = L"F2-Details"  ; break;
+        case SCAN_F10:       Retval = L"F10-ScrnShot"; break;
+        case 0x0016:         Retval = L"F12-Eject"   ; break;
+        default:             Retval = L"KEY_UNKNOWN" ; break;
     } // switch
 
     return Retval;
@@ -724,14 +724,20 @@ VOID ShowTextInfoLines (
 
     BeginTextScreen (Screen->Title);
 
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_BASIC
+    );
 
     for (i = 0; i < (INTN)Screen->InfoLineCount; i++) {
         REFIT_CALL_3_WRAPPER(
             gST->ConOut->SetCursorPosition, gST->ConOut,
             3, 4 + i
         );
-        REFIT_CALL_2_WRAPPER(gST->ConOut->OutputString, gST->ConOut, Screen->InfoLines[i]);
+        REFIT_CALL_2_WRAPPER(
+            gST->ConOut->OutputString,
+            gST->ConOut, Screen->InfoLines[i]
+        );
     }
 } // static VOID ShowTextInfoLines()
 
@@ -747,9 +753,7 @@ UINTN TextLineHeight (VOID) {
     return TheLineHeight;
 } // static UINTN TextLineHeight()
 
-// Display text with a solid background (MenuBackgroundPixel or SelectionBackgroundPixel).
-// Indents text by one character and placed TEXT_YMARGIN pixels down from the
-// specified XPos and YPos locations.
+// Display text with a solid background
 static
 VOID DrawText (
     IN CHAR16  *Text,
@@ -758,8 +762,10 @@ VOID DrawText (
     IN UINTN    XPos,
     IN UINTN    YPos
 ) {
+    UINTN     LumIndex;
     EG_IMAGE *TextBuffer;
-    EG_PIXEL  Bg;
+    EG_PIXEL  TextBackground;
+    EG_PIXEL  SelectionPixel = { 0xFF, 0xFF, 0xFF, 0 };
 
 
     TextBuffer = egCreateFilledImage (
@@ -768,41 +774,38 @@ VOID DrawText (
         FALSE,
         &MenuBackgroundPixel
     );
-
     if (TextBuffer == NULL) {
         // Early Return
         return;
     }
 
-    Bg = MenuBackgroundPixel;
-    if (Selected) {
-        EG_PIXEL SelectionBackgroundPixel = { 0xFF, 0xFF, 0xFF, 0 };
-
+    if (!Selected) {
+        TextBackground = MenuBackgroundPixel;
+    }
+    else {
         // Draw selection bar background
         egFillImageArea (
             TextBuffer,
             0, 0,
             FieldWidth,
             TextBuffer->Height,
-            &SelectionBackgroundPixel
+            &SelectionPixel
         );
-        Bg = SelectionBackgroundPixel;
+        TextBackground = SelectionPixel;
     }
 
     // Get Luminance Index
-    UINTN LumIndex = GetLumIndex (
-        (UINTN) Bg.r,
-        (UINTN) Bg.g,
-        (UINTN) Bg.b
+    LumIndex = GetLumIndex (
+        (UINTN) TextBackground.r,
+        (UINTN) TextBackground.g,
+        (UINTN) TextBackground.b
     );
 
     // Render the text
     egRenderText (
-        Text,
-        TextBuffer,
+        Text, TextBuffer,
         egGetFontCellWidth(),
-        TEXT_YMARGIN,
-        (UINT8) LumIndex
+        TEXT_YMARGIN, (UINT8) LumIndex
     );
 
     egDrawImageWithTransparency (
@@ -828,20 +831,23 @@ UINT8 AverageBrightness (
 ) {
     UINTN i;
     UINTN Sum;
+    UINTN Size;
 
 
-    if (Image == NULL || ((Image->Width * Image->Height) == 0)) {
+    if (Image == NULL || (Image->Width * Image->Height) == 0) {
         // Early Return
         return 0;
     }
 
-    Sum = 0;
-    for (i = 0; i < (Image->Width * Image->Height); i++) {
+    Sum  = 0;
+    Size = Image->Width * Image->Height;
+
+    for (i = 0; i < Size; i++) {
         Sum += Image->PixelData[i].r;
         Sum += Image->PixelData[i].g;
         Sum += Image->PixelData[i].b;
     }
-    Sum /= (Image->Width * Image->Height * 3);
+    Sum /= (Size * 3);
 
     return (UINT8) Sum;
 } // static UINT8 AverageBrightness()
@@ -884,8 +890,7 @@ VOID DrawTextWithTransparency (
 
     // Render the text
     egRenderText (
-        Text,
-        TextBuffer,
+        Text, TextBuffer,
         0, 0,
         AverageBrightness (TextBuffer)
     );
@@ -1072,7 +1077,15 @@ VOID PaintAll (
     }
 
     for (i = State->FirstVisible; i <= State->MaxIndex; i++) {
-        if (Screen->Entries[i]->Row == 0) {
+        if (Screen->Entries[i]->Row != 0) {
+            DrawMainMenuEntry (
+                Screen->Entries[i],
+                (i == State->CurrentSelection) ? TRUE : FALSE,
+                itemPosX[i],
+                row1PosY
+            );
+        }
+        else {
             if (i <= State->LastVisible) {
                 DrawMainMenuEntry (
                     Screen->Entries[i],
@@ -1081,14 +1094,6 @@ VOID PaintAll (
                     row0PosY
                 );
             }
-        }
-        else {
-            DrawMainMenuEntry (
-                Screen->Entries[i],
-                (i == State->CurrentSelection) ? TRUE : FALSE,
-                itemPosX[i],
-                row1PosY
-            );
         }
     }
 
@@ -1262,6 +1267,7 @@ VOID PaintArrows (
 
     UINTN            RightX;
     UINTN            VetValue;
+    UINTN            AllTileWidth;
     static EG_IMAGE *LeftArrow       =  NULL;
     static EG_IMAGE *RightArrow      =  NULL;
     static EG_IMAGE *LeftBackground  =  NULL;
@@ -1269,9 +1275,12 @@ VOID PaintArrows (
     static BOOLEAN   LoadedArrows    = FALSE;
 
 
-    RightX = (ScreenW + (TileSizes[0] + TILE_XSPACING) * State->MaxVisible) / 2 + TILE_XSPACING;
+    AllTileWidth = (TILE_XSPACING + TileSizes[0]) * State->MaxVisible;
+    RightX = TILE_XSPACING + ((ScreenW + AllTileWidth) / 2);
 
-    if (!LoadedArrows && !(GlobalConfig.HideUIFlags & HIDEUI_FLAG_ARROWS)) {
+    if (!LoadedArrows &&
+        !(GlobalConfig.HideUIFlags & HIDEUI_FLAG_ARROWS)
+    ) {
         #if REFIT_DEBUG > 0
         MY_MUTELOGGER_SET;
         #endif
@@ -1307,8 +1316,16 @@ VOID PaintArrows (
     // icon's height to properly center it.
     if (LeftArrow && LeftBackground) {
         (State->FirstVisible > 0)
-            ? PaintIcon (LeftArrow, PosX, PosY, ALIGN_RIGHT)
-            : BltImage (LeftBackground, PosX - LeftArrow->Width, PosY - (LeftArrow->Height / 2));
+            ? PaintIcon (
+                LeftArrow,
+                PosX, PosY,
+                ALIGN_RIGHT
+            )
+            : BltImage (
+                LeftBackground,
+                PosX - LeftArrow->Width,
+                PosY - (LeftArrow->Height / 2)
+            );
     }
 
     if (RightArrow && RightBackground) {
@@ -1316,8 +1333,16 @@ VOID PaintArrows (
             row0Loaders > 1
         ) ? row0Loaders - 1 : 0;
         (State->LastVisible < VetValue)
-            ? PaintIcon (RightArrow, RightX, PosY, ALIGN_LEFT)
-            : BltImage (RightBackground, RightX, PosY - (RightArrow->Height / 2));
+            ? PaintIcon (
+                RightArrow,
+                RightX, PosY,
+                ALIGN_LEFT
+            )
+            : BltImage (
+                RightBackground,
+                RightX,
+                PosY - (RightArrow->Height / 2)
+            );
     }
 } // static VOID PaintArrows()
 
@@ -2129,7 +2154,6 @@ UINTN DrawMenuScreen (
     CHAR16                     *MsgStr;
     CHAR16                     *KeyTxt;
     BOOLEAN                     TmpLevel;
-    BOOLEAN                     CheckMute = FALSE;
 
     static BOOLEAN              OnceWait  = FALSE;
     static INTN                 PreviousItem = -1;
@@ -2211,7 +2235,10 @@ UINTN DrawMenuScreen (
     MenuExit = MENU_EXIT_ZERO; // Temporary in case we need to abort DirectBoot
 
     if (Screen->TimeoutSeconds == -1) {
-        Status = REFIT_CALL_2_WRAPPER(gST->ConIn->ReadKeyStroke, gST->ConIn, &key);
+        Status = REFIT_CALL_2_WRAPPER(
+            gST->ConIn->ReadKeyStroke,
+            gST->ConIn, &key
+        );
         if (!EFI_ERROR(Status)) {
             KeyAsString[0] = key.UnicodeChar;
             KeyAsString[1] = 0;
@@ -2221,51 +2248,46 @@ UINTN DrawMenuScreen (
                 State.CurrentSelection = ShortcutEntry;
             }
             else {
+                if (GlobalConfig.DirectBoot) {
+                    // DA-TAG: If we enter here, a shortcut key was pressed but not found.
+                    //         Load the screen menu ... Without tools for Main Menu.
+                    //         Tools are not loaded with DirectBoot for speed.
+                    //         Enable Rescan to allow tools to be loaded.
+                    //         Also disable Timeout just in case.
+                    BlockRescan = FALSE;
+                    Screen->TimeoutSeconds = 0;
+
+                    // Flag Abort DirectBoot
+                    MenuExit = MENU_EXIT_SHOWSCREEN;
+                }
+
                 WaitForRelease =  TRUE;
                 HaveTimeout    = FALSE;
+
+                while (WaitForRelease) {
+                    // Ensure no keys are being held down
+                    Status = REFIT_CALL_2_WRAPPER(
+                        gST->ConIn->ReadKeyStroke,
+                        gST->ConIn, &key
+                    );
+                    if (!EFI_ERROR(Status)) {
+                        // Reset to keep the keystroke buffer clear
+                        REFIT_CALL_2_WRAPPER(
+                            gST->ConIn->Reset,
+                            gST->ConIn, FALSE
+                        );
+
+                        continue;
+                    }
+
+                    WaitForRelease = FALSE;
+                    REFIT_CALL_2_WRAPPER(
+                        gST->ConIn->Reset,
+                        gST->ConIn, TRUE
+                    );
+                } // while
             }
         }
-    }
-
-    if (!WaitForRelease) {
-        // Quietly clear the keystroke buffer just in case
-        #if REFIT_DEBUG > 0
-        MY_MUTELOGGER_SET;
-        #endif
-        REFIT_CALL_2_WRAPPER(gST->ConIn->Reset, gST->ConIn, FALSE);
-        #if REFIT_DEBUG > 0
-        MY_MUTELOGGER_OFF;
-        #endif
-    }
-    else {
-        if (GlobalConfig.DirectBoot) {
-            // DA-TAG: If we enter here, a shortcut key was pressed but not found.
-            //         Load the screen menu ... Without tools for Main Menu.
-            //         Tools are not loaded with DirectBoot for speed.
-            //         Enable Rescan to allow tools to be loaded.
-            //         Also disable Timeout just in case.
-            BlockRescan = FALSE;
-            Screen->TimeoutSeconds = 0;
-
-            // Flag Abort DirectBoot
-            MenuExit = MENU_EXIT_SHOWSCREEN;
-        }
-
-        while (WaitForRelease) {
-            // Ensure no keys are being held down
-            Status = REFIT_CALL_2_WRAPPER(
-                gST->ConIn->ReadKeyStroke,
-                gST->ConIn, &key
-            );
-            if (!EFI_ERROR(Status)) {
-                // Reset to keep the keystroke buffer clear
-                REFIT_CALL_2_WRAPPER(gST->ConIn->Reset, gST->ConIn, FALSE);
-            }
-            else {
-                WaitForRelease = FALSE;
-                REFIT_CALL_2_WRAPPER(gST->ConIn->Reset, gST->ConIn, TRUE);
-            }
-        } // while
     }
 
     if (GlobalConfig.DirectBoot) {
@@ -2345,7 +2367,7 @@ UINTN DrawMenuScreen (
     UserKeyPress = UserKeyScan = Rotated = FALSE;
     while (MenuExit == MENU_EXIT_ZERO) {
         // Update the screen
-        pdClear();
+        pdClear (TRUE);
         if (State.PaintAll && GlobalConfig.ScreensaverTime != -1) {
             StyleFunc (Screen, &State, MENU_FUNCTION_PAINT_ALL, NULL);
             State.PaintAll = FALSE;
@@ -2404,7 +2426,8 @@ UINTN DrawMenuScreen (
             }
         }
 
-        // Read keypress or pointer event (and wait for them if applicable)
+        // Read keypress or pointer event
+        //   (wait for them if applicable)
         if (!PointerEnabled) {
             PointerStatus = EFI_NOT_READY;
         }
@@ -2412,7 +2435,10 @@ UINTN DrawMenuScreen (
             PointerStatus = pdUpdateState();
         }
 
-        Status = REFIT_CALL_2_WRAPPER(gST->ConIn->ReadKeyStroke, gST->ConIn, &key);
+        Status = REFIT_CALL_2_WRAPPER(
+            gST->ConIn->ReadKeyStroke,
+            gST->ConIn, &key
+        );
         if (!EFI_ERROR(Status)) {
             PointerActive      = FALSE;
             DrawSelection      =  TRUE;
@@ -2423,9 +2449,10 @@ UINTN DrawMenuScreen (
             TimeSinceKeystroke =    0;
 
             if (StyleFunc != MainMenuStyle && pdGetState().Press) {
-                // Prevent user from getting stuck on submenus
-                // Only 'About' screen currently reachable without keyboard
+                // Exit all submenus on pointer click.
+                // These return to main menu by default.
                 MenuExit = MENU_EXIT_ENTER;
+
                 break;
             }
         }
@@ -2656,7 +2683,7 @@ UINTN DrawMenuScreen (
 
                     if (DrawSelection) {
                         DrawSelection        = FALSE;
-                        State.PaintSelection = TRUE;
+                        State.PaintSelection =  TRUE;
                     }
 
                     // Log Pointer Event
@@ -2680,7 +2707,7 @@ UINTN DrawMenuScreen (
 
                     if (DrawSelection) {
                         DrawSelection        = FALSE;
-                        State.PaintSelection = TRUE;
+                        State.PaintSelection =  TRUE;
                     }
 
                     // Log Pointer Event
@@ -2726,7 +2753,7 @@ UINTN DrawMenuScreen (
         } // if/else !PointerActive
     } // while
 
-    pdClear();
+    pdClear (TRUE);
     StyleFunc (Screen, &State, MENU_FUNCTION_CLEANUP, NULL);
 
     // Ignore MenuExit if FlushFailedTag is set and not previously reset
@@ -2752,7 +2779,6 @@ UINTN DrawMenuScreen (
 
         if (!IsMainMenu              ||
             ClearedBuffer            ||
-            AppleFirmware            ||
             FlushFailReset           ||
             GlobalConfig.DirectBoot  ||
             MenuExit != MENU_EXIT_ENTER
@@ -2762,7 +2788,9 @@ UINTN DrawMenuScreen (
 
         // Ignore MenuExit if time between loading main menu and detecting
         // an 'Enter' keypress is too low. Primed Keystroke Buffers appear
-        // to only affect UEFI PC but some provision to cover Macs made
+        // to only affect UEFI PC and provision is not made for Apple Macs
+        if (AppleFirmware) break;
+
         MenuExitNumb = 768; // 512 + 256
         MenuExitGate = MenuExitNumb;
         MenuExitTime = GetCurrentMS();
@@ -2862,12 +2890,15 @@ VOID TextMenuStyle (
             }
 
             MenuWidth += 2;
-            if (MenuWidth > ConWidth - 3) {
-                MenuWidth = ConWidth - 3;
+            i = ConWidth - 3;
+            if (MenuWidth > i) {
+                MenuWidth = i;
             }
 
             // Prepare strings for display
-            DisplayStrings = AllocatePool (sizeof (CHAR16 *) * Screen->EntryCount);
+            DisplayStrings = AllocatePool (
+                Screen->EntryCount * sizeof (CHAR16 *)
+            );
             for (i = 0; i <= State->MaxIndex; i++) {
                 // Note: Theoretically, 'SPrint' is a cleaner way to do this; but the
                 // description of the StrSize parameter to SPrint implies it is measured
@@ -2879,7 +2910,7 @@ VOID TextMenuStyle (
                 //
                 // DA-TAG: Investigate This
                 //         Review the above and possibly change other uses of 'SPrint'
-                DisplayStrings[i] = AllocateZeroPool (2 * sizeof (CHAR16));
+                DisplayStrings[i] = AllocateZeroPool (sizeof (CHAR16) * 2);
                 DisplayStrings[i][0] = L' ';
 
                 #if REFIT_DEBUG > 0
@@ -2918,7 +2949,10 @@ VOID TextMenuStyle (
                     );
 
                     if (i == State->CurrentSelection) {
-                        REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_CHOICE_CURRENT);
+                        REFIT_CALL_2_WRAPPER(
+                            gST->ConOut->SetAttribute,
+                            gST->ConOut, ATTR_CHOICE_CURRENT
+                        );
                     }
                     else {
                         if (DisplayStrings[i]) {
@@ -2936,7 +2970,10 @@ VOID TextMenuStyle (
             }
 
             // Scrolling indicators
-            REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_SCROLLARROW);
+            REFIT_CALL_2_WRAPPER(
+                gST->ConOut->SetAttribute,
+                gST->ConOut, ATTR_SCROLLARROW
+            );
             REFIT_CALL_3_WRAPPER(
                 gST->ConOut->SetCursorPosition, gST->ConOut,
                 0, MenuPosY
@@ -2949,13 +2986,22 @@ VOID TextMenuStyle (
                 gST->ConOut->OutputString (gST->ConOut, L" ");
             }
 
-            gST->ConOut->SetCursorPosition (gST->ConOut, 0, MenuPosY + State->MaxVisible);
+            gST->ConOut->SetCursorPosition (
+                gST->ConOut, 0,
+                MenuPosY + State->MaxVisible
+            );
 
             if (State->LastVisible < State->MaxIndex) {
-                REFIT_CALL_2_WRAPPER(gST->ConOut->OutputString, gST->ConOut, ArrowDown);
+                REFIT_CALL_2_WRAPPER(
+                    gST->ConOut->OutputString,
+                    gST->ConOut, ArrowDown
+                );
             }
             else {
-                REFIT_CALL_2_WRAPPER(gST->ConOut->OutputString, gST->ConOut, L" ");
+                REFIT_CALL_2_WRAPPER(
+                    gST->ConOut->OutputString,
+                    gST->ConOut, L" "
+                );
             }
 
             if (!(GlobalConfig.HideUIFlags & HIDEUI_FLAG_HINTS)) {
@@ -2964,7 +3010,10 @@ VOID TextMenuStyle (
                        gST->ConOut->SetCursorPosition, gST->ConOut,
                        0, ConHeight - 2
                    );
-                   REFIT_CALL_2_WRAPPER(gST->ConOut->OutputString, gST->ConOut, Screen->Hint1);
+                   REFIT_CALL_2_WRAPPER(
+                       gST->ConOut->OutputString,
+                       gST->ConOut, Screen->Hint1
+                   );
                }
 
                if (Screen->Hint2 != NULL) {
@@ -2972,7 +3021,10 @@ VOID TextMenuStyle (
                        gST->ConOut->SetCursorPosition, gST->ConOut,
                        0, ConHeight - 1
                    );
-                   REFIT_CALL_2_WRAPPER(gST->ConOut->OutputString, gST->ConOut, Screen->Hint2);
+                   REFIT_CALL_2_WRAPPER(
+                       gST->ConOut->OutputString,
+                       gST->ConOut, Screen->Hint2
+                   );
                }
             }
 
@@ -2983,16 +3035,28 @@ VOID TextMenuStyle (
                 gST->ConOut->SetCursorPosition, gST->ConOut,
                 2, MenuPosY + (State->PreviousSelection - State->FirstVisible)
             );
-            REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_CHOICE_BASIC);
+            REFIT_CALL_2_WRAPPER(
+                gST->ConOut->SetAttribute,
+                gST->ConOut, ATTR_CHOICE_BASIC
+            );
             if (DisplayStrings[State->PreviousSelection] != NULL) {
-                REFIT_CALL_2_WRAPPER( gST->ConOut->OutputString, gST->ConOut, DisplayStrings[State->PreviousSelection]);
+                REFIT_CALL_2_WRAPPER(
+                    gST->ConOut->OutputString,
+                    gST->ConOut, DisplayStrings[State->PreviousSelection]
+                );
             }
             REFIT_CALL_3_WRAPPER(
                 gST->ConOut->SetCursorPosition, gST->ConOut,
                 2, MenuPosY + (State->CurrentSelection - State->FirstVisible)
             );
-            REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_CHOICE_CURRENT);
-            REFIT_CALL_2_WRAPPER(gST->ConOut->OutputString, gST->ConOut, DisplayStrings[State->CurrentSelection]);
+            REFIT_CALL_2_WRAPPER(
+                gST->ConOut->SetAttribute,
+                gST->ConOut, ATTR_CHOICE_CURRENT
+            );
+            REFIT_CALL_2_WRAPPER(
+                gST->ConOut->OutputString,
+                gST->ConOut, DisplayStrings[State->CurrentSelection]
+            );
 
         break;
         case MENU_FUNCTION_PAINT_TIMEOUT:
@@ -3001,21 +3065,33 @@ VOID TextMenuStyle (
                 if (!BlankLine) {
                     PrepareBlankLine();
                 }
-                REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
+                REFIT_CALL_2_WRAPPER(
+                    gST->ConOut->SetAttribute,
+                    gST->ConOut, ATTR_BASIC
+                );
                 REFIT_CALL_3_WRAPPER(
                     gST->ConOut->SetCursorPosition, gST->ConOut,
                     0, ConHeight - 3
                 );
-                REFIT_CALL_2_WRAPPER(gST->ConOut->OutputString, gST->ConOut, BlankLine + 1);
+                REFIT_CALL_2_WRAPPER(
+                    gST->ConOut->OutputString,
+                    gST->ConOut, BlankLine + 1
+                );
             }
             else {
                 // Paint or update message
-                REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_ERROR);
+                REFIT_CALL_2_WRAPPER(
+                    gST->ConOut->SetAttribute,
+                    gST->ConOut, ATTR_ERROR
+                );
                 REFIT_CALL_3_WRAPPER(
                     gST->ConOut->SetCursorPosition, gST->ConOut,
                     3, ConHeight - 3
                 );
-                REFIT_CALL_2_WRAPPER(gST->ConOut->OutputString, gST->ConOut, ParamText);
+                REFIT_CALL_2_WRAPPER(
+                    gST->ConOut->OutputString,
+                    gST->ConOut, ParamText
+                );
             }
     } // switch
 } // VOID TextMenuStyle()
@@ -3032,13 +3108,20 @@ VOID GraphicsMenuStyle (
     #endif
 
     INTN      i;
-    UINTN     ItemWidth;
+    UINTN     TmpDim;
     EG_IMAGE *Window;
-    EG_PIXEL *BackgroundPixel = &(GlobalConfig.ScreenBackground->PixelData[0]);
+    EG_PIXEL *BackgroundPixel = &(
+        GlobalConfig.ScreenBackground->PixelData[0]
+    );
 
-    static UINTN EntriesPosX, EntriesPosY;
-    static UINTN LineWidth, MenuWidth, MenuHeight;
-    static UINTN TitlePosX, TimeoutPosY, CharWidth;
+    static UINTN EntriesPosX;
+    static UINTN EntriesPosY;
+    static UINTN LineWidth;
+    static UINTN MenuWidth;
+    static UINTN MenuHeight;
+    static UINTN TimeoutPosY;
+    static UINTN TitlePosX;
+    static UINTN CharWidth;
 
 
     CharWidth = egGetFontCellWidth();
@@ -3057,7 +3140,9 @@ VOID GraphicsMenuStyle (
                 &LineWidth
             );
 
-            TimeoutPosY = EntriesPosY + (Screen->EntryCount + 1) * TextLineHeight();
+            // Timeout position is after entry block plus spacer line
+            TmpDim = (Screen->EntryCount + 1) * TextLineHeight();
+            TimeoutPosY = EntriesPosY + TmpDim;
 
             #if REFIT_DEBUG > 0
             MY_MUTELOGGER_SET;
@@ -3078,10 +3163,9 @@ VOID GraphicsMenuStyle (
                 MY_FREE_IMAGE(Window);
             }
 
-            ItemWidth = egComputeTextWidth (Screen->Title);
-
-            if (MenuWidth > ItemWidth) {
-                TitlePosX = EntriesPosX + ((MenuWidth - ItemWidth) / 2) - CharWidth;
+            TmpDim = egComputeTextWidth (Screen->Title);
+            if (MenuWidth > TmpDim) {
+                TitlePosX = EntriesPosX + ((MenuWidth - TmpDim) / 2) - CharWidth;
             }
             else {
                TitlePosX = EntriesPosX;
@@ -3198,7 +3282,7 @@ UINTN ComputeRow0PosY (
 
 
     // Default IconRowTweak to zero
-    // Keep rows in central position
+    // Keeps rows in central position
     IconRowTweak = 0;
 
     // Amend IconRowTweak if 'ApplyOffset' is active
@@ -3314,20 +3398,34 @@ VOID MainMenuStyle (
 
         break;
         case MENU_FUNCTION_PAINT_ALL:
-            PaintAll (Screen, State, itemPosX, row0PosY, row1PosY, textPosY);
-            // For PaintArrows(), the starting Y position is moved to the midpoint
-            // of the surrounding row; PaintIcon() adjusts this back up by half the
-            // icon's height to properly center it.
-            PaintArrows (State, row0PosX - TILE_XSPACING, row0PosY + (TileSizes[0] / 2), row0Loaders);
+            PaintAll (
+                Screen, State, itemPosX,
+                row0PosY, row1PosY, textPosY
+            );
+
+            // Moves starting Y position to
+            //   midpoint of surrounding row.
+            // Adjusted by half of icon height
+            //  in PaintIcon() to center it.
+            PaintArrows (
+                State, row0PosX - TILE_XSPACING,
+                row0PosY + (TileSizes[0] / 2), row0Loaders
+            );
 
         break;
         case MENU_FUNCTION_PAINT_SELECTION:
-            PaintSelection (Screen, State, itemPosX, row0PosY, row1PosY, textPosY);
+            PaintSelection (
+                Screen, State, itemPosX,
+                row0PosY, row1PosY, textPosY
+            );
 
         break;
         case MENU_FUNCTION_PAINT_TIMEOUT:
             if (!(GlobalConfig.HideUIFlags & HIDEUI_FLAG_LABEL)) {
-               DrawTextWithTransparency (L"", 0, textPosY + TextLineHeight());
+               DrawTextWithTransparency (
+                   L"", 0, textPosY + TextLineHeight()
+               );
+
                DrawTextWithTransparency (
                    ParamText,
                    (ScreenW - egComputeTextWidth (ParamText)) >> 1,
@@ -3381,13 +3479,15 @@ UINTN FindMainMenuItem (
         itemRow = 1;
     }
     else {
-        // Early Return ... Y coordinate is outside of either row
+        // Early Return ... Y coordinate outside either row
         return POINTER_NO_ITEM;
     }
 
     ItemIndex = POINTER_NO_ITEM;
 
-    itemPosX = AllocatePool (sizeof (UINTN) * Screen->EntryCount);
+    itemPosX = AllocatePool (
+        Screen->EntryCount * sizeof (UINTN)
+    );
     if (itemPosX == NULL) {
         // Resource Exhaustion ... Early Exit
         return POINTER_NO_ITEM;
@@ -3447,13 +3547,15 @@ VOID GenerateWaitList(VOID) {
     PointerCount   = pdCount();
     WaitListLength = 2 + PointerCount;
 
-    WaitList = AllocatePool (sizeof (EFI_EVENT) * WaitListLength);
+    WaitList = AllocatePool (
+        WaitListLength * sizeof (EFI_EVENT)
+    );
     if (WaitList == NULL) {
         // Early Return
         return;
     }
-    WaitList[0] = gST->ConIn->WaitForKey;
 
+    WaitList[0] = gST->ConIn->WaitForKey;
     for (UINTN Index = 0; Index < PointerCount; Index++) {
         WaitList[Index + 1] = pdWaitEvent (Index);
     } // for
@@ -3952,7 +4054,9 @@ BOOLEAN ConfirmRotate (VOID) {
         return FALSE;
     }
 
-    ConfirmRotateMenu = AllocateZeroPool (sizeof (REFIT_MENU_SCREEN));
+    ConfirmRotateMenu = AllocateZeroPool (
+        sizeof (REFIT_MENU_SCREEN)
+    );
     if (ConfirmRotateMenu == NULL) {
         // Resource Exhaustion ... Early Exit
         return TRUE;
@@ -4097,7 +4201,9 @@ UINTN RunMainMenu (
         MY_FREE_POOL(MsgStr);
 
         BREAD_CRUMB(L"%a:  3a 2", __func__);
-        if (DefaultSelection == NULL || *DefaultSelection == NULL) {
+        if ( DefaultSelection == NULL ||
+            *DefaultSelection == NULL
+        ) {
             BREAD_CRUMB(L"%a:  3a 2a 1", __func__);
             MsgStr = StrDuplicate (
                 L"Configured Default Loader:- 'NULL'"
@@ -4135,18 +4241,18 @@ UINTN RunMainMenu (
     }
     #endif
 
-    // Remove any buffered key strokes
+    // Remove buffered key strokes
     BREAD_CRUMB(L"%a:  4", __func__);
     KeyStrokeFound = ReadAllKeyStrokes();
 
     BREAD_CRUMB(L"%a:  5", __func__);
+    // NB: Buffer is always reset on UEFI PC
     if (!KeyStrokeFound || !AppleFirmware) {
         BREAD_CRUMB(L"%a:  5a 1", __func__);
-        if (!AppleFirmware) {
-            // Always reset the buffer on UEFI PC
-            BREAD_CRUMB(L"%a:  5a 1a 1", __func__);
-            REFIT_CALL_2_WRAPPER(gST->ConIn->Reset, gST->ConIn, FALSE);
-        }
+        REFIT_CALL_2_WRAPPER(
+            gST->ConIn->Reset,
+            gST->ConIn, FALSE
+        );
         BREAD_CRUMB(L"%a:  5a 2", __func__);
     }
 
@@ -4163,11 +4269,11 @@ UINTN RunMainMenu (
         DrawSelection  = !PointerEnabled;
     }
 
-    // Generate WaitList if not already generated.
+    // Generate WaitList if not already generated
     BREAD_CRUMB(L"%a:  7 - GenerateWaitList", __func__);
     GenerateWaitList();
 
-    // Save time elaspsed from start til now
+    // Save time elaspsed since start
     BREAD_CRUMB(L"%a:  8 - GetCurrentMS", __func__);
     MainMenuLoad = GetCurrentMS();
 
@@ -4258,7 +4364,7 @@ UINTN RunMainMenu (
         }
 
         BREAD_CRUMB(L"%a:  9a 5", __func__);
-        if (GlobalConfig.EnableTouch && MenuExit == MENU_EXIT_ZERO) {
+        if (MenuExit == MENU_EXIT_ZERO && GlobalConfig.EnableTouch) {
             // Break out of loop and reload page
             // Reload happens in 'main.c -> MainLoopRunning'
 
@@ -4325,7 +4431,9 @@ VOID FreeMenuScreen (
     LOG_INCREMENT();
     BREAD_CRUMB(L"%a:  1 - START", __func__);
 
-    if (Screen == NULL || *Screen == NULL) {
+    if ( Screen == NULL ||
+        *Screen == NULL
+    ) {
         BREAD_CRUMB(L"%a:  1a 1 - END:- VOID", __func__);
         LOG_DECREMENT();
         LOG_SEP(L"X");
@@ -4486,7 +4594,9 @@ BDS_COMMON_OPTION * CopyBdsOption (
         return NULL;
     }
 
-    NewBdsOption = AllocateCopyPool (sizeof (*BdsOption), BdsOption);
+    NewBdsOption = AllocateCopyPool (
+        sizeof (*BdsOption), BdsOption
+    );
     if (NewBdsOption == NULL) {
         // Early Return
         return NULL;
@@ -4557,14 +4667,18 @@ BOOLEAN GetMenuEntryReturn (
         return FALSE;
     }
 
-    MenuEntryReturn = AllocateZeroPool (sizeof (REFIT_MENU_ENTRY));
+    MenuEntryReturn = AllocateZeroPool (
+        sizeof (REFIT_MENU_ENTRY)
+    );
     if (MenuEntryReturn == NULL) {
         // Early Return
         return FALSE;
     }
 
-    MenuEntryReturn->Title = StrDuplicate (L"Return to Main Menu");
-    MenuEntryReturn->Tag   = TAG_RETURN;
+    MenuEntryReturn->Title = StrDuplicate (
+        L"Return to Main Menu"
+    );
+    MenuEntryReturn->Tag = TAG_RETURN;
     AddMenuEntry (*Screen, MenuEntryReturn);
 
     return TRUE;
@@ -4582,7 +4696,9 @@ BOOLEAN GetMenuEntryYesNo (
         return FALSE;
     }
 
-    MenuEntryYes = AllocateZeroPool (sizeof (REFIT_MENU_ENTRY));
+    MenuEntryYes = AllocateZeroPool (
+        sizeof (REFIT_MENU_ENTRY)
+    );
     if (MenuEntryYes == NULL) {
         // Early Return
         return FALSE;
@@ -4592,7 +4708,9 @@ BOOLEAN GetMenuEntryYesNo (
     MenuEntryYes->Tag   = TAG_YES;
     AddMenuEntry (*Screen, MenuEntryYes);
 
-    MenuEntryNo = AllocateZeroPool (sizeof (REFIT_MENU_ENTRY));
+    MenuEntryNo = AllocateZeroPool (
+        sizeof (REFIT_MENU_ENTRY)
+    );
     if (MenuEntryNo == NULL) {
         FreeMenuEntry ((REFIT_MENU_ENTRY **) MenuEntryYes);
 

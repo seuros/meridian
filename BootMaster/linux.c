@@ -150,7 +150,11 @@ CHAR16 * FindInitrd (
     BREAD_CRUMB(L"%a:  8", __func__);
     InitrdNames = FinalInitrdName = CurrentInitrdName = NULL;
     while (1) {
-        CheckIter = DirIterNext (&DirIter, 2, L"init*,booster*", &DirEntry);
+        CheckIter = DirIterNext (
+            &DirIter,
+            2, L"init*,booster*",
+            &DirEntry
+        );
         if (!CheckIter) break;
 
         BREAD_CRUMB(L"%a:  8a 0", __func__);

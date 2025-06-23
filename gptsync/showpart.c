@@ -71,80 +71,103 @@ INTN FindMem (
 // detect boot code
 //
 
-static UINTN detect_bootcode(UINT64 partlba, CHARN **bootcodename)
-{
+static UINTN detect_bootcode (
+    UINT64   partlba,
+    CHARN  **bootcodename
+) {
     UINTN   status;
+    UINT16  sig;
+    UINT32  v502;
+    UINT32  v506;
     BOOLEAN bootable;
 
+
     // read MBR data
-    status = read_sector(partlba, sector);
-    if (status != 0)
-        return status;
+    status = read_sector (partlba, sector);
+    if (status != 0) return status;
 
     // check bootable signature
-    if (*((UINT16 *)(sector + 510)) == 0xaa55 && sector[0] != 0)
+    CopyMem (&sig, sector + 510, sizeof (sig));
+    if (sector[0] != 0 && sig == 0xaa55) {
         bootable = TRUE;
-    else
+    }
+    else {
         bootable = FALSE;
+    }
     *bootcodename = NULL;
 
     // detect specific boot codes
-    if (CompareMem(sector + 2, "LILO", 4) == 0 ||
-        CompareMem(sector + 6, "LILO", 4) == 0) {
+    if (CompareMem (sector + 2, "LILO", 4) == 0 ||
+        CompareMem (sector + 6, "LILO", 4) == 0
+    ) {
         *bootcodename = STR("LILO");
-
     }
-    else if (CompareMem(sector + 3, "SYSLINUX", 8) == 0) {
+    else if (
+        CompareMem (sector + 3, "SYSLINUX", 8) == 0
+    ) {
         *bootcodename = STR("SYSLINUX");
 
     }
-    else if (FindMem (sector, 512, "ISOLINUX", 8) >= 0) {
+    else if (
+        FindMem (sector, 512, "ISOLINUX", 8) >= 0
+    ) {
         *bootcodename = STR("ISOLINUX");
 
     }
-    else if (FindMem (sector, 512, "Geom\0Hard Disk\0Read\0 Error", 26) >= 0) {
+    else if (
+        FindMem (sector, 512, "Geom\0Hard Disk\0Read\0 Error", 26) >= 0
+    ) {
         *bootcodename = STR("GRUB");
 
     }
-    else if ((*((UINT32 *)(sector + 502)) == 0 &&
-                *((UINT32 *)(sector + 506)) == 50000 &&
-                *((UINT16 *)(sector + 510)) == 0xaa55) ||
-               FindMem (sector, 512, "Starting the BTX loader", 23) >= 0) {
-        *bootcodename = STR("FreeBSD");
-
-    }
-    else if (FindMem (sector, 512, "!Loading", 8) >= 0 ||
-               FindMem (sector, 512, "/cdboot\0/CDBOOT\0", 16) >= 0) {
+    else if (
+        FindMem (sector, 512, "!Loading", 8) >= 0 ||
+        FindMem (sector, 512, "/cdboot\0/CDBOOT\0", 16) >= 0
+    ) {
         *bootcodename = STR("OpenBSD");
 
     }
-    else if (FindMem (sector, 512, "Not a bootxx image", 18) >= 0) {
+    else if (
+        FindMem (sector, 512, "Not a bootxx image", 18) >= 0
+    ) {
         *bootcodename = STR("NetBSD");
 
     }
-    else if (FindMem (sector, 512, "NTLDR", 5) >= 0) {
+    else if (
+        FindMem (sector, 512, "NTLDR", 5) >= 0
+    ) {
         *bootcodename = STR("Windows NTLDR");
 
     }
-    else if (FindMem (sector, 512, "BOOTMGR", 7) >= 0) {
+    else if (
+        FindMem (sector, 512, "BOOTMGR", 7) >= 0
+    ) {
         *bootcodename = STR("Windows BOOTMGR (Vista)");
 
     }
-    else if (FindMem (sector, 512, "CPUBOOT SYS", 11) >= 0 ||
-               FindMem (sector, 512, "KERNEL  SYS", 11) >= 0) {
+    else if (
+        FindMem (sector, 512, "CPUBOOT SYS", 11) >= 0 ||
+        FindMem (sector, 512, "KERNEL  SYS", 11) >= 0
+    ) {
         *bootcodename = STR("FreeDOS");
 
     }
-    else if (FindMem (sector, 512, "OS2LDR", 6) >= 0 ||
-               FindMem (sector, 512, "OS2BOOT", 7) >= 0) {
+    else if (
+        FindMem (sector, 512, "OS2LDR",  6) >= 0 ||
+        FindMem (sector, 512, "OS2BOOT", 7) >= 0
+    ) {
         *bootcodename = STR("eComStation");
 
     }
-    else if (FindMem (sector, 512, "Be Boot Loader", 14) >= 0) {
+    else if (
+        FindMem (sector, 512, "Be Boot Loader", 14) >= 0
+    ) {
         *bootcodename = STR("BeOS");
 
     }
-    else if (FindMem (sector, 512, "yT Boot Loader", 14) >= 0) {
+    else if (
+        FindMem (sector, 512, "yT Boot Loader", 14) >= 0
+    ) {
         *bootcodename = STR("ZETA");
 
     }
@@ -152,18 +175,35 @@ static UINTN detect_bootcode(UINT64 partlba, CHARN **bootcodename)
         if (FindMem (sector, 512, "\x04" "beos\x06" "system\x05" "zbeos", 18) >= 0) {
             *bootcodename = STR("Haiku");
         }
+        else {
+            CopyMem (&v502, sector + 502, sizeof (v502));
+            CopyMem (&v506, sector + 506, sizeof (v506));
+            CopyMem (&sig,  sector + 510, sizeof (sig) );
+            if ((
+                    v502 == 0 &&
+                    v506 == 50000 &&
+                    sig == 0xaa55
+                ) || FindMem (sector, 512, "Starting the BTX loader", 23) >= 0
+            ) {
+                *bootcodename = STR("FreeBSD");
+            }
+        }
     }
 
-    if (FindMem (sector, 512, "Non-system disk", 15) >= 0)   // dummy FAT boot sector
+    if (FindMem (sector, 512, "Non-system disk", 15) >= 0) {
+        // dummy FAT boot sector
         *bootcodename = STR("None (Non-system disk message)");
+    }
 
     // TODO: Add a note if a specific code was detected, but the sector is not bootable?
 
     if (*bootcodename == NULL) {
-        if (bootable)
+        if (bootable) {
             *bootcodename = STR("Unknown, but bootable");
-        else
+        }
+        else {
             *bootcodename = STR("None");
+        }
     }
 
     return 0;
@@ -173,47 +213,58 @@ static UINTN detect_bootcode(UINT64 partlba, CHARN **bootcodename)
 // check one partition
 //
 
-static UINTN analyze_part(UINT64 partlba)
-{
+static
+UINTN analyze_part (
+    UINT64 partlba
+) {
     UINTN   status;
     UINTN   i;
     CHARN   *bootcodename;
     UINTN   parttype;
     CHARN   *fsname;
 
-    if (partlba == 0)
+
+    if (partlba == 0) {
         Print(L"\nMBR contents:\n");
-    else
+    }
+    else {
         Print(L"\nPartition at LBA %lld:\n", partlba);
+    }
 
     // detect boot code
-    status = detect_bootcode(partlba, &bootcodename);
-    if (status)
-        return status;
+    status = detect_bootcode (partlba, &bootcodename);
+    if (status) return status;
+
     Print(L" Boot Code: %s\n", bootcodename);
 
-    if (partlba == 0)
-        return 0;   // short-circuit MBR analysis
+    if (partlba == 0) return 0;   // short-circuit MBR analysis
 
     // detect file system
-    status = detect_mbrtype_fs(partlba, &parttype, &fsname);
-    if (status)
-        return status;
+    status = detect_mbrtype_fs (partlba, &parttype, &fsname);
+    if (status) return status;
+
     Print(L" File System: %s\n", fsname);
 
     // cross-reference with partition table
     for (i = 0; i < gpt_part_count; i++) {
         if (gpt_parts[i].start_lba == partlba) {
-            Print(L" Listed in GPT as partition %d, type %s\n", i+1,
-                  gpt_parts[i].gpt_parttype->name);
+            Print (
+                L" Listed in GPT as partition %d, type %s\n",
+                i + 1,
+                gpt_parts[i].gpt_parttype->name
+            );
         }
     }
+
     for (i = 0; i < mbr_part_count; i++) {
         if (mbr_parts[i].start_lba == partlba) {
-            Print(L" Listed in MBR as partition %d, type %02x  %s%s\n", i+1,
-                  mbr_parts[i].mbr_type,
-                  mbr_parttype_name(mbr_parts[i].mbr_type),
-                  mbr_parts[i].active ? STR(", active") : STR(""));
+            Print (
+                L" Listed in MBR as partition %d, type %02x  %s%s\n",
+                i + 1,
+                mbr_parts[i].mbr_type,
+                mbr_parttype_name (mbr_parts[i].mbr_type),
+                mbr_parts[i].active ? STR(", active") : STR("")
+            );
         }
     }
 
@@ -224,22 +275,21 @@ static UINTN analyze_part(UINT64 partlba)
 // check all partitions
 //
 
-static UINTN analyze_parts(VOID)
-{
+static
+UINTN analyze_parts (VOID) {
     UINTN   i, k;
     UINTN   status;
     BOOLEAN is_dupe;
 
+
     // check MBR (bootcode only)
-    status = analyze_part(0);
-    if (status)
-        return status;
+    status = analyze_part (0);
+    if (status) return status;
 
     // check partitions listed in GPT
     for (i = 0; i < gpt_part_count; i++) {
-        status = analyze_part(gpt_parts[i].start_lba);
-        if (status)
-            return status;
+        status = analyze_part (gpt_parts[i].start_lba);
+        if (status) return status;
     }
 
     // check partitions listed in MBR, but not in GPT
@@ -253,9 +303,8 @@ static UINTN analyze_parts(VOID)
                 is_dupe = TRUE;
 
         if (!is_dupe) {
-            status = analyze_part(mbr_parts[i].start_lba);
-            if (status)
-                return status;
+            status = analyze_part (mbr_parts[i].start_lba);
+            if (status) return status;
         }
     }
 
@@ -266,8 +315,7 @@ static UINTN analyze_parts(VOID)
 // display algorithm entry point
 //
 
-UINTN showpart(VOID)
-{
+UINTN showpart (VOID) {
     UINTN   status = 0;
     UINTN   status_gpt, status_mbr;
 
@@ -279,8 +327,6 @@ UINTN showpart(VOID)
 
     // analyze all partitions
     status = analyze_parts();
-    if (status != 0)
-        return status;
 
     return status;
 }

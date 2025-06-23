@@ -182,7 +182,10 @@ REFIT_VOLUME * PickOneESP (
             FsName != NULL && (StrLen (FsName) > 0) &&
             !MyStriCmp (FsName, PartName)
         ) {
-            MenuEntryItem->Title = PoolPrint (L"%s - '%s', AKA '%s'", GuidStr, PartName, FsName);
+            MenuEntryItem->Title = PoolPrint (
+                L"%s - '%s', AKA '%s'",
+                GuidStr, PartName, FsName
+            );
         }
         else if (FsName != NULL && (StrLen (FsName) > 0)) {
             MenuEntryItem->Title = PoolPrint (L"%s - '%s'", GuidStr, FsName);
@@ -219,7 +222,10 @@ REFIT_VOLUME * PickOneESP (
 
         DefaultEntry = 9999; // Use the Max Index
         Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
-        MenuExit = DrawMenuScreen (InstallMenu, Style, &DefaultEntry, &ChosenOption);
+        MenuExit = DrawMenuScreen (
+            InstallMenu, Style,
+            &DefaultEntry, &ChosenOption
+        );
 
         #if REFIT_DEBUG > 0
         LogExit (MenuExit, __func__, ChosenOption->Title);
@@ -277,7 +283,6 @@ EFI_STATUS RenameFile (
         RefitReadWrite, 0
     );
     if (EFI_ERROR(Status)) {
-        // Early Return
         return Status;
     }
 
@@ -286,7 +291,6 @@ EFI_STATUS RenameFile (
         Buffer = LibFileInfo (FilePtr);
         if (Buffer == NULL) {
             Status = EFI_BUFFER_TOO_SMALL;
-
             break;
         }
 
@@ -317,7 +321,9 @@ EFI_STATUS RenameFile (
         );
     } while (0); // This 'loop' only runs once
 
-    REFIT_CALL_1_WRAPPER(FilePtr->Close, FilePtr);
+    REFIT_CALL_1_WRAPPER(
+        FilePtr->Close, FilePtr
+    );
 
     MY_FREE_POOL(NewInfo);
     MY_FREE_POOL(FilePtr);
@@ -384,8 +390,9 @@ EFI_STATUS CreateDirectories (
             RefitReadWriteCreate, EFI_FILE_DIRECTORY
         );
 
-        Status = REFIT_CALL_1_WRAPPER(TheDir->Close, TheDir);
-
+        Status = REFIT_CALL_1_WRAPPER(
+            TheDir->Close, TheDir
+        );
         MY_FREE_POOL(FileName);
         MY_FREE_POOL(TheDir);
         if (EFI_ERROR(Status)) break;
@@ -536,7 +543,11 @@ EFI_STATUS CopyDirectory (
 
     Status = EFI_SUCCESS;
     while (!EFI_ERROR(Status)) {
-        CheckIter = DirIterNext (&DirIter, 2, NULL, &DirEntry);
+        CheckIter = DirIterNext (
+            &DirIter,
+            2, NULL,
+            &DirEntry
+        );
         if (!CheckIter) break;
 
         SourceFileName = PoolPrint (L"%s\\%s", SourceDirName, DirEntry->FileName);

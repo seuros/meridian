@@ -237,7 +237,7 @@ FORCE_INLINE size_t FSE_decompress_usingDTable_generic(void *dst, size_t maxDstS
 			*op++ = FSE_GETSYMBOL(&state1);
 			break;
 		}
-	}
+	} // while {Infinite}
 
 	return op - ostart;
 }

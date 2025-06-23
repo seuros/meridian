@@ -142,8 +142,10 @@ static
 EFI_DEVICE_PATH_PROTOCOL *LegacyLoaderMediaPath = (EFI_DEVICE_PATH_PROTOCOL *) LegacyLoaderMediaPathData;
 
 static
-EFI_GUID AppleVariableVendorID = { 0x7C436110, 0xAB2A, 0x4BBB, \
-    { 0xA8, 0x80, 0xFE, 0x41, 0x99, 0x5C, 0x9F, 0x82 } };
+EFI_GUID AppleVariableVendorID = {
+    0x7C436110, 0xAB2A, 0x4BBB,
+    { 0xA8, 0x80, 0xFE, 0x41, 0x99, 0x5C, 0x9F, 0x82 }
+};
 
 BOOLEAN FirstLegacyScan  = TRUE;
 
@@ -153,8 +155,7 @@ EFI_STATUS ActivateMbrPartition (
     IN UINTN                  PartitionIndex
 ) {
     EFI_STATUS           Status;
-    UINTN                i;
-    UINTN                LogicalPartitionIndex;
+    UINTN                LogicalPartitionIndex, i;
     UINT8                SectorBuffer[512];
     UINT32               NextExtCurrent;
     UINT32               ExtCurrent;
@@ -204,7 +205,9 @@ EFI_STATUS ActivateMbrPartition (
     MbrTable = (MBR_PARTITION_INFO *) (SectorBuffer + 446);
     ExtBase = 0;
     for (i = 0; i < 4; i++) {
-        if (MbrTable[i].Flags != 0x00 && MbrTable[i].Flags != 0x80) {
+        if (MbrTable[i].Flags != 0x00 &&
+            MbrTable[i].Flags != 0x80
+        ) {
             // Safety Measure #2
             return EFI_NOT_FOUND;
         }
@@ -212,7 +215,10 @@ EFI_STATUS ActivateMbrPartition (
         if (i == PartitionIndex) {
             MbrTable[i].Flags = 0x80;
         }
-        else if (PartitionIndex >= 4 && IS_EXTENDED_PART_TYPE(MbrTable[i].Type)) {
+        else if (
+            PartitionIndex >= 4 &&
+            IS_EXTENDED_PART_TYPE(MbrTable[i].Type)
+        ) {
             MbrTable[i].Flags = 0x80;
             ExtBase = MbrTable[i].StartLBA;
         }
@@ -227,81 +233,87 @@ EFI_STATUS ActivateMbrPartition (
         BlockIO->Media->MediaId, 0,
         512, SectorBuffer
     );
-    if (EFI_ERROR(Status)) {
+    if (EFI_ERROR(Status) ||
+        PartitionIndex < 4
+    ) {
         // Early Return
         return Status;
     }
 
-    if (PartitionIndex >= 4) {
-        // Must activate a logical partition ... Walk the EMBR chain
-        //
-        // NB: ExtBase was set above while looking at the MBR table
-        for (ExtCurrent = ExtBase; ExtCurrent; ExtCurrent = NextExtCurrent) {
-            // Read current EMBR
-            Status = REFIT_CALL_5_WRAPPER(
-                BlockIO->ReadBlocks, BlockIO,
-                BlockIO->Media->MediaId, ExtCurrent,
-                512, SectorBuffer
-            );
-            if (EFI_ERROR(Status)) {
-                return Status;
-            }
+    // Must activate a logical partition ... Walk the EMBR chain
+    //
+    // NB: ExtBase was set above while looking at the MBR table
+    for (
+        ExtCurrent = ExtBase;
+        ExtCurrent;
+        ExtCurrent = NextExtCurrent
+    ) {
+        // Read current EMBR
+        Status = REFIT_CALL_5_WRAPPER(
+            BlockIO->ReadBlocks, BlockIO,
+            BlockIO->Media->MediaId, ExtCurrent,
+            512, SectorBuffer
+        );
+        if (EFI_ERROR(Status)) {
+            return Status;
+        }
 
-            if (*((UINT16 *)(SectorBuffer + 510)) != 0xaa55) {
-                // Safety Measure #3
+        if (*((UINT16 *)(SectorBuffer + 510)) != 0xaa55) {
+            // Safety Measure #3
+            return EFI_NOT_FOUND;
+        }
+
+        // Scan EMBR ... Set appropriate partition active
+        NextExtCurrent = 0;
+        LogicalPartitionIndex = 4;
+        MbrTableEx = (MBR_PARTITION_INFO *) (SectorBuffer + 446);
+        for (i = 0; i < 4; i++) {
+            if (MbrTableEx[i].Flags != 0x00 &&
+                MbrTableEx[i].Flags != 0x80
+            ) {
+                // Safety Measure #4
                 return EFI_NOT_FOUND;
             }
 
-            // Scan EMBR ... Set appropriate partition active
-            NextExtCurrent = 0;
-            LogicalPartitionIndex = 4;
-            MbrTableEx = (MBR_PARTITION_INFO *) (SectorBuffer + 446);
-            for (i = 0; i < 4; i++) {
-                if (MbrTableEx[i].Flags != 0x00 &&
-                    MbrTableEx[i].Flags != 0x80
-                ) {
-                    // Safety Measure #4
-                    return EFI_NOT_FOUND;
-                }
-
-                if (MbrTableEx[i].Size == 0 ||
-                    MbrTableEx[i].StartLBA == 0
-                ) {
-                    break;
-                }
-
-                if (IS_EXTENDED_PART_TYPE(MbrTableEx[i].Type)) {
-                    // Link to next EMBR
-                    NextExtCurrent = ExtBase + MbrTableEx[i].StartLBA;
-                    MbrTableEx[i].Flags = (PartitionIndex >= LogicalPartitionIndex)
-                        ? 0x80 : 0x00;
-
-                    break;
-                }
-
-                // Logical Partition
-                MbrTableEx[i].Flags = (PartitionIndex == LogicalPartitionIndex)
-                    ? 0x80 : 0x00;
-
-                LogicalPartitionIndex++;
-            }
-
-            // Write Current EMBR
-            Status = REFIT_CALL_5_WRAPPER(
-                BlockIO->WriteBlocks, BlockIO,
-                BlockIO->Media->MediaId, ExtCurrent,
-                512, SectorBuffer
-            );
-            if (EFI_ERROR(Status)) {
-                return Status;
-            }
-
-            if (PartitionIndex < LogicalPartitionIndex) {
-                // Stop the loop ... Ignore other EMBRs
+            if (MbrTableEx[i].Size     == 0 ||
+                MbrTableEx[i].StartLBA == 0
+            ) {
                 break;
             }
-        } // for
-    } // if PartitionIndex
+
+            if (IS_EXTENDED_PART_TYPE(MbrTableEx[i].Type)) {
+                // Link to next EMBR
+                NextExtCurrent = ExtBase + MbrTableEx[i].StartLBA;
+                MbrTableEx[i].Flags = (
+                    PartitionIndex >= LogicalPartitionIndex
+                ) ? 0x80 : 0x00;
+
+                break;
+            }
+
+            // Logical Partition
+            MbrTableEx[i].Flags = (
+                PartitionIndex == LogicalPartitionIndex
+            ) ? 0x80 : 0x00;
+
+            LogicalPartitionIndex++;
+        }
+
+        // Write Current EMBR
+        Status = REFIT_CALL_5_WRAPPER(
+            BlockIO->WriteBlocks, BlockIO,
+            BlockIO->Media->MediaId, ExtCurrent,
+            512, SectorBuffer
+        );
+        if (EFI_ERROR(Status)) {
+            return Status;
+        }
+
+        if (PartitionIndex < LogicalPartitionIndex) {
+            // Stop the loop ... Ignore other EMBRs
+            break;
+        }
+    } // for
 
     return EFI_SUCCESS;
 } // static EFI_STATUS ActivateMbrPartition()
@@ -326,20 +338,20 @@ VOID ExtractLegacyLoaderPaths (
     UINTN                      MaxPaths,
     EFI_DEVICE_PATH_PROTOCOL **HardcodedPathList
 ) {
-    EFI_STATUS                            Status;
-    UINTN                                 PathIndex;
-    UINTN                                 PathCount;
-    UINTN                                 HandleCount;
-    UINTN                                 HandleIndex;
-    UINTN                                 HardcodedIndex;
-    BOOLEAN                               Seen;
-    EFI_HANDLE                           *Handles;
-    EFI_HANDLE                            Handle;
-    EFI_DEVICE_PATH_PROTOCOL             *DevicePath;
-    EFI_LOADED_IMAGE_PROTOCOL            *LoadedImage;
+    EFI_STATUS                 Status;
+    UINTN                      PathIndex;
+    UINTN                      PathCount;
+    UINTN                      HandleCount;
+    UINTN                      HandleIndex;
+    UINTN                      HardcodedIndex;
+    BOOLEAN                    Seen;
+    EFI_HANDLE                *Handles;
+    EFI_HANDLE                 Handle;
+    EFI_DEVICE_PATH_PROTOCOL  *DevicePath;
+    EFI_LOADED_IMAGE_PROTOCOL *LoadedImage;
 
 
-    MaxPaths--;  // leave space for the terminating NULL pointer
+    MaxPaths--;  // Accomodate NULL Termination
 
     // Get all LoadedImage handles
     PathCount = HandleCount = 0;
@@ -364,7 +376,11 @@ VOID ExtractLegacyLoaderPaths (
         return;
     }
 
-    for (HandleIndex = 0; HandleIndex < HandleCount && PathCount < MaxPaths; HandleIndex++) {
+    for (
+        HandleIndex = 0;
+        HandleIndex < HandleCount && PathCount < MaxPaths;
+        HandleIndex++
+    ) {
         Handle = Handles[HandleIndex];
 
         Status = REFIT_CALL_3_WRAPPER(
@@ -387,7 +403,7 @@ VOID ExtractLegacyLoaderPaths (
 
         // Only grab memory range nodes
         if (DevicePathSubType (DevicePath) != HW_MEMMAP_DP      ||
-            DevicePathType (DevicePath)    != HARDWARE_DEVICE_PATH
+            DevicePathType    (DevicePath) != HARDWARE_DEVICE_PATH
         ) {
             continue;
         }
@@ -396,7 +412,12 @@ VOID ExtractLegacyLoaderPaths (
         // WARNING: Assumes first node in the device path is unique!
         Seen = FALSE;
         for (PathIndex = 0; PathIndex < PathCount; PathIndex++) {
-            if (DevicePathNodeLength (DevicePath) != DevicePathNodeLength (PathList[PathIndex])) {
+            if (DevicePathNodeLength (
+                    DevicePath
+                ) != DevicePathNodeLength (
+                    PathList[PathIndex]
+                )
+            ) {
                 continue;
             }
 
@@ -408,14 +429,13 @@ VOID ExtractLegacyLoaderPaths (
                 Seen = TRUE;
                 break;
             }
-        }
+        } // for
+        if (Seen) continue;
 
-        if (Seen) {
-            continue;
-        }
-
-        PathList[PathCount++] = AppendDevicePath (DevicePath, LegacyLoaderMediaPath);
-    }
+        PathList[PathCount++] = AppendDevicePath (
+            DevicePath, LegacyLoaderMediaPath
+        );
+    } // for HandleIndex
     MY_FREE_POOL(Handles);
 
     if (HardcodedPathList != NULL) {
@@ -444,7 +464,11 @@ EFI_STATUS StartLegacyImageList (
     Status = EFI_LOAD_ERROR;
 
     // Load the image into memory
-    for (DevicePathIndex = 0; DevicePaths[DevicePathIndex] != NULL; DevicePathIndex++) {
+    for (
+        DevicePathIndex = 0;
+        DevicePaths[DevicePathIndex] != NULL;
+        DevicePathIndex++
+    ) {
         Status = REFIT_CALL_6_WRAPPER(
             gBS->LoadImage, FALSE,
             SelfImageHandle, DevicePaths[DevicePathIndex],
@@ -478,8 +502,9 @@ EFI_STATUS StartLegacyImageList (
     }
 
     ChildLoadedImage->LoadOptions     = (VOID *) LoadOptions;
-    ChildLoadedImage->LoadOptionsSize = (LoadOptions != NULL)
-        ? ((UINT32) StrLen (LoadOptions) + 1) * sizeof (CHAR16) : 0;
+    ChildLoadedImage->LoadOptionsSize = (
+        LoadOptions != NULL
+    ) ? ((UINT32) StrLen (LoadOptions) + 1) * sizeof (CHAR16) : 0;
 
     // Turn control over to child image
     // DA-TAG: (optionally) re-enable the EFI watchdog timer!
@@ -508,8 +533,11 @@ EFI_STATUS StartLegacyImageList (
     ReinitRefitLib();
 
 bailout_unload:
-    // Unload the child image ... We do not care if it works or not
-    REFIT_CALL_1_WRAPPER(gBS->UnloadImage, ChildImageHandle);
+    // Unload child image
+    REFIT_CALL_1_WRAPPER(
+        gBS->UnloadImage,
+        ChildImageHandle
+    );
 
     return Status;
 } // static EFI_STATUS StartLegacyImageList()
@@ -536,8 +564,13 @@ EG_IMAGE * LegacyHelper (
     BeginExternalScreen (TRUE, MsgStrA);
 
     BREAD_CRUMB(L"%a:  2", __func__);
-    if ((MyStrStr (Entry->Volume->OSName, L"Windows") && !(GlobalConfig.DisableBootLogo & DISABLE_BOOTLOGO_WIN)) ||
-        (MyStrStr (Entry->Volume->OSName, L"Linux"  ) && !(GlobalConfig.DisableBootLogo & DISABLE_BOOTLOGO_LIN))
+    if ((
+            MyStrStr (Entry->Volume->OSName, L"Windows") &&
+            !(GlobalConfig.DisableBootLogo & DISABLE_BOOTLOGO_WIN)
+        ) || (
+            MyStrStr (Entry->Volume->OSName, L"Linux"  ) &&
+            !(GlobalConfig.DisableBootLogo & DISABLE_BOOTLOGO_LIN)
+        )
     ) {
         BREAD_CRUMB(L"%a:  2a 1", __func__);
         BootLogoImage = LoadOSIcon (NULL, EXIT_SPLASH, TRUE);
@@ -659,9 +692,15 @@ VOID StartLegacy (
 
             BREAD_CRUMB(L"%a:  7a 1a 2", __func__);
             MsgStrA = L"Ensure Latest Firmware Updates Are Installed";
-            REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_ERROR);
+            REFIT_CALL_2_WRAPPER(
+                gST->ConOut->SetAttribute,
+                gST->ConOut, ATTR_ERROR
+            );
             PrintUglyText (MsgStrA, NEXTLINE);
-            REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
+            REFIT_CALL_2_WRAPPER(
+                gST->ConOut->SetAttribute,
+                gST->ConOut, ATTR_BASIC
+            );
             BREAD_CRUMB(L"%a:  7a 1a 3", __func__);
 
             #if REFIT_DEBUG > 0
@@ -769,8 +808,9 @@ VOID AddLegacyEntry (
 
 
     if (LoaderTitle == NULL) {
-        LoaderTitle = (Volume->OSName != NULL)
-            ? Volume->OSName : L"Legacy Bootcode";
+        LoaderTitle = (
+            Volume->OSName != NULL
+        ) ? Volume->OSName : L"Legacy Bootcode";
     }
 
     VolDesc = (Volume->VolName != NULL)
@@ -897,7 +937,7 @@ VOID AddLegacyEntry (
 
 
 /**
-    Create a RefindPlus boot option from a Legacy BIOS protocol option.
+    Create RefindPlus boot option from Legacy BIOS protocol option.
 */
 static
 VOID AddLegacyEntryUEFI (
@@ -1051,9 +1091,9 @@ VOID ScanLegacyUEFI (
     BREAD_CRUMB(L"%a:  A - START", __func__);
 
     #if REFIT_DEBUG > 0
-    LogLineType = (FirstLegacyScan)
-        ? LOG_STAR_HEAD_SEP
-        : LOG_LINE_THIN_SEP;
+    LogLineType = (
+        FirstLegacyScan
+    ) ? LOG_STAR_HEAD_SEP : LOG_LINE_THIN_SEP;
 
     ALT_LOG(1, LogLineType, L"'UEFI-Style' Legacy Boot Options");
     #endif
@@ -1062,8 +1102,8 @@ VOID ScanLegacyUEFI (
 
     ZeroMem (Buffer, sizeof (Buffer));
 
-    // If LegacyBios protocol is not implemented on this platform,
-    // we do not support this type of legacy boot on this machine.
+    // If LegacyBIOS protocol is not implemented on this platform,
+    //   we do not support this type of legacy boot on this machine.
     Status = REFIT_CALL_3_WRAPPER(
         gBS->LocateProtocol, &gEfiLegacyBootProtocolGuid,
         NULL, (VOID **) &LegacyBios
@@ -1079,7 +1119,7 @@ VOID ScanLegacyUEFI (
 
     // UEFI calls USB drives "BBS_HARDDRIVE".
     // To distinguish from normal hard drives,
-    // "DiskType" was set wrongly earlier and is "translated" here.
+    //   "DiskType" was set wrongly earlier and is "translated" here.
     if (DiskType != BBS_USB) {
         AssumeUSB = FALSE;
     }
@@ -1103,7 +1143,7 @@ VOID ScanLegacyUEFI (
     BbsDevicePath = NULL;
     while (Index < BootOrderSize / sizeof (UINT16)) {
         // Grab each boot option variable from the boot order
-        // and convert the variable into a BDS boot option
+        //   and convert the variable into a BDS boot option
         SPrint (
             BootOption, sizeof (BootOption),
             L"Boot%04x", BootOrder[Index]
@@ -1121,14 +1161,14 @@ VOID ScanLegacyUEFI (
         BbsDevicePath = (BBS_BBS_DEVICE_PATH *) BdsOption->DevicePath;
         // Only add the entry if it is of a requested type (e.g. USB, HD).
         // Two checks necessary because some systems return EFI boot loaders
-        //   with a DeviceType value that would inappropriately include them
-        //   as legacy loaders.
+        //   with a DeviceType value that would inappropriately
+        //   identify them as legacy loaders.
         if (BbsDevicePath->DeviceType == DiskType &&
             BdsOption->DevicePath->Type == DEVICE_TYPE_BIOS
         ) {
-            // USB flash drives appear as hard disks with certain media flags set.
-            // Look for this, and if present, pass it on with the (technically
-            //   incorrect, but internally useful) BBS_TYPE_USB flag set.
+            // USB flash drives appear as hard disks if certain media flags set.
+            // Look for such and pass on, if present, with the technically
+            //   incorrect but internally useful "BBS_TYPE_USB" flag.
             if (DiskType != BBS_HARDDISK) {
                 AddLegacyEntryUEFI (BdsOption, DiskType);
             }
@@ -1141,14 +1181,15 @@ VOID ScanLegacyUEFI (
             ) {
                 AddLegacyEntryUEFI (BdsOption, BBS_USB);
             }
-            else if (
-                !AssumeUSB &&
-                !(
-                    BbsDevicePath->StatusFlag &
-                    (BBS_MEDIA_PRESENT | BBS_MEDIA_MAYBE_PRESENT)
-                )
-            ) {
-                AddLegacyEntryUEFI (BdsOption, DiskType);
+            else {
+                if (!AssumeUSB &&
+                    !(
+                        BbsDevicePath->StatusFlag &
+                        (BBS_MEDIA_PRESENT | BBS_MEDIA_MAYBE_PRESENT)
+                    )
+                ) {
+                    AddLegacyEntryUEFI (BdsOption, DiskType);
+                }
             }
         } // if BbsDevicePath->DeviceType
 
@@ -1400,7 +1441,7 @@ VOID ScanLegacyEx (
 } // static VOID ScanLegacyEx()
 
 // Scan attached optical discs for legacy boot code
-// and add anything found to the list.
+//   and add anything found to the list.
 VOID ScanLegacyDisc (VOID) {
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_THREE_STAR_SEP,
@@ -1420,7 +1461,7 @@ VOID ScanLegacyDisc (VOID) {
 } // VOID ScanLegacyDisc()
 
 // Scan internal hard disks for legacy boot code
-// and add anything found to the list.
+//   and add anything found to the list.
 VOID ScanLegacyInternal (VOID) {
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_THREE_STAR_SEP,
@@ -1443,7 +1484,7 @@ VOID ScanLegacyInternal (VOID) {
 } // VOID ScanLegacyInternal()
 
 // Scan external disks for legacy boot code
-// and add anything found to the list.
+//   and add anything found to the list.
 VOID ScanLegacyExternal (VOID) {
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_THREE_STAR_SEP,
@@ -1520,8 +1561,8 @@ VOID FindLegacyBootType (VOID) {
     }
 } // VOID FindLegacyBootType()
 
-// Warn user if legacy OS scans are enabled but
-// the firmware does not support legacy BIOS boot.
+// Warn if legacy OS scans are enabled but the
+//   firmware does not support legacy BIOS boot.
 VOID WarnIfLegacyProblems (VOID) {
     #if REFIT_DEBUG > 0
     BOOLEAN   TmpLevel;
@@ -1614,12 +1655,18 @@ VOID WarnIfLegacyProblems (VOID) {
         #endif
         SwitchToText (FALSE);
 
-        REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_ERROR);
+        REFIT_CALL_2_WRAPPER(
+            gST->ConOut->SetAttribute,
+            gST->ConOut, ATTR_ERROR
+        );
         PrintUglyText (Spacer, NEXTLINE);
         PrintUglyText (TxtMsg, NEXTLINE);
         PrintUglyText (Spacer, NEXTLINE);
 
-        REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
+        REFIT_CALL_2_WRAPPER(
+            gST->ConOut->SetAttribute,
+            gST->ConOut, ATTR_BASIC
+        );
         PrintUglyText (Spacer, NEXTLINE);
         PrintUglyText (MsgStr, NEXTLINE);
         PrintUglyText (Spacer, NEXTLINE);

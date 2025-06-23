@@ -258,13 +258,16 @@ GPT_PARTTYPE * gpt_parttype(UINT8 *type_guid)
     return &gpt_dummy_type;
 }
 
-UINTN read_gpt(VOID)
-{
-    UINTN       status;
-    GPT_HEADER  *header;
-    GPT_ENTRY   *entry;
+UINTN read_gpt (VOID) {
+    GPT_HEADER *header;
+    GPT_ENTRY  *entry;
     UINT64      entry_lba;
-    UINTN       entry_count, entry_size, i;
+    UINTN       i;
+    UINTN       status;
+    UINTN       offset;
+    UINTN       entry_size;
+    UINTN       entry_count;
+
 
     Print(L"\nCurrent GUID partition table:\n");
 
@@ -295,14 +298,18 @@ UINTN read_gpt(VOID)
     for (i = 0; i < entry_count; i++) {
         if (((i * entry_size) % 512) == 0) {
             status = read_sector(entry_lba, sector);
-            if (status != 0)
-                return status;
+            if (status != 0) return status;
+
             entry_lba++;
         }
-        entry = (GPT_ENTRY *)(sector + ((i * entry_size) % 512));
 
-        if (guids_are_equal(entry->type_guid, empty_guid))
+        offset = (i * entry_size) % 512;
+        CopyMem (&entry, sector + offset, sizeof (entry));
+
+        if (guids_are_equal(entry->type_guid, empty_guid)) {
             continue;
+        }
+
         if (gpt_part_count == 0) {
             Print(L" #      Start LBA      End LBA  Type\n");
         }

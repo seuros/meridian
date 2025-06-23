@@ -931,7 +931,10 @@ EFI_STATUS RefitGetApfsVolumeInfo (
         return Status;
     }
 
-    Status = REFIT_CALL_2_WRAPPER(FileSystem->OpenVolume, FileSystem, &Root);
+    Status = REFIT_CALL_2_WRAPPER(
+        FileSystem->OpenVolume,
+        FileSystem, &Root
+    );
     if (EFI_ERROR(Status)) {
         // Early Return ... Return Error
         return Status;

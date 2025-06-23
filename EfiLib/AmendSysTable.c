@@ -146,7 +146,10 @@ VOID OurDispatchEventNotifies (
         // Notify this event
         ASSERT (Event->NotifyFunction != NULL);
 
-        REFIT_CALL_2_WRAPPER(Event->NotifyFunction, Event, Event->NotifyContext);
+        REFIT_CALL_2_WRAPPER(
+            Event->NotifyFunction,
+            Event, Event->NotifyContext
+        );
 
         // Check for next pending event
         OurAcquireLock (&zEventQueueLock);

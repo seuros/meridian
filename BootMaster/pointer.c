@@ -53,6 +53,73 @@ POINTER_STATE                   State;
 
 extern BOOLEAN                  RunningOC;
 
+
+////////////////////////////////////////////////////////////////////////////////
+// Frees allocated memory and closes pointer protocols
+////////////////////////////////////////////////////////////////////////////////
+static
+VOID pdCleanup (VOID) {
+    #if REFIT_DEBUG > 0
+    CHAR16 *MsgStr;
+    #endif
+
+    UINTN   Index;
+
+
+    #if REFIT_DEBUG > 0
+    MsgStr = L"Pointer Scenarios";
+    ALT_LOG(1, LOG_LINE_NORMAL, L"Dismantle %s", MsgStr);
+    LOG_MSG("Deconfigure %s:", MsgStr);
+    #endif
+
+    if (RunningOC) {
+        return;
+    }
+
+    pdClear (FALSE);
+
+    if (HandleA != NULL) {
+        for (Index = 0; Index < NumAPointerDevices; Index++) {
+            REFIT_CALL_4_WRAPPER(
+                gBS->CloseProtocol, HandleA[Index],
+                &APointerGuid, SelfImageHandle, NULL
+            );
+        }
+    }
+
+    if (HandleS != NULL) {
+        for (Index = 0; Index < NumSPointerDevices; Index++) {
+            REFIT_CALL_4_WRAPPER(
+                gBS->CloseProtocol, HandleS[Index],
+                &SPointerGuid, SelfImageHandle, NULL
+            );
+        }
+    }
+
+    NumAPointerDevices = 0;
+    NumSPointerDevices = 0;
+
+    LastXPos = ScreenW / 2;
+    LastYPos = ScreenH / 2;
+
+    State.X  = ScreenW / 2;
+    State.Y  = ScreenH / 2;
+    State.Press    = FALSE;
+    State.Holding  = FALSE;
+
+    #if REFIT_DEBUG > 0
+    MsgStr = L"Disable Pointer Protocols ... Success";
+    ALT_LOG(1, LOG_THREE_STAR_MID, L"%s", MsgStr);
+    LOG_MSG("%s  - %s", OffsetNext, MsgStr);
+    #endif
+
+    MY_FREE_POOL(HandleA);
+    MY_FREE_POOL(HandleS);
+    MY_FREE_POOL(ProtocolA);
+    MY_FREE_POOL(ProtocolS);
+    MY_FREE_IMAGE(MouseImage);
+} // static VOID pdCleanup()
+
 ////////////////////////////////////////////////////////////////////////////////
 // Initialise Pointer Devices
 ////////////////////////////////////////////////////////////////////////////////
@@ -87,10 +154,13 @@ VOID pdInitialize (VOID) {
         return;
     }
 
-    pdCleanup(); // Just in case
+    pdCleanup();
 
-    if (!GlobalConfig.EnableMouse && !GlobalConfig.EnableTouch) {
+    if (!GlobalConfig.EnableMouse &&
+        !GlobalConfig.EnableTouch
+    ) {
         MouseTouchActive = FALSE;
+        PointerAvailable = FALSE;
 
         #if REFIT_DEBUG > 0
         // DA-TAG: Use LOG_THREE_STAR_END for this instance
@@ -238,19 +308,26 @@ VOID pdInitialize (VOID) {
     MY_FREE_POOL(MsgStr);
     #endif
 
-    // Load mouse icon
-    if (NumAPointerDevices > 0 ||
-        NumSPointerDevices > 0
-    ) {
-        if (GlobalConfig.EnableMouse) {
-            MouseImage = BuiltinIcon (BUILTIN_ICON_MOUSE);
-        }
-
-        PointerAvailable =  TRUE;
+    if (!RunningOC && pdCount() == 0) {
+        MouseTouchActive = FALSE;
+        PointerAvailable = FALSE;
     }
     else {
-        PointerAvailable = FALSE;
-        MouseTouchActive = FALSE;
+        if (GlobalConfig.EnableMouse) {
+            MouseImage = BuiltinIcon (
+                BUILTIN_ICON_MOUSE
+            );
+        }
+
+        // Form below is delibrate for RunningOC
+        MouseTouchActive = (
+            GlobalConfig.EnableMouse ||
+            GlobalConfig.EnableTouch
+        ) ? TRUE : FALSE;
+        PointerAvailable = (
+            GlobalConfig.EnableMouse ||
+            GlobalConfig.EnableTouch
+        ) ? TRUE : FALSE;
     }
 
     #if REFIT_DEBUG > 0
@@ -276,71 +353,6 @@ VOID pdInitialize (VOID) {
     MY_FREE_POOL(MsgStr);
     #endif
 } // VOID pdInitialize()
-
-////////////////////////////////////////////////////////////////////////////////
-// Frees allocated memory and closes pointer protocols
-////////////////////////////////////////////////////////////////////////////////
-VOID pdCleanup (VOID) {
-    #if REFIT_DEBUG > 0
-    CHAR16 *MsgStr;
-    #endif
-
-    UINTN   Index;
-
-    #if REFIT_DEBUG > 0
-    MsgStr = L"Pointer Scenarios";
-    ALT_LOG(1, LOG_LINE_NORMAL, L"Dismantle %s", MsgStr);
-    LOG_MSG("Deconfigure %s:", MsgStr);
-    #endif
-
-    PointerAvailable = FALSE;
-    pdClear();
-
-    if (RunningOC) {
-        return;
-    }
-
-    if (HandleA != NULL) {
-        for (Index = 0; Index < NumAPointerDevices; Index++) {
-            REFIT_CALL_4_WRAPPER(
-                gBS->CloseProtocol, HandleA[Index],
-                &APointerGuid, SelfImageHandle, NULL
-            );
-        }
-    }
-
-    if (HandleS != NULL) {
-        for (Index = 0; Index < NumSPointerDevices; Index++) {
-            REFIT_CALL_4_WRAPPER(
-                gBS->CloseProtocol, HandleS[Index],
-                &SPointerGuid, SelfImageHandle, NULL
-            );
-        }
-    }
-
-    NumAPointerDevices = 0;
-    NumSPointerDevices = 0;
-
-    LastXPos = ScreenW / 2;
-    LastYPos = ScreenH / 2;
-
-    State.X  = ScreenW / 2;
-    State.Y  = ScreenH / 2;
-    State.Press    = FALSE;
-    State.Holding  = FALSE;
-
-    #if REFIT_DEBUG > 0
-    MsgStr = L"Disable Pointer Protocols ... Success";
-    ALT_LOG(1, LOG_THREE_STAR_MID, L"%s", MsgStr);
-    LOG_MSG("%s  - %s", OffsetNext, MsgStr);
-    #endif
-
-    MY_FREE_POOL(HandleA);
-    MY_FREE_POOL(HandleS);
-    MY_FREE_POOL(ProtocolA);
-    MY_FREE_POOL(ProtocolS);
-    MY_FREE_IMAGE(MouseImage);
-} // VOID pdCleanup()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Returns whether or not any pointer devices are available
@@ -445,6 +457,11 @@ UINTN Int64ToUintn (
     return (UINTN) TempINT64;
 } // static UINTN Int64ToUintn()
 
+static
+BOOLEAN pdNotUsed (VOID) {
+    return (!PointerAvailable || !MouseTouchActive);
+} // static BOOLEAN pdNotUsed()
+
 EFI_STATUS pdUpdateState (VOID) {
     EFI_STATUS                 Status;
     UINTN                      Index;
@@ -457,11 +474,7 @@ EFI_STATUS pdUpdateState (VOID) {
     EFI_ABSOLUTE_POINTER_STATE APointerState;
 
 
-    #if defined (EFI32) && defined (__MAKEWITH_GNUEFI)
-    return EFI_NOT_READY;
-    #endif
-
-    if (!PointerAvailable) {
+    if (pdNotUsed()) {
         return EFI_NOT_READY;
     }
 
@@ -570,7 +583,8 @@ VOID pdDraw (VOID) {
     UINTN Width;
     UINTN Height;
 
-    if (!MouseTouchActive) {
+
+    if (pdNotUsed()) {
         return;
     }
 
@@ -601,7 +615,9 @@ VOID pdDraw (VOID) {
 ////////////////////////////////////////////////////////////////////////////////
 // Restores the background at the position the mouse was last drawn
 ////////////////////////////////////////////////////////////////////////////////
-VOID pdClear (VOID) {
+VOID pdClear (
+    BOOLEAN VetStatus
+) {
     #if REFIT_DEBUG > 0
     CHAR16 *MsgStr;
 
@@ -609,7 +625,9 @@ VOID pdClear (VOID) {
     #endif
 
 
-    if (!MouseTouchActive) {
+    if (VetStatus &&
+        pdNotUsed()
+    ) {
         return;
     }
 

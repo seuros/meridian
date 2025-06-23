@@ -587,7 +587,11 @@ UINTN ScanDriverDir (
     DriversArrSize = DriversArrSizeNew = 16;
     ArrayCount = ProtocolIndex = DriversArrNum = NumFound = 0;
     while (1) {
-        CheckIter = DirIterNext (&DirIter, 2, LOADER_MATCH_PATTERNS, &DirEntry);
+        CheckIter = DirIterNext (
+            &DirIter,
+            2, LOADER_MATCH_PATTERNS,
+            &DirEntry
+        );
         if (!CheckIter) break;
 
         if (DirEntry->FileName[0] == '.') {

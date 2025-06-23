@@ -403,6 +403,8 @@ VOID DeepLoggger (
     CHAR16  *StoreMsg;
     BOOLEAN  LongStr;
     BOOLEAN  EarlyReturn;
+    BOOLEAN  CheckReturn;
+
 
     if (*Msg == NULL) {
         return;
@@ -422,20 +424,21 @@ VOID DeepLoggger (
         )
     );
 
-    if (!MuteLogger           &&
-        type == LOG_BLOCK_SEP &&
-        REFIT_DEBUG > LOGLEVELMAX
-    ) {
-        EarlyReturn = FALSE;
-    }
+    CheckReturn = (
+        MuteLogger              ||
+        type != LOG_BLOCK_SEP   ||
+        REFIT_DEBUG <= LOGLEVELMAX
+    );
 
-    if (EarlyReturn) {
+    if (EarlyReturn && CheckReturn) {
         MY_FREE_POOL(*Msg);
 
         return;
     }
 
-    OurPad = (PadStr != NULL) ? PadStr : L"[ ";
+    OurPad = (
+        PadStr != NULL
+    ) ? PadStr : L"[ ";
 
     // Truncate message at LOGLEVELMAX and lower (if required)
     if (GlobalConfig.LogLevel <= LOGLEVELMAX) {
@@ -485,6 +488,7 @@ VOID DeepLoggger (
         // Write the Message String to File
         UnicodeStrToAsciiStr (Tmp, FormatMsg);
         DebugLog ((const CHAR8 *) FormatMsg);
+        MY_FREE_POOL(FormatMsg);
 
         // Disable Native Logging
         UseMsgLog = FALSE;
@@ -492,7 +496,6 @@ VOID DeepLoggger (
 
     MY_FREE_POOL(Tmp);
     MY_FREE_POOL(*Msg);
-    MY_FREE_POOL(FormatMsg);
 } // VOID DeepLoggger()
 
 VOID EFIAPI DebugLog (

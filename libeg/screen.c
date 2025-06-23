@@ -229,7 +229,10 @@ EFI_STATUS GopSetModeAndReconnectTextOut (
         return EFI_UNSUPPORTED;
     }
 
-    Status = REFIT_CALL_2_WRAPPER(GOPDraw->SetMode, GOPDraw, ModeNumber);
+    Status = REFIT_CALL_2_WRAPPER(
+        GOPDraw->SetMode,
+        GOPDraw, ModeNumber
+    );
 
     #if REFIT_DEBUG > 0
     MsgStr = PoolPrint (L"Switch Mode to GOP Mode[%02d] ... %r", ModeNumber, Status);
@@ -2820,7 +2823,10 @@ BOOLEAN egSetTextMode (
     MY_FREE_POOL(MsgStr);
     #endif
 
-    Status = REFIT_CALL_2_WRAPPER(gST->ConOut->SetMode, gST->ConOut, RequestedMode);
+    Status = REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetMode,
+        gST->ConOut, RequestedMode
+    );
     if (!EFI_ERROR(Status)) {
         #if REFIT_DEBUG > 0
         LOG_MSG("\n");
@@ -2984,7 +2990,10 @@ VOID egSetGraphicsModeEnabled (
     BREAD_CRUMB(L"%a:  4", __func__);
     if (CurrentMode != NewMode) {
         BREAD_CRUMB(L"%a:  4a 1 - (Set to Tagged Mode)", __func__);
-        REFIT_CALL_2_WRAPPER(ConsoleControl->SetMode, ConsoleControl, NewMode);
+        REFIT_CALL_2_WRAPPER(
+            ConsoleControl->SetMode,
+            ConsoleControl, NewMode
+        );
     }
     else {
         BREAD_CRUMB(L"%a:  4b 1 - (Tagged Mode is Already Active)", __func__);
@@ -3015,8 +3024,14 @@ VOID egClearScreen (
         LOG_SEP(L"X");
 
         // Try to clear in text mode
-        REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
-        REFIT_CALL_1_WRAPPER(gST->ConOut->ClearScreen,  gST->ConOut);
+        REFIT_CALL_2_WRAPPER(
+            gST->ConOut->SetAttribute,
+            gST->ConOut, ATTR_BASIC
+        );
+        REFIT_CALL_1_WRAPPER(
+            gST->ConOut->ClearScreen,
+            gST->ConOut
+        );
 
         // Early Return
         return;

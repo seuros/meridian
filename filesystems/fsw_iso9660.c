@@ -544,7 +544,7 @@ static fsw_status_t fsw_iso9660_dir_lookup(struct fsw_iso9660_volume *vol, struc
         // compare name
         if (fsw_streq(lookup_name, &dirrec_buffer.name))  // TODO: compare case-insensitively
             break;
-    }
+    } // while {Infinite}
 
     // setup a dnode for the child item
     status = fsw_dnode_create(dno, dirrec_buffer.ino, FSW_DNODE_TYPE_UNKNOWN, &dirrec_buffer.name, child_dno_out);
@@ -599,7 +599,7 @@ static fsw_status_t fsw_iso9660_dir_read(struct fsw_iso9660_volume *vol, struct 
             (dirrec->file_identifier[0] == 0 || dirrec->file_identifier[0] == 1))
             continue;
         break;
-    }
+    } // while {Infinite}
 
     // setup a dnode for the child item
     status = fsw_dnode_create(dno, dirrec_buffer.ino, FSW_DNODE_TYPE_UNKNOWN, &dirrec_buffer.name, child_dno_out);

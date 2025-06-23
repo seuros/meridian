@@ -71,10 +71,11 @@ typedef struct PointerStateStruct {
 #endif
 
 
-VOID pdDraw (VOID);
-VOID pdClear (VOID);
-VOID pdCleanup (VOID);
 VOID pdInitialize (VOID);
+VOID pdDraw (VOID);
+VOID pdClear (
+    BOOLEAN VetStatus
+);
 
 UINTN pdCount (VOID);
 

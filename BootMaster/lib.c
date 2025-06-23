@@ -249,8 +249,13 @@ UINTN GetUserInput (
             &gST->ConIn->WaitForKey, &Index
         );
 
-        Status = REFIT_CALL_2_WRAPPER(gST->ConIn->ReadKeyStroke, gST->ConIn, &Key);
-        if (EFI_ERROR(Status) && Status != EFI_NOT_READY) {
+        Status = REFIT_CALL_2_WRAPPER(
+            gST->ConIn->ReadKeyStroke,
+            gST->ConIn, &Key
+        );
+        if (EFI_ERROR(Status) &&
+            Status != EFI_NOT_READY
+        ) {
             ErrorOut = TRUE;
             break;
         }
@@ -260,7 +265,9 @@ UINTN GetUserInput (
         return 1;
     }
 
-    if (Key.UnicodeChar == 'y' || Key.UnicodeChar == 'Y') {
+    if (Key.UnicodeChar == 'Y' ||
+        Key.UnicodeChar == 'y'
+    ) {
         Print(L"Yes\n");
         *bool_out = TRUE;
     }
@@ -308,7 +315,9 @@ EFI_STATUS FinishInitRefitLib (VOID) {
     EFI_STATUS  Status;
 
 
-    if (SelfVolume && SelfVolume->DeviceHandle != SelfLoadedImage->DeviceHandle) {
+    if (SelfVolume != NULL &&
+        SelfVolume->DeviceHandle != SelfLoadedImage->DeviceHandle
+    ) {
         SelfLoadedImage->DeviceHandle = SelfVolume->DeviceHandle;
     }
 
@@ -523,7 +532,9 @@ VOID CleanUpPathNameSlashes (
     UINTN Source;
 
 
-    if (PathName == NULL || PathName[0] == '\0') {
+    if (PathName == NULL ||
+        PathName[0] == '\0'
+    ) {
         return;
     }
 
@@ -2107,24 +2118,16 @@ CHAR16 * GetVolumeNameEx (
     // DA-TAG: Investigate This
     //         If filesystem name is not found, this could be improved/extended
     //         Such as: use or add disk/partition number (e.g., "(hd0,2)")
-    if (Volume->FsName          == NULL  ||
-        Volume->FsName[0]       == L'\0' ||
-        StrLen (Volume->FsName) == 0
+    if (Volume->FsName          != NULL  &&
+        Volume->FsName[0]       != L'\0' &&
+        StrLen (Volume->FsName) != 0
     ) {
-        FoundName = NULL;
-    }
-    else {
-        if (Volume->FSType == FS_TYPE_EXFAT &&
-            MyStriCmp (Volume->FsName, L"FAT")
-        ) {
-            FoundName = StrDuplicate (L"ExFAT");
-        }
-        else {
-            FoundName = StrDuplicate (Volume->FsName);
-        }
-    }
-    if (FoundName != NULL) {
-        return FoundName;
+        return StrDuplicate (
+            (
+                Volume->FSType == FS_TYPE_EXFAT &&
+                MyStriCmp (Volume->FsName, L"FAT")
+            ) ? L"ExFAT" : Volume->FsName
+        );
     }
 
 
@@ -2134,16 +2137,15 @@ CHAR16 * GetVolumeNameEx (
         StrLen (Volume->PartName) >     0  &&
         !IsListItem (Volume->PartName, IGNORE_PARTITION_NAMES)
     ) {
-        FoundName = StrDuplicate (Volume->PartName);
-    }
-    if (FoundName != NULL) {
-        return FoundName;
+        return StrDuplicate (Volume->PartName);
     }
 
     if (Volume->DiskKind == DISK_KIND_OPTICAL) {
-        FoundName = (Volume->FSType == FS_TYPE_ISO9660)
-            ? StrDuplicate (L"Optical ISO-9660 Image")
-            : StrDuplicate (L"Optical Disc Drive");
+        FoundName = StrDuplicate (
+            (Volume->FSType == FS_TYPE_ISO9660)
+                ? L"Optical ISO-9660 Image"
+                : L"Optical Disc Drive"
+        );
     }
     else if (MediaCheck) {
         FoundName = StrDuplicate (L"Network Volume (Assumed)");
@@ -2380,8 +2382,10 @@ VOID ScanVolume (
         ALT_LOG(1, LogLineType, L"Cannot Get BlockIO Protocol in ScanVolume!!");
         #endif
     }
-    else if (Volume->BlockIO->Media->BlockSize == 2048) {
-        Volume->DiskKind = DISK_KIND_OPTICAL;
+    else {
+        if (Volume->BlockIO->Media->BlockSize == 2048) {
+            Volume->DiskKind = DISK_KIND_OPTICAL;
+        }
     }
 
     #if REFIT_DEBUG > 0
@@ -2555,17 +2559,20 @@ VOID ScanVolume (
     MY_HYBRIDLOGGER_OFF;
     #endif
 
-    // Open the root directory of the volume
+    // Open Volume Root Directory
     if (Volume->RootDir == NULL) {
         Volume->RootDir = LibOpenRoot (Volume->DeviceHandle);
     }
 
+    // Set Volume Name
     SetFilesystemName (Volume);
     Volume->VolName = GetVolumeName (Volume);
     SanitiseVolumeName (&Volume);
 
-    Volume->IsReadable = (Volume->HasBootCode || Volume->RootDir != NULL)
-        ? TRUE : FALSE;
+    // Set 'IsReadable' Flag
+    Volume->IsReadable = (
+        Volume->HasBootCode || Volume->RootDir != NULL
+    ) ? TRUE : FALSE;
 } // ScanVolume()
 
 static
@@ -2581,8 +2588,7 @@ VOID ScanExtendedPartition (
     UINT32              ExtBase;
     UINT32              ExtCurrent;
     UINT32              NextExtCurrent;
-    UINTN               i;
-    UINTN               LogicalPartitionIndex;
+    UINTN               LogicalPartitionIndex, i;
     UINT8               SectorBuffer[BASE_SIZE];
     BOOLEAN             Bootable;
     REFIT_VOLUME       *Volume;
@@ -2728,12 +2734,12 @@ VOID VetMultiInstanceAPFS (VOID) {
         for (i = 0; i < VolumesCount; i++) {
             GotSystemVol = (
                 (
-                    Volumes[i]->VolRole == APFS_VOLUME_ROLE_SYSTEM ||
-                    Volumes[i]->VolRole == APFS_VOLUME_ROLE_UNDEFINED
-                ) && (
                     Volumes[i]->VolName != NULL
                 ) && (
                     StrLen (Volumes[i]->VolName) != 0
+                ) && (
+                    Volumes[i]->VolRole == APFS_VOLUME_ROLE_SYSTEM ||
+                    Volumes[i]->VolRole == APFS_VOLUME_ROLE_UNDEFINED
                 ) && GuidsAreEqual (
                     &(PreBootVolumes[j]->PartGuid),
                     &(Volumes[i]->PartGuid)
@@ -2746,10 +2752,12 @@ VOID VetMultiInstanceAPFS (VOID) {
                 }
                 else {
                     SingleAPFS = FALSE;
+
+                    // Break out of loop
                     break;
                 }
             }
-        } // for
+        } // for i = 0
 
         if (!SingleAPFS) {
             // DA-TAG: Multiple installations in a single APFS Container
@@ -3179,7 +3187,10 @@ VOID ScanVolumes (VOID) {
             BRK_MOD("\n");
         }
         else if (ScannedOnce) {
-            if (!SkipSpacing && (HandleIndex % 4) == 0 && (HandleCount - HandleIndex) > 2) {
+            if (!SkipSpacing &&
+                (HandleIndex % 4) == 0 &&
+                (HandleCount - HandleIndex) > 2
+            ) {
                 if ((HandleIndex % 24) == 0 &&
                     (HandleCount - HandleIndex) > (12 + 2)
                 ) {
@@ -3211,12 +3222,19 @@ VOID ScanVolumes (VOID) {
                             LOG_MSG(
                                 "%s for %s",
                                 LEGACY_CODE_TXT,
-                                (Volume->OSName) ? Volume->OSName : UNKNOWN_OS
+                                (Volume->OSName != NULL)
+                                    ? Volume->OSName
+                                    : UNKNOWN_OS
                             );
                         }
                         if (FoundMBR) {
                             if (Volume->HasBootCode) {
-                                LOG_MSG("%s", (UseButJoin) ? BUT_JOIN_TXT : AND_JOIN_TXT);
+                                LOG_MSG(
+                                    "%s",
+                                    (UseButJoin)
+                                        ? BUT_JOIN_TXT
+                                        : AND_JOIN_TXT
+                                );
                             }
                             LOG_MSG("%s", PARTITION_TABLE_TXT);
                         }

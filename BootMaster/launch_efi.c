@@ -127,10 +127,19 @@ VOID WarnSecureBootError(
 
     SwitchToText (FALSE);
 
-    MsgStrA = PoolPrint (L"Secure Boot Validation Failure While Starting %s", LoaderName);
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_ERROR);
-    PrintUglyText (MsgStrA,                                        NEXTLINE);
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
+    MsgStrA = PoolPrint (
+        L"Secure Boot Validation Failure While Starting %s",
+        LoaderName
+    );
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_ERROR
+    );
+    PrintUglyText (MsgStrA, NEXTLINE);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_BASIC
+    );
 
     if (SecureFlag && Verbose) {
         MsgStrB = PoolPrint (
@@ -396,7 +405,7 @@ BOOLEAN IsValidLoader (
     if (Header == NULL) {
         // DA-TAG: Set 'ValidText' in 'REL' for 'FALSE' outcome
         //         Allows accurate screen message
-        ValidText = L"EFI File *IS ASSUMED* to be Invalid";
+        ValidText = L"EFI File *IS ASSUMED* Invalid";
 
         #if REFIT_DEBUG > 0
         AbortReason = L":- 'Unable to Allocate Memory'";
@@ -411,6 +420,9 @@ BOOLEAN IsValidLoader (
         return FALSE;
     }
 
+
+
+    /* OUTER - START */
     do {
         ValidFile = AppleBinaryFat = AppleBinaryPlain = FALSE;
 
@@ -445,6 +457,7 @@ BOOLEAN IsValidLoader (
 
         LoadedSize = EFI_HEADER_SIZE;
 
+        // Read FileHandle Header
         Status = REFIT_CALL_3_WRAPPER(
             FileHandle->Read, FileHandle,
             &LoadedSize, Header
@@ -479,6 +492,7 @@ BOOLEAN IsValidLoader (
 
 
 
+        /* INNER - START */
         do {
             // Search for Common PE Signatures and Sizes
             ValidFile = (
@@ -486,36 +500,40 @@ BOOLEAN IsValidLoader (
                 Header[1]  == 'Z' &&
                 LoadedSize ==  EFI_HEADER_SIZE
             );
-            if (!ValidFile) break;
-
-            // Search for Standard PE32+ Signature
-            PESig = EFI_STUB_ARCH;
-            REFIT_CALL_3_WRAPPER(
-                gBS->CopyMem, &BaseMagicPE,
-                &Header[BASIC_PE_OFFSET], sizeof (UINT32)
-            ); // Safely Read Basic PE Magic
-            ValidFile = (
-                BaseMagicPE < (EFI_HEADER_SIZE - 8) &&
-                CompareMem (
-                    &Header[BaseMagicPE], &PESig, 6
-                ) == 0
-            );
-            if (ValidFile) break;
+            if (ValidFile) {
+                // Search for Standard PE32+ Signature
+                PESig = EFI_STUB_ARCH;
+                REFIT_CALL_3_WRAPPER(
+                    gBS->CopyMem, &BaseMagicPE,
+                    &Header[BASIC_PE_OFFSET], sizeof (UINT32)
+                ); // Safely Read Basic PE Magic
+                ValidFile = (
+                    BaseMagicPE < (EFI_HEADER_SIZE - 8) &&
+                    CompareMem (
+                        &Header[BaseMagicPE], &PESig, 6
+                    ) == 0
+                );
+                if (ValidFile) break;
+            }
 
             // Check for Linux EFI Bootable Kernel Image
             REFIT_CALL_3_WRAPPER(
                 gBS->CopyMem, &LinuxMagicPE,
                 &Header[LINUX_PE_OFFSET], sizeof (UINT32)
             ); // Safely Read Linux PE Magic
-            ValidFile = (LinuxMagicPE == LINUX_PE_MAGIC);
-        } while (0); // This 'loop' only runs once
+            ValidFile = (
+                LinuxMagicPE == LINUX_PE_MAGIC
+            );
+        } while (0); // This 'loop' only runs once ... Inner
+        /* INNER - END */
+
+
+
         if (ValidFile) {
             //LoaderType = LOADER_TYPE_EFI;
 
             break;
         }
-
-
 
         // Search for Apple's 'Fat' Binary Signature
         ValidFile = AppleBinaryFat = (
@@ -539,7 +557,9 @@ BOOLEAN IsValidLoader (
         #if REFIT_DEBUG > 0
         AbortReason = L":- 'Unknown Binary Type'";
         #endif
-    } while (0); // This 'loop' only runs once
+    } while (0); // This 'loop' only runs once ... Outer
+    /* OUTER - END */
+
 
 
     // DA-TAG: Set ValidText in REL for 'FALSE' outcome
@@ -623,6 +643,8 @@ EFI_STATUS StartEFIImage (
     CHAR16                              *EspGUID;
     UINTN                                ScaleLogo;
     UINTN                                OrigIconBig;
+    BOOLEAN                              ShowLogoLin;
+    BOOLEAN                              ShowLogoWin;
     BOOLEAN                              LoaderValid;
     EG_IMAGE                            *BootLogoImage;
     EFI_HANDLE                           ChildImageHandle;
@@ -675,9 +697,15 @@ EFI_STATUS StartEFIImage (
         #if REFIT_DEBUG > 0
         MY_MUTELOGGER_SET;
         #endif
-        REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
+        REFIT_CALL_2_WRAPPER(
+            gST->ConOut->SetAttribute,
+            gST->ConOut, ATTR_ERROR
+        );
         PrintUglyText (MsgStr, NEXTLINE);
-        REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
+        REFIT_CALL_2_WRAPPER(
+            gST->ConOut->SetAttribute,
+            gST->ConOut, ATTR_BASIC
+        );
         #if REFIT_DEBUG > 0
         MY_MUTELOGGER_OFF;
         #endif
@@ -697,7 +725,10 @@ EFI_STATUS StartEFIImage (
         //         sometimes comes back NULL; so an exception is provided.
         //
         //         Handle this special condition better.
-        LoaderValid = IsValidLoader (Volume->RootDir, Filename);
+        LoaderValid = IsValidLoader (
+            Volume->RootDir,
+            Filename
+        );
         if (!LoaderValid) {
             #if REFIT_DEBUG > 0
             MsgStr = StrDuplicate (L"Found Invalid Binary");
@@ -719,7 +750,21 @@ EFI_STATUS StartEFIImage (
             break;
         }
 
-        DevicePath = FileDevicePath (Volume->DeviceHandle, Filename);
+        DevicePath = FileDevicePath (
+            Volume->DeviceHandle,
+            Filename
+        );
+        if (DevicePath == NULL) {
+            MsgStr = PoolPrint (
+                L"While Fetching DeviceHandle Path to '%s'",
+                Filename
+            );
+            CheckError (ReturnStatus, MsgStr);
+            MY_FREE_POOL(MsgStr);
+
+            // Bail Out
+            break;
+        }
 
         #if REFIT_DEBUG < 1
         // Stall to avoid unwanted flash of text when starting loaders
@@ -765,7 +810,9 @@ EFI_STATUS StartEFIImage (
             }
             else {
                 #if REFIT_DEBUG > 0
-                MsgStr = StrDuplicate (L"Secure Boot Validation Failure");
+                MsgStr = StrDuplicate (
+                    L"Secure Boot Validation Failure"
+                );
                 ALT_LOG(1, LOG_STAR_SEPARATOR, L"ERROR: %s", MsgStr);
                 LOG_MSG("\n\n");
                 LOG_MSG("WARN: %s", MsgStr);
@@ -791,7 +838,9 @@ EFI_STATUS StartEFIImage (
             // See the replacements.c file in Shim, especially its start_image()
             // function, for the source of the problem.
             #if REFIT_DEBUG > 0
-            MsgStr = StrDuplicate (L"Shim 0.8 'Load/Start Image' Hack Applied");
+            MsgStr = StrDuplicate (
+                L"Shim 0.8 'Load/Start Image' Hack Applied"
+            );
             ALT_LOG(1, LOG_LINE_NORMAL, L"%s", MsgStr);
             LOG_MSG("\n\n");
             LOG_MSG("INFO: %s", MsgStr);
@@ -830,18 +879,20 @@ EFI_STATUS StartEFIImage (
 
             // DA-TAG: Investigate This
             //         Optionally Re-enable the EFI watchdog timer
-            if (IsBoot &&
-                (
-                    (
-                        OSType == 'L' &&
-                        !(GlobalConfig.DisableBootLogo & DISABLE_BOOTLOGO_LIN)
-                    ) || (
-                        OSType == 'W' &&
-                        !(GlobalConfig.DisableBootLogo & DISABLE_BOOTLOGO_WIN)
-                    )
-                )
-            ) {
-                if (!Verbose) {
+            BootLogoImage = NULL;
+            if (IsBoot) {
+                ShowLogoLin = (
+                    !Verbose &&
+                    OSType == 'L' &&
+                    !(GlobalConfig.DisableBootLogo & DISABLE_BOOTLOGO_LIN)
+                );
+                ShowLogoWin = (
+                    !Verbose &&
+                    OSType == 'W' &&
+                    !(GlobalConfig.DisableBootLogo & DISABLE_BOOTLOGO_WIN)
+                );
+
+                if (ShowLogoLin || ShowLogoWin) {
                     if (ScreenW > 1024 && ScreenH > 1024) {
                         // Stash current size
                         OrigIconBig = GlobalConfig.IconSizes[ICON_SIZE_BIG];
@@ -862,13 +913,15 @@ EFI_STATUS StartEFIImage (
                         TmpStr = NULL;
 
                         if (OSType == 'L') {
-                            GuessLinuxDistribution (&TmpStr, Volume, Filename, FALSE);
+                            GuessLinuxDistribution (
+                                &TmpStr, Volume,
+                                Filename, FALSE
+                            );
                         }
 
                         if (TmpStr == NULL) {
                             TmpStr = StrDuplicate (Volume->OSIconName);
                         }
-
                         ToLower (TmpStr);
 
                         BootLogoImage = LoadOSIcon (
@@ -899,11 +952,9 @@ EFI_STATUS StartEFIImage (
                         // Reset to stashed size
                         GlobalConfig.IconSizes[ICON_SIZE_BIG] = OrigIconBig;
                     }
+                } // if ShowLogoLin || ShowLogoWin
 
-                    MY_FREE_IMAGE(BootLogoImage);
-                } // if !Verbose
-
-                if (OSType == 'L' && GlobalConfig.WriteSystemdVars) {
+                if (GlobalConfig.WriteSystemdVars && OSType == 'L') {
                     // Inform SystemD of RefindPlus ESP
                     EspGUID = GuidAsString (&(SelfVolume->PartGuid));
 
@@ -939,8 +990,8 @@ EFI_STATUS StartEFIImage (
                     #endif
 
                     MY_FREE_POOL(EspGUID);
-                } // if GlobalConfig.WriteSystemdVars
-            } // if IsBoot && OSType
+                } // if GlobalConfig.WriteSystemdVars && OSType
+            } // if IsBoot
 
             // Store loader name if booting and set to do so
             if (BootSelection != NULL) {
@@ -949,9 +1000,6 @@ EFI_STATUS StartEFIImage (
                 }
                 BootSelection = NULL;
             }
-
-            // Close open file handles
-            UninitRefitLib();
 
             #if REFIT_DEBUG > 0
             if (IsDriver) {
@@ -968,13 +1016,21 @@ EFI_STATUS StartEFIImage (
             }
             #endif
 
+            // Free BootLogoImage ... Delibrately delayed
+            MY_FREE_IMAGE(BootLogoImage);
+
+            // Close open file handles
+            UninitRefitLib();
+
             // Turn control over to child image
             ReturnStatus = REFIT_CALL_3_WRAPPER(
                 gBS->StartImage, ChildImageHandle,
                 NULL, NULL
             );
 
-            /* Control returns here if the child image calls 'Exit()' */
+
+            /* Control returns here if child image calls 'Exit()' */
+
 
             // DA-TAG: Used in 'ScanDriverDir()'
             NewImageHandle = ChildImageHandle;
@@ -993,12 +1049,12 @@ EFI_STATUS StartEFIImage (
             #endif
 
             if (EFI_ERROR(ReturnStatus)) {
-                // Reset IsBoot if required
-                IsBoot = FALSE;
-
                 MsgStrTmp = L"Returned from Child Image";
                 if (IsDriver) {
-                    MsgStrEx = PoolPrint (L"%s:- '%s'", MsgStrTmp, ImageTitle);
+                    MsgStrEx = PoolPrint (
+                        L"%s:- '%s'",
+                        MsgStrTmp, ImageTitle
+                    );
                 }
                 else {
                     MsgStrEx = StrDuplicate (MsgStrTmp);
@@ -1026,7 +1082,10 @@ EFI_STATUS StartEFIImage (
 
                 CheckError (ReturnStatus, MsgStrEx);
                 MY_FREE_POOL(MsgStrEx);
-            }
+
+                // Reset IsBoot if required
+                IsBoot = FALSE;
+            } // EFI_ERROR(ReturnStatus)
 
             // DA-TAG: Exclude TianoCore - START
             #ifndef __MAKEWITH_TIANO
@@ -1120,9 +1179,15 @@ EFI_STATUS RebootIntoFirmware (VOID) {
     LOG_MSG("\n\n");
     #endif
 
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_ERROR);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_ERROR
+    );
     PrintUglyText (MsgStr, NEXTLINE);
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_BASIC
+    );
 
     PauseForKey();
 
@@ -1176,9 +1241,15 @@ VOID RebootIntoLoader (
 
         MY_MUTELOGGER_SET;
         #endif
-        REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_ERROR);
+        REFIT_CALL_2_WRAPPER(
+            gST->ConOut->SetAttribute,
+            gST->ConOut, ATTR_ERROR
+        );
         PrintUglyText (MsgStr, NEXTLINE);
-        REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
+        REFIT_CALL_2_WRAPPER(
+            gST->ConOut->SetAttribute,
+            gST->ConOut, ATTR_BASIC
+        );
         #if REFIT_DEBUG > 0
         MY_MUTELOGGER_OFF;
         #endif
@@ -1214,9 +1285,15 @@ VOID RebootIntoLoader (
 
     MY_MUTELOGGER_SET;
     #endif
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_ERROR);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_ERROR
+    );
     PrintUglyText (MsgStr, NEXTLINE);
-    REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
+    REFIT_CALL_2_WRAPPER(
+        gST->ConOut->SetAttribute,
+        gST->ConOut, ATTR_BASIC
+    );
     #if REFIT_DEBUG > 0
     MY_MUTELOGGER_OFF;
     #endif
@@ -1249,7 +1326,10 @@ VOID StartLoader (
         DoEnableAndLockVMX();
     }
 
-    BeginExternalScreen (Entry->UseGraphicsMode, SelectionName);
+    BeginExternalScreen (
+        Entry->UseGraphicsMode,
+        SelectionName
+    );
 
     LoaderPath = Basename (Entry->LoaderPath);
     IsVerbose  = !Entry->UseGraphicsMode;
@@ -1276,9 +1356,10 @@ VOID StartTool (
     #endif
 
     EFI_STATUS  Status;
-    CHAR16     *MsgStr;
-    CHAR16     *LoaderPath;
     BOOLEAN     IsVerbose;
+    BOOLEAN     IsRecovAPFS;
+    CHAR16     *LoaderPath;
+    CHAR16     *MsgStr;
 
 
     IsBoot     = FALSE;
@@ -1293,7 +1374,29 @@ VOID StartTool (
     LOG_MSG("%s    * %s", OffsetNext, MsgStr);
     #endif
 
-    if (FindSubStr (Entry->me.Title, RECOVERY_NAME_APFS)) {
+    IsRecovAPFS = FindSubStr (
+        Entry->me.Title,
+        RECOVERY_NAME_APFS
+    );
+    if (!IsRecovAPFS) {
+        BeginExternalScreen (
+            Entry->UseGraphicsMode,
+            MsgStr
+        );
+
+        IsVerbose = !Entry->UseGraphicsMode;
+
+        StartEFIImage (
+            Entry->Volume,
+            Entry->LoaderPath,
+            Entry->LoadOptions,
+            LoaderPath,
+            Entry->OSType,
+            IsVerbose,
+            FALSE, NULL
+        );
+    }
+    else {
         MY_FREE_POOL(MsgStr);
 
         /* APFS Recovery Instance */
@@ -1304,12 +1407,14 @@ VOID StartTool (
         else {
             Status = EFI_NOT_STARTED;
 
+            // MsgStr previously freed
             MsgStr = StrDuplicate (
                 L"APFS Recovery Boot *IS NOT* Available When Multi-Instance Contaners are Present"
             );
         }
         if (EFI_ERROR(Status)) {
             if (SingleAPFS) {
+                // MsgStr previously freed
                 MsgStr = PoolPrint (
                     L"'%r' While Running '%s'",
                     Status, Entry->me.Title
@@ -1318,41 +1423,29 @@ VOID StartTool (
 
             #if REFIT_DEBUG > 0
             ALT_LOG(1, LOG_LINE_NORMAL, L"%s", MsgStr);
+            LOG_MSG("\n");
             LOG_MSG("** WARN: %s", MsgStr);
             LOG_MSG("\n\n");
 
             MY_MUTELOGGER_SET;
             #endif
-            REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_ERROR);
+            REFIT_CALL_2_WRAPPER(
+                gST->ConOut->SetAttribute,
+                gST->ConOut, ATTR_ERROR
+            );
             PrintUglyText (MsgStr, NEXTLINE);
-            REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
+            REFIT_CALL_2_WRAPPER(
+                gST->ConOut->SetAttribute,
+                gST->ConOut, ATTR_BASIC
+            );
             #if REFIT_DEBUG > 0
             MY_MUTELOGGER_OFF;
             #endif
 
             PauseForKey();
+        } // if EFI_ERROR(Status)
+    } // if/else !IsRecovAPFS
 
-            MY_FREE_POOL(MsgStr);
-        }
-        MY_FREE_POOL(LoaderPath);
-
-        return;
-    }
-
-    BeginExternalScreen (Entry->UseGraphicsMode, MsgStr);
     MY_FREE_POOL(MsgStr);
-
-    IsVerbose = !Entry->UseGraphicsMode;
-
-    StartEFIImage (
-        Entry->Volume,
-        Entry->LoaderPath,
-        Entry->LoadOptions,
-        LoaderPath,
-        Entry->OSType,
-        IsVerbose,
-        FALSE, NULL
-    );
-
     MY_FREE_POOL(LoaderPath);
 } // VOID StartTool()

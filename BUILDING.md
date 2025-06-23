@@ -26,7 +26,7 @@ Once the workflow run is completed, click on the action instance displayed and l
 
 > [!TIP]
 >
-> If your repository fork has `diverged from RefindPlusRepo`, refer to the [REPOSITORY SYNC](https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#repository-sync) section below for sync options.
+> If your repository fork has `diverged from RefindPlusRepo`, refer to the [REPOSITORY SYNC](https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#repository-sync) section for sync options.
 
 
 <br><br>
@@ -46,6 +46,10 @@ Please refer to that project's repository (https://github.com/xaionaro/edk2-buil
 ---
 
 <br><br>
+
+> [!CAUTION]
+>
+> The process outlined below *HAS NOT* been verified on Mac OS 15.x Sequoia/Newer.
 
 # LOCAL BUILD (MAC OS)
 

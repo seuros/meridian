@@ -50,14 +50,17 @@
 
 // variables
 
-static int      fd;
+static int fd;
 
 //
 // error functions
 //
 static
 void format_error_message (
-    char *buf, size_t buflen, const char *msg, va_list ap
+    char       *buf,
+    size_t      buflen,
+    const char *msg,
+    va_list     ap
 ) {
     int len;
 
@@ -66,9 +69,12 @@ void format_error_message (
         buf[0] = '\0';
     }
     else {
-        len = vsnprintf(buf, buflen, msg, ap);
+        // CWE-134 [False Positive: Externally-Controlled Format String]
+        //         Next line checks and rationalises input
+        /* Flawfinder: ignore */
+        len = vsnprintf (buf, buflen, msg, ap);
         if (len < 0 || (size_t)len >= buflen) {
-            // DA-TAG: Null-terminate on overflow
+            // DA-TAG: Null-terminate on overflow or encoding error
             buf[buflen - 1] = '\0';
         }
     }
@@ -148,6 +154,10 @@ UINTN read_sector (
     total_read = 0;
 
     while (total_read < 512) {
+        // CWE-20  [False Positive: Improper Input Validation]
+        // CWE-120 [False Positive: Classic Buffer Overflow]
+        //         Loop is bound checked
+        /* Flawfinder: ignore */
         result_read = read (fd, buffer + total_read, 512 - total_read);
         if (result_read < 0) {
             errore(
@@ -220,6 +230,7 @@ UINTN input_boolean (
 ) {
     int c;
 
+
     printf("%s", prompt);
     fflush(NULL);
 
@@ -251,21 +262,44 @@ UINTN input_boolean (
 // EFI-style print function
 //
 
-void Print(wchar_t *format, ...)
-{
-    va_list par;
+static
+void format_print_message (
+    char *buf, size_t buflen,
+    const wchar_t *format, va_list ap
+) {
     char formatbuf[256];
-    char buf[4096];
-    int i;
+    int len, i;
 
-    for (i = 0; format[i]; i++)
-        formatbuf[i] = (format[i] > 255) ? '?' : (char)(format[i] & 0xff);
-    formatbuf[i] = 0;
+
+    for (i = 0; format[i] && i < (int)(sizeof(formatbuf) - 1); i++) {
+        formatbuf[i] = (
+            format[i] > 255
+        ) ? '?' : (char)(format[i] & 0xff);
+    }
+    formatbuf[i] = '\0';
+
+    // CWE-134 [False Positive: Externally-Controlled Format String]
+    //         Format string constructed safely from trusted input
+    /* Flawfinder: ignore */
+    len = vsnprintf(buf, buflen, formatbuf, ap);
+    if (len < 0 || (size_t)len >= buflen) {
+        // DA-TAG: Null-terminate on overflow or encoding error
+        buf[buflen - 1] = '\0';
+    }
+}
+
+void Print (
+    wchar_t *format, ...
+) {
+    va_list par;
+    char buf[4096];
+
 
     va_start(par, format);
-    vsnprintf(buf, 4096, formatbuf, par);
+    format_print_message (buf, sizeof(buf), format, par);
     va_end(par);
 
+    // DA-TAG: Static format string to avoid CWE-134
     printf("%s", buf);
 }
 
@@ -273,8 +307,10 @@ void Print(wchar_t *format, ...)
 // main entry point
 //
 
-int main(int argc, char *argv[])
-{
+int main (
+    int   argc,
+    char *argv[]
+) {
     char        *filename;
     struct stat sb;
     int         filekind;

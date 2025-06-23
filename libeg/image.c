@@ -375,7 +375,9 @@ EFI_STATUS egLoadFile (
 
     FileInfo = LibFileInfo (FileHandle);
     if (FileInfo == NULL) {
-        REFIT_CALL_1_WRAPPER(FileHandle->Close, FileHandle);
+        REFIT_CALL_1_WRAPPER(
+            FileHandle->Close, FileHandle
+        );
 
         // Early Return
         return EFI_NOT_FOUND;
@@ -391,7 +393,9 @@ EFI_STATUS egLoadFile (
     BufferSize = (UINTN) ReadSize;   // Safe as limited to 1 GB above
     Buffer = (UINT8 *) AllocatePool (BufferSize);
     if (Buffer == NULL) {
-        REFIT_CALL_1_WRAPPER(FileHandle->Close, FileHandle);
+        REFIT_CALL_1_WRAPPER(
+            FileHandle->Close, FileHandle
+        );
 
         // Early Return
         return EFI_OUT_OF_RESOURCES;
@@ -401,7 +405,9 @@ EFI_STATUS egLoadFile (
         FileHandle->Read, FileHandle,
         &BufferSize, Buffer
     );
-    REFIT_CALL_1_WRAPPER(FileHandle->Close, FileHandle);
+    REFIT_CALL_1_WRAPPER(
+        FileHandle->Close, FileHandle
+    );
     if (EFI_ERROR(Status)) {
         MY_FREE_POOL(Buffer);
 
@@ -419,7 +425,9 @@ EFI_STATUS egLoadFile (
     if (FileDataLength) *FileDataLength = BufferSize;
 
     #if REFIT_DEBUG > 0
-    ALT_LOG(1, LOG_THREE_STAR_MID, L"In egLoadFile ... Loaded File:- '%s'", FileName);
+    ALT_LOG(1, LOG_THREE_STAR_MID,
+        L"In egLoadFile ... Loaded File:- '%s'", FileName
+    );
     #endif
 
     return EFI_SUCCESS;
@@ -486,7 +494,9 @@ EFI_STATUS egSaveFile (
     }
 
     if (FileDataLength == 0) {
-        Status = REFIT_CALL_1_WRAPPER(FileHandle->Delete, FileHandle);
+        Status = REFIT_CALL_1_WRAPPER(
+            FileHandle->Delete, FileHandle
+        );
     }
     else {
         BufferSize = FileDataLength;
@@ -494,7 +504,9 @@ EFI_STATUS egSaveFile (
             FileHandle->Write, FileHandle,
             &BufferSize, FileData
         );
-        REFIT_CALL_1_WRAPPER(FileHandle->Close, FileHandle);
+        REFIT_CALL_1_WRAPPER(
+            FileHandle->Close, FileHandle
+        );
     }
 
     return Status;
@@ -531,7 +543,9 @@ EG_IMAGE * egLoadImage (
 
     if (BaseDir == NULL || FileName == NULL) {
         #if REFIT_DEBUG > 0
-        ALT_LOG(1, LOG_THREE_STAR_MID, L"In egLoadImage ... Requirements *NOT* Met");
+        ALT_LOG(1, LOG_THREE_STAR_MID,
+            L"In egLoadImage ... Requirements *NOT* Met"
+        );
         #endif
 
         // Early Return
@@ -539,7 +553,10 @@ EG_IMAGE * egLoadImage (
     }
 
     // Load file
-    Status = egLoadFile (BaseDir, FileName, &FileData, &FileDataLength);
+    Status = egLoadFile (
+        BaseDir, FileName,
+        &FileData, &FileDataLength
+    );
     if (EFI_ERROR(Status)) {
         #if REFIT_DEBUG > 0
         ALT_LOG(1, LOG_THREE_STAR_MID,
@@ -554,7 +571,10 @@ EG_IMAGE * egLoadImage (
 
     // Decode it
     // '128' can be any arbitrary value
-    NewImage = egDecodeAny (FileData, FileDataLength, 128, WantAlpha);
+    NewImage = egDecodeAny (
+        FileData, FileDataLength,
+        128, WantAlpha
+    );
     MY_FREE_POOL(FileData);
 
     return NewImage;
@@ -607,7 +627,10 @@ EG_IMAGE * egLoadIcon (
 
     // Try to load file if able to get to image
     FileDataLength = 0;
-    Status = egLoadFile (BaseDir, Path, &FileData, &FileDataLength);
+    Status = egLoadFile (
+        BaseDir, Path,
+        &FileData, &FileDataLength
+    );
     if (EFI_ERROR(Status)) {
         #if REFIT_DEBUG > 0
         ALT_LOG(1, LOG_THREE_STAR_MID,
@@ -621,7 +644,10 @@ EG_IMAGE * egLoadIcon (
     }
 
     // Decode it
-    Image = egDecodeAny (FileData, FileDataLength, IconSize, TRUE);
+    Image = egDecodeAny (
+        FileData, FileDataLength,
+        IconSize, TRUE
+    );
     MY_FREE_POOL(FileData);
     if (Image == NULL) {
         #if REFIT_DEBUG > 0
@@ -725,7 +751,9 @@ EG_IMAGE * egLoadIconAnyType (
 
     #if REFIT_DEBUG > 0
     if (Image == NULL) {
-        ALT_LOG(1, LOG_THREE_STAR_MID, L"In egLoadIconAnyType - Icon:- 'Not Ready'");
+        ALT_LOG(1, LOG_THREE_STAR_MID,
+            L"In egLoadIconAnyType - Icon:- 'Not Ready'"
+        );
     }
     #endif
 
@@ -875,7 +903,11 @@ EG_IMAGE * egPrepareEmbeddedImage (
             BREAD_CRUMB(L"%a:  7a 1a 1 - Grey Plane Size:- '%d'", __func__,
                 CompData - CompStart
             );
-            egDecompressIcnsRLE (&CompData, &CompLen, PLPTR(NewImage, r), PixelCount);
+            egDecompressIcnsRLE (
+                &CompData, &CompLen,
+                PLPTR(NewImage, r),
+                PixelCount
+            );
         }
         else {
             //BREAD_CRUMB(L"%a:  7a 1b 1", __func__);
@@ -897,7 +929,11 @@ EG_IMAGE * egPrepareEmbeddedImage (
             #if REFIT_DEBUG > 1
             CompStart = CompData;
             #endif
-            egDecompressIcnsRLE (&CompData, &CompLen, PLPTR(NewImage, r), PixelCount);
+            egDecompressIcnsRLE (
+                &CompData, &CompLen,
+                PLPTR(NewImage, r),
+                PixelCount
+            );
 
             BREAD_CRUMB(L"%a:  7b 1a 2 - Red Plane Size:- '%d'", __func__,
                 CompData - CompStart
@@ -905,12 +941,20 @@ EG_IMAGE * egPrepareEmbeddedImage (
             #if REFIT_DEBUG > 1
             CompStart = CompData;
             #endif
-            egDecompressIcnsRLE (&CompData, &CompLen, PLPTR(NewImage, g), PixelCount);
+            egDecompressIcnsRLE (
+                &CompData, &CompLen,
+                PLPTR(NewImage, g),
+                PixelCount
+            );
 
             BREAD_CRUMB(L"%a:  7b 1a 3 - Green Plane Size:- '%d'", __func__,
                 CompData - CompStart
             );
-            egDecompressIcnsRLE (&CompData, &CompLen, PLPTR(NewImage, b), PixelCount);
+            egDecompressIcnsRLE (
+                &CompData, &CompLen,
+                PLPTR(NewImage, b),
+                PixelCount
+            );
         }
         else {
             //BREAD_CRUMB(L"%a:  7b 1b 1", __func__);
@@ -974,7 +1018,11 @@ EG_IMAGE * egPrepareEmbeddedImage (
         // Add Alpha Mask if Available and Required
         if (EmbeddedImage->CompressMode == EG_EICOMPMODE_RLE) {
             //BREAD_CRUMB(L"%a:  8a 1a 1", __func__);
-            egDecompressIcnsRLE (&CompData, &CompLen, PLPTR(NewImage, a), PixelCount);
+            egDecompressIcnsRLE (
+                &CompData, &CompLen,
+                PLPTR(NewImage, a),
+                PixelCount
+            );
         }
         else {
             //BREAD_CRUMB(L"%a:  8a 1b 1", __func__);

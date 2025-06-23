@@ -187,7 +187,10 @@ EFI_STATUS ReloadOptionROM (
 
                 if (!EFI_ERROR(Status)) {
                     RomFileName = PoolPrint (L"%s[%d]", FileName, ImageIndex);
-                    FilePath = REFIT_CALL_2_WRAPPER(FileDevicePath, NULL, RomFileName);
+                    FilePath = REFIT_CALL_2_WRAPPER(
+                        FileDevicePath,
+                        NULL, RomFileName
+                    );
                     Status = REFIT_CALL_6_WRAPPER(
                         gBS->LoadImage, TRUE,
                         gImageHandle, FilePath,
@@ -195,7 +198,10 @@ EFI_STATUS ReloadOptionROM (
                     );
                     if (EFI_ERROR(Status)) {
                         if (Status == EFI_SECURITY_VIOLATION) {
-                            REFIT_CALL_1_WRAPPER(gBS->UnloadImage, ImageHandle);
+                            REFIT_CALL_1_WRAPPER(
+                                gBS->UnloadImage,
+                                ImageHandle
+                            );
                         }
                     }
                     else {

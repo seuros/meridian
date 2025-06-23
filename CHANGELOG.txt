@@ -1,6 +1,13 @@
 0.14.2.AD (PRE-RELEASE):
 -----------------------
-- PENDING
+- Adds Full `Linux EFI Bootable Kernel` Support
+  * Now fully supports booting `Linux Unified Kernel` images
+  * Previously only supported `Standard PE32` and `Apple Fat Binary` images
+    - Linux `EFISTUB` images without `PE32` signatures were tagged `invalid`
+    - Now considered valid if a `LINUX_PE_MAGIC` signature is found instead
+    - Ref: https://github.com/torvalds/linux/blob/master/include/linux/pe.h
+- Fixes `Auto Defined BadRAM` Handling
+  * This element of the `TagBadRAM` feature was previously a `NOOP`
 
 
 0.14.2.AC (03 JUN 2025):

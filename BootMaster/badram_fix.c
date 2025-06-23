@@ -177,6 +177,7 @@ EFI_MEMORY_TYPE GetMemoryTypeForAddress (
     UINTN                  MemoryMapSize,
     UINTN                  DescriptorSize
 ) {
+    UINTN                  SizeTotalPages;
     EFI_MEMORY_DESCRIPTOR *MemoryMapEntry;
 
 
@@ -184,8 +185,9 @@ EFI_MEMORY_TYPE GetMemoryTypeForAddress (
          (UINT8 *) MemoryMapEntry < (UINT8 *) MemoryMap + MemoryMapSize;
          MemoryMapEntry = (EFI_MEMORY_DESCRIPTOR *) ((UINT8 *) MemoryMapEntry + DescriptorSize)
     ) {
+        SizeTotalPages   = MemoryMapEntry->NumberOfPages * EFI_PAGE_SIZE;
         if (PageAddress >= MemoryMapEntry->PhysicalStart &&
-            PageAddress <  MemoryMapEntry->PhysicalStart + (MemoryMapEntry->NumberOfPages * EFI_PAGE_SIZE)
+            PageAddress < (MemoryMapEntry->PhysicalStart + SizeTotalPages)
         ) {
             return MemoryMapEntry->Type;
         }
@@ -226,6 +228,7 @@ VOID GetBadRamInfo (
     *BadRamData = BadRamTemp;
 } // static VOID GetBadRamInfo()
 
+static
 EFI_STATUS ScanRAM (
     EFI_MEMORY_DESCRIPTOR *MemoryMap,
     UINTN                  MemoryMapSize,
@@ -240,8 +243,7 @@ EFI_STATUS ScanRAM (
 
     EFI_STATUS             Status;
     EFI_STATUS             XStatus;
-    UINTN                  i;
-    UINTN                  ListSize;
+    UINTN                  ListSize, i;
     CHAR16                *BadRamInfo;
     BOOLEAN                ValidTarget;
     BOOLEAN                CheckMemory;
@@ -338,10 +340,8 @@ EFI_STATUS ScanRAM (
     MY_MUTELOGGER_OFF;
     #endif
 
-    MY_FREE_POOL(MemoryMap);
-
     return XStatus;
-} // EFI_STATUS ScanRAM()
+} // static EFI_STATUS ScanRAM()
 
 static
 EFI_STATUS ProcessPages (
@@ -353,8 +353,8 @@ EFI_STATUS ProcessPages (
     EFI_STATUS             Status;
     EFI_STATUS             XStatus;
     UINTN                  i;
-    UINTN                  MemoryMapSize;
     UINTN                  DescriptorSize;
+    UINTN                  MemoryMapSize;
     BOOLEAN                GotUsedPages;
     BOOLEAN                ValidTarget;
     BOOLEAN                PageInUse;
@@ -373,82 +373,94 @@ EFI_STATUS ProcessPages (
         return Status;
     }
 
-    if (OurFixType == 7 || OurFixType == 8) {
+    if (OurFixType == 7 ||
+        OurFixType == 8
+    ) {
         // Types 7 and 8
         // Previous nvRAM check blank
         XStatus = ScanRAM (
             MemoryMap, MemoryMapSize, DescriptorSize,
             OurFixType, OurFixWide, FALSE
         );
-    }
-    else {
-        XStatus = EFI_SUCCESS;
 
-        for (i = 0; i < NumPages; i++) {
-            PageAddress = StartAddress + (EFI_PAGE_SIZE * i);
-            PageInUse = IsPageInUse (
+        MY_FREE_POOL(MemoryMap);
+
+        return XStatus;
+    }
+
+    XStatus = EFI_SUCCESS;
+
+    for (i = 0; i < NumPages; i++) {
+        PageAddress = StartAddress + (EFI_PAGE_SIZE * i);
+        PageInUse = IsPageInUse (
+            PageAddress, MemoryMap,
+            MemoryMapSize, DescriptorSize, OurFixWide
+        );
+
+        if (OurFixType == 1) {
+            Status = MarkPageUnusable (PageAddress);
+        }
+        else if (OurFixType == 2) {
+            Status = MarkPageReserved (PageAddress);
+        }
+        else { // Types 3 to 6
+            MemoryType = GetMemoryTypeForAddress (
                 PageAddress, MemoryMap,
-                MemoryMapSize, DescriptorSize, OurFixWide
+                MemoryMapSize, DescriptorSize
+            );
+            ValidTarget = IsQualifyingTarget (
+                MemoryType, OurFixWide
             );
 
-            if (OurFixType == 1) {
-                Status = MarkPageUnusable (PageAddress);
-            }
-            else if (OurFixType == 2) {
-                Status = MarkPageReserved (PageAddress);
-            }
-            else { // Types 3 to 6
-                MemoryType = GetMemoryTypeForAddress (
-                    PageAddress, MemoryMap,
-                    MemoryMapSize, DescriptorSize
-                );
-                ValidTarget = IsQualifyingTarget (MemoryType, OurFixWide);
+            if (OurFixType == 3 ||
+                OurFixType == 4
+            ) {
+                GotUsedPages = (
+                    PageInUse || !ValidTarget
+                ) ? TRUE : FALSE;
 
-                if (OurFixType == 3 ||
-                    OurFixType == 4
-                ) {
-                    GotUsedPages = (PageInUse || !ValidTarget) ? TRUE : FALSE;
-
-                    if (OurFixType == 3 && GotUsedPages) {
-                        XStatus = EFI_BAD_BUFFER_SIZE;
-                    }
-                    else {
-                        for (i = 0; i < NumPages; i++) {
-                            PageAddress = StartAddress + (EFI_PAGE_SIZE * i);
-
-                            if (GotUsedPages) {
-                                Status = MarkPageReserved (PageAddress);
-                            }
-                            else {
-                                Status = MarkPageUnusable (PageAddress);
-                            }
-
-                            if (EFI_ERROR(Status)) {
-                                XStatus = Status;
-                            }
-                        } // for
-                    }
-
-                    break; // Outer loop
+                if (OurFixType == 3 && GotUsedPages) {
+                    XStatus = EFI_BAD_BUFFER_SIZE;
                 }
-                else if (
-                    OurFixType == 5 ||
+                else {
+                    for (i = 0; i < NumPages; i++) {
+                        PageAddress = StartAddress + (EFI_PAGE_SIZE * i);
+
+                        if (GotUsedPages) {
+                            Status = MarkPageReserved (PageAddress);
+                        }
+                        else {
+                            Status = MarkPageUnusable (PageAddress);
+                        }
+
+                        if (EFI_ERROR(Status)) {
+                            XStatus = Status;
+                        }
+                    } // for
+                }
+
+                break; // Outer loop
+            }
+            else {
+                if (OurFixType == 5 ||
                     OurFixType == 6
                 ) {
                     if (!PageInUse && ValidTarget) {
                         Status = MarkPageUnusable (PageAddress);
                     }
-                    else if (OurFixType == 6) {
-                        Status = MarkPageReserved (PageAddress);
+                    else {
+                        if (OurFixType == 6) {
+                            Status = MarkPageReserved (PageAddress);
+                        }
                     }
                 }
             }
+        }
 
-            if (EFI_ERROR(Status)) {
-                XStatus = Status;
-            }
-        } // for i
-    }
+        if (EFI_ERROR(Status)) {
+            XStatus = Status;
+        }
+    } // for i
 
     MY_FREE_POOL(MemoryMap);
 
@@ -456,7 +468,6 @@ EFI_STATUS ProcessPages (
 } // static EFI_STATUS ProcessPages()
 
 EFI_STATUS ManageBadRam (
-    CHAR16                *OurFixList,
     INTN                   OurFixType,
     BOOLEAN                OurFixWide
 ) {
@@ -466,49 +477,56 @@ EFI_STATUS ManageBadRam (
 
     EFI_STATUS             Status;
     EFI_STATUS             XStatus;
-    UINTN                  i;
-    UINTN                  NumPages;
+    UINTN                  NumPages, i;
     CHAR16                *AddressPair;
     CHAR16                *AddressOne;   // Do *NOT* Free
     CHAR16                *AddressTwo;   // Do *NOT* Free
     CHAR16                *BadRamInfo;
+    CHAR16                *OurFixList;
     EFI_PHYSICAL_ADDRESS   TopBadRAM;
     EFI_PHYSICAL_ADDRESS   EndBadRAM;
 
 
+    OurFixList = NULL;
     XStatus = EFI_NOT_READY;
 
-    if (OurFixType < 0 || OurFixType > 8) {
+    if (OurFixType < 0 ||
+        OurFixType > 8
+    ) {
         // Disable for invalid settings
         OurFixType = 0;
     }
-    else if (OurFixType == 7 || OurFixType == 8) {
-        #if REFIT_DEBUG > 0
-        MY_MUTELOGGER_SET;
-        #endif
-        Status = EfivarGetRaw (
-            &RefindPlusGuid, L"BadRamInfo",
-            (VOID **) &BadRamInfo, NULL
-        );
-        #if REFIT_DEBUG > 0
-        MY_MUTELOGGER_OFF;
-        #endif
+    else {
+        if (OurFixType == 7 ||
+            OurFixType == 8
+        ) {
+            #if REFIT_DEBUG > 0
+            MY_MUTELOGGER_SET;
+            #endif
+            Status = EfivarGetRaw (
+                &RefindPlusGuid, L"BadRamInfo",
+                (VOID **) &BadRamInfo, NULL
+            );
+            #if REFIT_DEBUG > 0
+            MY_MUTELOGGER_OFF;
+            #endif
 
-        if (!EFI_ERROR(Status)) {
-            // Previously scanned RAM and saved results to nvRAM
-            if (MyStriCmp (BadRamInfo, L":0x")) {
-                OurFixList = BadRamInfo;
-                // Bad RAM Addresses were found on previous scan
-                // Set Type to 5 or 6 for actual execution
-                OurFixType -= 2;
-            }
-            else {
-                // Bad RAM Addresses were *NOT* found on previous scan
-                // Free variable and set Type to 0 (skip execution)
-                MY_FREE_POOL(BadRamInfo);
-                OurFixType = 0;
+            if (!EFI_ERROR(Status)) {
+                // Previously scanned RAM and saved results to nvRAM
+                if (IsStriStr (BadRamInfo, L":0x")) {
+                    OurFixList = BadRamInfo;
+                    // Bad RAM Addresses were found on previous scan
+                    // Set Type to 5 or 6 for actual execution
+                    OurFixType -= 2;
+                }
+                else {
+                    // Bad RAM Addresses were *NOT* found on previous scan
+                    // Free variable and set Type to 0 (skip execution)
+                    MY_FREE_POOL(BadRamInfo);
+                    OurFixType = 0;
 
-                XStatus = EFI_ALREADY_STARTED;
+                    XStatus = EFI_ALREADY_STARTED;
+                }
             }
         }
     }
@@ -520,6 +538,12 @@ EFI_STATUS ManageBadRam (
             }
 
             break;
+        }
+
+        if (OurFixList == NULL) {
+            OurFixList = StrDuplicate (
+                GlobalConfig.BadRamFixList
+            );
         }
 
         i = 0;
@@ -584,6 +608,8 @@ EFI_STATUS ManageBadRam (
     LOG_MSG("INFO: Tag Bad RAM Regions ... %r", XStatus);
     LOG_MSG("\n\n");
     #endif
+
+    MY_FREE_POOL(OurFixList);
 
     return XStatus;
 } // EFI_STATUS ManageBadRam()

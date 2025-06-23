@@ -581,7 +581,10 @@ VOID SetDefaultByTime (
     if (StartTime <= LAST_MINUTE &&
         EndTime   <= LAST_MINUTE
     ) {
-        Status = REFIT_CALL_2_WRAPPER(gRT->GetTime, &CurrentTime, NULL);
+        Status = REFIT_CALL_2_WRAPPER(
+            gRT->GetTime,
+            &CurrentTime, NULL
+        );
         if (EFI_ERROR(Status)) {
             return;
         }
@@ -1189,22 +1192,28 @@ LOADER_ENTRY * InitializeStanza (
             ALT_LOG(1, LOG_THREE_STAR_MID, L"Handle Token:- 'loader'");
             #endif
 
-            HasPath = (TokenList[1] && StrLen (TokenList[1]) > 0);
+            HasPath = (
+                TokenList[1] &&
+                StrLen (TokenList[1]) > 0
+            );
             if (HasPath) {
                 if (!DoneIcon) {
                     MY_FREE_POOL(LoaderToken);
-                    LoaderToken = StrDuplicate (TokenList[1]);
+                    LoaderToken = StrDuplicate (
+                        TokenList[1]
+                    );
                 }
                 else {
                     // Set the boot loader filename
                     MY_FREE_POOL(StanzaEntry->LoaderPath);
-                    StanzaEntry->LoaderPath = StrDuplicate (TokenList[1]);
+                    StanzaEntry->LoaderPath = StrDuplicate (
+                        TokenList[1]
+                    );
 
                     HasPath = (
                         StanzaEntry->LoaderPath &&
                         StrLen (StanzaEntry->LoaderPath) > 0
                     );
-
                     if (HasPath) {
                         #if REFIT_DEBUG > 0
                         ALT_LOG(1, LOG_LINE_NORMAL,
@@ -1265,21 +1274,20 @@ LOADER_ENTRY * InitializeStanza (
             MY_FREE_POOL(BootNumber);
             BootNumber = StrDuplicate (TokenList[1]);
         }
-        else if (
-            TokenCount > 1 &&
-            MyStriCmp (TokenList[0], L"submenuentry")
-        ) {
-            #if REFIT_DEBUG > 0
-            ALT_LOG(1, LOG_BLANK_LINE_SEP, L"X");
-            ALT_LOG(1, LOG_LINE_SPECIAL, L"***[ Add SubMenu Entry ]***");
-            #endif
+        else {
+            if (MyStriCmp (TokenList[0], L"submenuentry")) {
+                #if REFIT_DEBUG > 0
+                ALT_LOG(1, LOG_BLANK_LINE_SEP, L"X");
+                ALT_LOG(1, LOG_LINE_SPECIAL, L"***[ Add SubMenu Entry ]***");
+                #endif
 
-            SeekSubmenu = AddSubmenu (
-                StanzaEntry, File,
-                CurrentVolume, TokenList[1]
-            );
-            if (!AddedSubmenu) {
-                AddedSubmenu = SeekSubmenu;
+                SeekSubmenu = AddSubmenu (
+                    StanzaEntry, File,
+                    CurrentVolume, TokenList[1]
+                );
+                if (!AddedSubmenu) {
+                    AddedSubmenu = SeekSubmenu;
+                }
             }
         } // Set options to pass to the loader program - End
 
@@ -1869,12 +1877,14 @@ CHAR16 * ReadLine (
                 *qChar16++ = *pChar08++;
             }
         }
-        else if (File->Encoding == ENCODING_UTF8) {
-            // DA-TAG: Investigate This
-            //         Actually handle UTF-8
-            //         Currently just duplicates previous block
-            for (pChar08 = LineStartChar08; pChar08 < LineEndChar08; ) {
-                *qChar16++ = *pChar08++;
+        else {
+            if (File->Encoding == ENCODING_UTF8) {
+                // DA-TAG: Investigate This
+                //         Actually handle UTF-8
+                //         Currently just duplicates previous block
+                for (pChar08 = LineStartChar08; pChar08 < LineEndChar08; ) {
+                    *qChar16++ = *pChar08++;
+                }
             }
         }
         *qChar16 = 0;
@@ -2026,11 +2036,12 @@ EFI_STATUS RefitReadFile (
             File->Encoding = ENCODING_UTF8; // Translate from UTF-8 to UTF-16
             File->Current8Ptr += 3;
         }
-        else if (
-            File->Buffer[1] == 0 &&
-            File->Buffer[3] == 0
-        ) {
-            File->Encoding = ENCODING_UTF16_LE; // Use CHAR16 as is
+        else {
+            if (File->Buffer[1] == 0 &&
+                File->Buffer[3] == 0
+            ) {
+                File->Encoding = ENCODING_UTF16_LE; // Use CHAR16 as is
+            }
         }
     }
 
@@ -2203,24 +2214,25 @@ VOID ScanUserConfigured (
 
                     AddMenuEntry (MainMenu, (REFIT_MENU_ENTRY *) Entry);
                 }
-                else if (
-                    !ManualInclude &&
-                    TokenCount == 2 &&
-                    MyStriCmp (TokenList[0], L"include") &&
-                    MyStriCmp (FileName, GlobalConfig.ConfigFilename)
-                ) {
-                    if (!MyStriCmp (TokenList[1], FileName)) {
+                else {
+                    if (!ManualInclude &&
+                        TokenCount == 2 &&
+                        !MyStriCmp (TokenList[1], FileName) &&
+                        MyStriCmp (TokenList[0], L"include") &&
+                        MyStriCmp (FileName, GlobalConfig.ConfigFilename)
+
+                    ) {
                         // Scan manual stanza include file
                         #if REFIT_DEBUG > 0
-                        #if REFIT_DEBUG < 2
+                        #   if REFIT_DEBUG < 2
                         ALT_LOG(1, LOG_BLANK_LINE_SEP, L"X");
                         ALT_LOG(1, LOG_THREE_STAR_MID,
                             L"Process Include File for Manual Stanzas"
                         );
-                        #else
+                        #   else
                         LOG_SEP(L"X");
                         BREAD_CRUMB(L"%a:  A1 - INCLUDE FILE (%s): START", __func__, TokenList[1]);
-                        #endif
+                        #   endif
                         #endif
 
                         ManualInclude =  TRUE;
@@ -2228,14 +2240,14 @@ VOID ScanUserConfigured (
                         ManualInclude = FALSE;
 
                         #if REFIT_DEBUG > 0
-                        #if REFIT_DEBUG < 2
+                        #   if REFIT_DEBUG < 2
                         ALT_LOG(1, LOG_THREE_STAR_MID,
                             L"Scanned Include File for Manual Stanzas"
                         );
-                        #else
+                        #   else
                         BREAD_CRUMB(L"%a:  A2 - INCLUDE FILE (%s): END", __func__, TokenList[1]);
                         LOG_SEP(L"X");
-                        #endif
+                        #   endif
                         #endif
                     }
                 }
@@ -2595,7 +2607,10 @@ VOID ReadConfig (
         return;
     }
 
-    Status = RefitReadFile (SelfDir, FileName, File, &i);
+    Status = RefitReadFile (
+        SelfDir, FileName,
+        File, &i
+    );
     if (EFI_ERROR(Status)) {
         #if REFIT_DEBUG > 0
         if (NotRunBefore) MuteLogger = FALSE;
@@ -3908,13 +3923,14 @@ VOID ReadConfig (
             if (MyStriCmp (TokenList[0], L"enable_esp_filter")) {
                 GlobalConfig.ScanAllESP = (DeclineSetting) ? FALSE : TRUE;
             }
-            else if (
-                MyStriCmp (TokenList[0], L"disable_esp_filter") ||
-                MyStriCmp (TokenList[0], L"disable_espfilter" )
-            ) {
-                // DA_TAG: Duplication Purely to Accomodate Deprecation
-                //         Change top level 'substring' check when dropped
-                GlobalConfig.ScanAllESP = DeclineSetting;
+            else {
+                if (MyStriCmp (TokenList[0], L"disable_esp_filter") ||
+                    MyStriCmp (TokenList[0], L"disable_espfilter" )
+                ) {
+                    // DA_TAG: Duplication Purely to Accomodate Deprecation
+                    //         Change top level 'substring' check when dropped
+                    GlobalConfig.ScanAllESP = DeclineSetting;
+                }
             }
         }
         else if (MyStriCmp (TokenList[0], L"scale_ui")) {
@@ -4037,8 +4053,10 @@ VOID ReadConfig (
             if (i < 1) {
                 i = 1;
             }
-            else if (i > 32) {
-                i = 32;
+            else {
+                if (i > 32) {
+                    i = 32;
+                }
             }
             GlobalConfig.MouseSpeed = i;
         }
@@ -4396,13 +4414,13 @@ VOID ReadConfig (
             // DA-TAG: Do not log this or set 'UpdatedToken'
             DoneManual = TRUE;
         }
-        else if (
-            OuterLoop                                     &&
-            TokenCount == 2                               &&
-            MyStriCmp (TokenList[0], L"include")          &&
-            MyStriCmp (FileName, GlobalConfig.ConfigFilename)
-        ) {
-            if (!MyStriCmp (TokenList[1], FileName)) {
+        else {
+            if (OuterLoop                                     &&
+                TokenCount == 2                               &&
+                !MyStriCmp (TokenList[1], FileName)           &&
+                MyStriCmp (TokenList[0], L"include")          &&
+                MyStriCmp (FileName, GlobalConfig.ConfigFilename)
+            ) {
                 #if REFIT_DEBUG > 0
                 // DA-TAG: Always log this in case LogLevel is overriden
                 RealLogLevel = 0;

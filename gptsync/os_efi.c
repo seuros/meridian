@@ -107,7 +107,10 @@ BOOLEAN ReadAllKeyStrokes (VOID) {
 
     GotKeyStrokes = FALSE;
     while (1) {
-        Status = REFIT_CALL_2_WRAPPER(gST->ConIn->ReadKeyStroke, gST->ConIn, &Key);
+        Status = REFIT_CALL_2_WRAPPER(
+            gST->ConIn->ReadKeyStroke,
+            gST->ConIn, &Key
+        );
         if (!EFI_ERROR(Status)) {
             GotKeyStrokes = TRUE;
             continue;
@@ -168,7 +171,10 @@ UINTN input_boolean (
             &gST->ConIn->WaitForKey, &Index
         );
 
-        Status = REFIT_CALL_2_WRAPPER(gST->ConIn->ReadKeyStroke, gST->ConIn, &Key);
+        Status = REFIT_CALL_2_WRAPPER(
+            gST->ConIn->ReadKeyStroke,
+            gST->ConIn, &Key
+        );
         if (EFI_ERROR(Status) && Status != EFI_NOT_READY) {
             return 1;
         }
