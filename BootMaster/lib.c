@@ -2798,9 +2798,11 @@ VOID VetSyncAPFS (VOID) {
     CHAR16  *TmpMsg;
     #endif
 
-    UINTN    i, j;
+    UINTN    i, j, k;
     CHAR16  *CheckName;
     CHAR16  *TweakName;
+    CHAR16  *TestName;
+    CHAR16  *DataName;
     BOOLEAN  GotName;
 
 
@@ -2855,47 +2857,60 @@ VOID VetSyncAPFS (VOID) {
 
     // Filter '- Data' string tag out of all Volume Group names if present
     for (i = 0; i < DataVolumesCount; i++) {
-        if (!MyStrEnds (L"- Data", DataVolumes[i]->VolName)) {
-            continue;
-        }
+        k = 0;
+        while (1) {
+            DataName = FindCommaDelimited (
+                DATA_NAME_APFS, k++
+            );
+            if (DataName == NULL) break;
 
-        GotName = FALSE;
-        for (j = 0; j < SystemVolumesCount; j++) {
-            TweakName = SanitiseString (SystemVolumes[j]->VolName);
-            CheckName = PoolPrint (L"%s - Data", TweakName);
-
-            if (MyStriCmp (DataVolumes[i]->VolName, CheckName)) {
-                GotName = TRUE;
-            }
-            else {
-                if (!MyStriCmp (SystemVolumes[j]->VolName, TweakName)) {
-                    // Check against raw name string if apporpriate
-                    MY_FREE_POOL(CheckName);
-                    CheckName = PoolPrint (
-                        L"%s - Data",
-                        SystemVolumes[j]->VolName
-                    );
+            TestName = PoolPrint (L"- %s", DataName);
+            if (TestName != NULL &&
+                MyStrEnds (TestName, DataVolumes[i]->VolName)
+            ) {
+                GotName = FALSE;
+                for (j = 0; j < SystemVolumesCount; j++) {
+                    TweakName = SanitiseString (SystemVolumes[j]->VolName);
+                    CheckName = PoolPrint (L"%s - %s", TweakName, DataName);
 
                     if (MyStriCmp (DataVolumes[i]->VolName, CheckName)) {
                         GotName = TRUE;
                     }
-                }
+                    else {
+                        if (!MyStriCmp (SystemVolumes[j]->VolName, TweakName)) {
+                            // Check against raw name string if apporpriate
+                            MY_FREE_POOL(CheckName);
+                            CheckName = PoolPrint (
+                                L"%s - %s",
+                                SystemVolumes[j]->VolName,
+                                DataName
+                            );
+
+                            if (MyStriCmp (DataVolumes[i]->VolName, CheckName)) {
+                                GotName = TRUE;
+                            }
+                        }
+                    }
+
+                    MY_FREE_POOL(TweakName);
+                    MY_FREE_POOL(CheckName);
+
+                    if (GotName) {
+                        MY_FREE_POOL(DataVolumes[i]->VolName);
+                        DataVolumes[i]->VolName = StrDuplicate (
+                            SystemVolumes[j]->VolName
+                        );
+
+                        // DA_TAG: Only break here
+                        //         Strip from all
+                        break;
+                    }
+                } // for j = 0
             }
 
-            MY_FREE_POOL(TweakName);
-            MY_FREE_POOL(CheckName);
-
-            if (GotName) {
-                MY_FREE_POOL(DataVolumes[i]->VolName);
-                DataVolumes[i]->VolName = StrDuplicate (
-                    SystemVolumes[j]->VolName
-                );
-
-                // DA_TAG: Only break here
-                //         Strip from all
-                break;
-            }
-        } // for j = 0
+            MY_FREE_POOL(TestName);
+            MY_FREE_POOL(DataName);
+        } // while {Infinite}
     } // for i = 0
 
     #if REFIT_DEBUG > 0

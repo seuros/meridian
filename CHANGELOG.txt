@@ -8,6 +8,11 @@
     - Ref: https://github.com/torvalds/linux/blob/master/include/linux/pe.h
 - Fixes `Auto Defined BadRAM` Handling
   * This element of the `TagBadRAM` feature was previously a `NOOP`
+- Improves `APFS Data Volume` Handling
+  * The `VolName - DATA` tag extended to match more languages
+    - German, Spanish, French, Portuguese, Italian, Finnish, Dutch, Croatian
+  * English is still given preference for technical reasons
+  * TODO: Process that does not rely on this tag is best.
 
 
 0.14.2.AC (03 JUN 2025):

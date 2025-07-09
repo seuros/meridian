@@ -253,6 +253,10 @@ EFI\\OEM\\Boot\\bootmgfw.efi"
 // Default Ventoy Partitions
 #define VENTOY_NAMES          L"VTOYEFI,Ventoy"
 
+// Some APFS 'Data' Volume Tags
+#define DATA_NAME_APFS \
+L"Data,Daten,Datos,Donnees,Dados,Dati,Tiedot,Gegevens,Podaci"
+
 // Misc Mac OS Paths/Files
 #define MACOSX_LOADER_DIR     L"System\\Library\\CoreServices"
 #define MACOSX_LOADER_PATH    ( MACOSX_LOADER_DIR L"\\boot.efi" )
