@@ -69,6 +69,24 @@
 #include "../libeg/efiUgaDraw.h"
 #include "../libeg/libeg.h"
 
+#ifndef __REFIT_SBAT_
+#  define __REFIT_SBAT_
+#  if defined(__APPLE__)
+__attribute__((used, section("__SBAT,__sbat"), visibility("default")))
+#  else
+__attribute__((used, section(".sbat"), visibility("default")))
+#  endif
+
+const char sbat_section[] =
+"sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md\n"
+"refindplus,1,Dayo Akanji,refindplus," VERSION_STRING_ASCII ",https://github.com/refindplusrepo\n"
+"refindplus.user,1,A User,refindplus_user,1.0.0,https://example.org/\n";
+
+// Shield 'sbat_section' from garbage collection
+__attribute__((used))
+volatile static const void *force_sbat_link = &sbat_section;
+#endif
+
 #ifndef __MAKEWITH_GNUEFI
 #define LibLocateProtocol EfiLibLocateProtocol
 #endif

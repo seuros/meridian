@@ -8,6 +8,10 @@
     - Ref: https://github.com/torvalds/linux/blob/master/include/linux/pe.h
 - Fixes `Auto Defined BadRAM` Handling
   * This element of the `TagBadRAM` feature was previously a `NOOP`
+- Improves `UEFI Secure Boot` Handling
+  * `SBAT` sections now added to binaries at compile time
+  * Signed binaries now available
+    - Option to sign binaries added to repository `Artefact Creation` Github action
 - Improves `SD-Boot` Handling
   * Manual Stanzas now accept a `SystemD` OSType
   * The `use_graphics_for` token now accepts a `systemd` input

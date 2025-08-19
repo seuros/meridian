@@ -46,6 +46,24 @@
 #include "../include/version.h"
 #include "../include/syslinux_mbr.h"
 
+#ifndef __GPTSYNC_SBAT_
+#  define __GPTSYNC_SBAT_
+#  if defined(__APPLE__)
+__attribute__((used, section("__SBAT,__sbat"), visibility("default")))
+#  else
+__attribute__((used, section(".sbat"), visibility("default")))
+#  endif
+
+const char sbat_section[] =
+"sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md\n"
+"gptsync,1,Dayo Akanji,gptsync," VERSION_STRING_ASCII ",https://github.com/refindplusrepo\n"
+"gptsync.user,1,A User,gptsync_user,1.0.0,https://example.org/\n";
+
+// Shield 'sbat_section' from garbage collection
+__attribute__((used))
+volatile static const void *force_sbat_link = &sbat_section;
+#endif
+
 
 static
 UINTN check_mbr (VOID) {

@@ -13,6 +13,19 @@ on:
         - 'REL and DBG'
         - 'REL, DBG and NPT'
         default: 'REL and DBG'
+      secure_boot_support:
+        description: >
+          Generate Signed Binaries for Secure Boot Support?
+          If enabled, the workflow will sign binaries with a
+          one-off private key. The certificate will be saved
+          along with the artefacts for enrollment later. The
+          the private key is not saved as there is no secure
+          way to privately transfer the key file over to you
+        type: choice
+        options:
+        - 'NO'
+        - 'YES'
+        default: 'NO'
       commit_id:
         description: "Commit ID (Blank for GOPFix Latest)"
         type: string
@@ -26,8 +39,8 @@ jobs:
     steps:
       - name: Get Repositories
         env:
-          GET_REPO: ${{ github.repository }}
-          GET_COMMIT_ID: ${{ github.event.inputs.commit_id }}
+          ENV_REPO: ${{ github.repository }}
+          ENV_COMMIT_ID: ${{ github.event.inputs.commit_id }}
         shell: bash
         run: |
           mkdir ~/Documents/RefindPlus || exit 1
@@ -37,20 +50,19 @@ jobs:
           git clone https://github.com/RefindPlusRepo/RefindPlusUDK.git edk2
 
           # Clone RefindPlus
-          git clone "https://github.com/${GET_REPO}.git" Working
+          git clone "https://github.com/${ENV_REPO}.git" Working
           cd Working || exit 1
 
           # Find Target Branch
-          if [ -z "${GET_COMMIT_ID}" ]; then
+          if [ -z "${ENV_COMMIT_ID}" ]; then
             # Use Default Branch
             BRANCH=GOPFix
           else
             # Get All Branches
             git fetch --all
-            RemoteBranches=$(git branch -r | grep -v '\->')
-            for RemoteName in "${RemoteBranches}"; do
+            git branch -r | grep -v '\->' | while read -r RemoteName; do
               LocalName="${RemoteName#origin/}"
-              git branch --track "${LocalName}" "${RemoteName}"
+              git branch --track "${LocalName}" "${RemoteName}" || true
 
               # Redundant update below is delibrate
               git checkout "${LocalName}"
@@ -58,25 +70,34 @@ jobs:
             done
 
             # Get Candidate Branches
-            BranchList=$(git branch -a --contains ${GET_COMMIT_ID} | grep -v '\->')
+            BranchList=$(git branch -r --contains "${ENV_COMMIT_ID}" | grep 'origin/' | sed 's|origin/||')
             if [ -z "${BranchList}" ]; then
-              echo "Error: Commit ID not located on any branch!"
+              echo "Error: Commit ID Not Located on Any Branch"
+              echo "       Exiting Now"
               exit 1
             fi
 
             # Use Target Branch Commit
-            BRANCH=$(echo "${BranchList}" | head -n 1 | sed 's/origin\///' | sed 's/remotes\///')
+            BRANCH=$(echo "${BranchList}" | head -n 1 | tr -d '[:space:]')
+            if ! git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
+              echo "Error: Remote Branch Not Found:- ${BRANCH}"
+              echo "       Paranoia Check Failed!"
+              echo "       Exiting Now"
+              exit 1
+            fi
+
             git checkout "${BRANCH}"
-            git reset --hard "${GET_COMMIT_ID}"
+            git reset --hard "${ENV_COMMIT_ID}"
           fi
           echo "BRANCH=${BRANCH}" >> "${GITHUB_ENV}"
+          echo "Using Branch: ${BRANCH}"
 
       - name: Set Targets
         env:
-          GET_BUILD_TYPE: ${{ github.event.inputs.build_type }}
+          ENV_BUILD_TYPE: ${{ github.event.inputs.build_type }}
         shell: bash
         run: |
-          case "${GET_BUILD_TYPE}" in
+          case "${ENV_BUILD_TYPE}" in
             "REL and DBG") BUILD_TYPE="SOME" ;;
             "REL Only")    BUILD_TYPE="REL" ;;
             "DBG Only")    BUILD_TYPE="DBG" ;;
@@ -84,6 +105,7 @@ jobs:
             *)             BUILD_TYPE="ALL" ;;
           esac
           echo "BUILD_TYPE=${BUILD_TYPE}" >> "${GITHUB_ENV}"
+          echo "Using Build Type: ${BUILD_TYPE}"
 
       - name: Install Prerequisites
         shell: bash
@@ -100,11 +122,17 @@ jobs:
       - name: Main Script
         env:
           TERM: xterm
+          ENV_SECURE_BOOT: ${{ github.event.inputs.secure_boot_support }}
         shell: bash
         run: |
           cd ~/Documents/RefindPlus/edk2/000-BuildScript || exit 1
+          if [ "${ENV_SECURE_BOOT}" == 'NO' ]; then
+            SB_FLAG=0
+          else
+            SB_FLAG=1
+          fi
           chmod +x RefindPlusBuilder.sh
-          ./RefindPlusBuilder.sh "${BRANCH}" "${BUILD_TYPE}"
+          ./RefindPlusBuilder.sh "${BRANCH}" "${BUILD_TYPE}" "${SB_FLAG}"
 
       - name: Upload Artefact (RELEASE)
         if: success() && contains(github.event.inputs.build_type, 'REL')
@@ -126,3 +154,142 @@ jobs:
         with:
           name: x64_RefindPlus-Artefacts_NPT
           path: ~/Documents/RefindPlus/edk2/Build/RefindPlus/NOOPT_XCODE5/x64/*.efi
+
+  sign-binaries:
+    name: Sign Binaries
+    needs: make-binaries
+    if: ${{ github.event.inputs.secure_boot_support == 'YES' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Artefacts (REL)
+        if: contains(github.event.inputs.build_type, 'REL')
+        uses: actions/download-artifact@v4
+        with:
+          name: x64_RefindPlus-Artefacts_REL
+          path: Unsigned_REL
+
+      - name: Fetch Artefacts (DBG)
+        if: contains(github.event.inputs.build_type, 'DBG')
+        uses: actions/download-artifact@v4
+        with:
+          name: x64_RefindPlus-Artefacts_DBG
+          path: Unsigned_DBG
+
+      - name: Fetch Artefacts (NPT)
+        if: contains(github.event.inputs.build_type, 'NPT')
+        uses: actions/download-artifact@v4
+        with:
+          name: x64_RefindPlus-Artefacts_NPT
+          path: Unsigned_NPT
+
+      - name: Set Target Type(s)
+        env:
+          ENV_BUILD_TYPE: ${{ github.event.inputs.build_type }}
+        shell: bash
+        run: |
+          case "${ENV_BUILD_TYPE}" in
+            "REL and DBG") BUILD_TYPE="SOME" ;;
+            "REL Only")    BUILD_TYPE="REL" ;;
+            "DBG Only")    BUILD_TYPE="DBG" ;;
+            "NPT Only")    BUILD_TYPE="NPT" ;;
+            *)             BUILD_TYPE="ALL" ;;
+          esac
+          echo "BUILD_TYPE=${BUILD_TYPE}" >> "${GITHUB_ENV}"
+
+      - name: Generate Signing Key
+        shell: bash
+        run: |
+          mkdir certs
+          NOW=$(date +%y%m%d%H%M%S)
+          openssl req -new -x509 -newkey rsa:2048 \
+            -keyout certs/build_cert_${NOW}.key \
+            -out certs/build_cert_${NOW}.crt \
+            -days 3650 -nodes \
+            -subj "/CN=RefindPlus Artefact Build ${NOW}/"
+          cp "certs/build_cert_${NOW}.crt" "certs/build_cert_${NOW}.cer"
+          echo "CER_PATH=certs/build_cert_${NOW}.cer" >> $GITHUB_ENV
+          echo "CRT_PATH=certs/build_cert_${NOW}.crt" >> $GITHUB_ENV
+          echo "KEY_PATH=certs/build_cert_${NOW}.key" >> $GITHUB_ENV
+          echo "NOW_FLAG=${NOW}"                      >> $GITHUB_ENV
+
+      - name: Sign Requested Artefacts
+        shell: bash
+        run: |
+          sign_artefacts() {
+            local target=$1
+            local filepath="${target}_signed_DIR"
+            mkdir -p "${filepath}"
+
+            for prefix in "x64_RefindPlus" "x64_gptsync"; do
+              local base="${prefix}_${target}"
+              local file="Unsigned_${target}/${base}.efi"
+              local xout="${filepath}/${base}_SIGNED--${NOW_FLAG}.efi"
+
+              if [ -f "${file}" ]; then
+                echo "Signing ${xout}"
+                sbsign --key "${KEY_PATH}" \
+                  --cert "${CRT_PATH}" \
+                  --output "${xout}" "${file}"
+              fi
+            done
+
+            for fs in btrfs ext2 ext4 hfs iso9660 ntfs reiserfs; do
+              local base="DRIVER_${target}--x64_${fs}"
+              local file="Unsigned_${target}/${base}.efi"
+              local xout="${filepath}/${base}_SIGNED--${NOW_FLAG}.efi"
+
+              if [ -f "${file}" ]; then
+                echo "Signing ${xout}"
+                sbsign --key "${KEY_PATH}" \
+                  --cert "${CRT_PATH}" \
+                  --output "${xout}" "${file}"
+              fi
+            done
+
+            echo ""
+            echo "Signed '${target}' Build Artefacts"
+            echo ""
+            echo ""
+          }
+
+          if [ "${BUILD_TYPE}" == "REL" ] || [ "${BUILD_TYPE}" == "ALL" ] || [ "${BUILD_TYPE}" == "SOME" ] ; then
+            sign_artefacts REL
+          fi
+
+          if [ "${BUILD_TYPE}" == "DBG" ] || [ "${BUILD_TYPE}" == "ALL" ] || [ "${BUILD_TYPE}" == "SOME" ] ; then
+            sign_artefacts DBG
+          fi
+
+          if [ "${BUILD_TYPE}" == "NPT" ] || [ "${BUILD_TYPE}" == "ALL" ] ; then
+            sign_artefacts NPT
+          fi
+
+      - name: Update Artefacts (REL)
+        if: contains(github.event.inputs.build_type, 'REL')
+        uses: actions/upload-artifact@v4
+        with:
+          name: x64_RefindPlus-Artefacts_REL [Signed]
+          path: |
+              ${{ env.CER_PATH }}
+              ${{ env.CRT_PATH }}
+              REL_signed_DIR/*.efi
+
+      - name: Update Artefacts (DBG)
+        if: contains(github.event.inputs.build_type, 'DBG')
+        uses: actions/upload-artifact@v4
+        with:
+          name: x64_RefindPlus-Artefacts_DBG [Signed]
+          path: |
+              ${{ env.CER_PATH }}
+              ${{ env.CRT_PATH }}
+              DBG_signed_DIR/*.efi
+
+      - name: Update Artefacts (NPT)
+        if: contains(github.event.inputs.build_type, 'NPT')
+        uses: actions/upload-artifact@v4
+        with:
+          name: x64_RefindPlus-Artefacts_NPT [Signed]
+          path: |
+              ${{ env.CER_PATH }}
+              ${{ env.CRT_PATH }}
+              NPT_signed_DIR/*.efi

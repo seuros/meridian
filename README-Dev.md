@@ -173,8 +173,8 @@ In addition to the new functionality listed above, the following upstream tokens
 ## Divergence
 
 Significant visible implementation differences vis-a-vis the upstream base are:
-- **UEFI Secure Boot:** RefindPlus binaries are currently not signed for secure boot support and do not include the `Secure Boot Advanced Targeting (SBAT)` sections required by Shim v15.3/newer.
-  - > The process [outlined here](https://www.rodsbooks.com/refind/secureboot.html#installation) for signing self built upstream binaries can be followed to enable suport.
+- **UEFI Secure Boot:** RefindPlus binaries as from v0.14.2.AD include `Secure Boot Advanced Targeting (SBAT)` sections required by Shim v15.3/newer for secure boot support but require users to self-sign the binaries and to enroll the certificate.
+  - > The process [outlined upstream](https://www.rodsbooks.com/refind/secureboot.html#installation) for self-signing can be followed to enable support.
   - > An adaptation of the process for RefindPlus is [provided here](https://github.com/RefindPlusRepo/RefindPlus/discussions/190#discussioncomment-10130431). Modify for newer releases as required.
   - > Refer to [this summation](https://forum.manjaro.org/t/howto-enable-secure-boot-with-refind/121403/6) for futher insight.
 - **GZipped Loaders:** RefindPlus only provides stub support for handling GZipped loaders as this is largely only relevant for units on the ARM architecture.
