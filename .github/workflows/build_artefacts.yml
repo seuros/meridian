@@ -54,7 +54,7 @@ jobs:
           cd Working || exit 1
 
           # Find Target Branch
-          if [ -z "${ENV_COMMIT_ID}" ]; then
+          if [[ -z "${ENV_COMMIT_ID}" ]]; then
             # Use Default Branch
             BRANCH=GOPFix
           else
@@ -71,14 +71,14 @@ jobs:
 
             # Get Candidate Branches
             BranchList=$(git branch -r --contains "${ENV_COMMIT_ID}" | grep 'origin/' | sed 's|origin/||')
-            if [ -z "${BranchList}" ]; then
+            if [[ -z "${BranchList}" ]]; then
               echo "Error: Commit ID Not Located on Any Branch"
               echo "       Exiting Now"
               exit 1
             fi
 
             # Use Target Branch Commit
-            BRANCH=$(echo "${BranchList}" | head -n 1 | tr -d '[:space:]')
+            BRANCH=$(echo "${BranchList}" | head -n 1 | tr -d '[[:space:]]')
             if ! git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
               echo "Error: Remote Branch Not Found:- ${BRANCH}"
               echo "       Paranoia Check Failed!"
@@ -98,7 +98,7 @@ jobs:
         shell: bash
         run: |
           case "${ENV_BUILD_TYPE}" in
-            "REL and DBG") BUILD_TYPE="SOME" ;;
+            "REL and DBG") BUILD_TYPE="TWO" ;;
             "REL Only")    BUILD_TYPE="REL" ;;
             "DBG Only")    BUILD_TYPE="DBG" ;;
             "NPT Only")    BUILD_TYPE="NPT" ;;
@@ -122,17 +122,11 @@ jobs:
       - name: Main Script
         env:
           TERM: xterm
-          ENV_SECURE_BOOT: ${{ github.event.inputs.secure_boot_support }}
         shell: bash
         run: |
           cd ~/Documents/RefindPlus/edk2/000-BuildScript || exit 1
-          if [ "${ENV_SECURE_BOOT}" == 'NO' ]; then
-            SB_FLAG=0
-          else
-            SB_FLAG=1
-          fi
           chmod +x RefindPlusBuilder.sh
-          ./RefindPlusBuilder.sh "${BRANCH}" "${BUILD_TYPE}" "${SB_FLAG}"
+          ./RefindPlusBuilder.sh "${BRANCH}" "${BUILD_TYPE}"
 
       - name: Upload Artefact (RELEASE)
         if: success() && contains(github.event.inputs.build_type, 'REL')
@@ -188,7 +182,7 @@ jobs:
         shell: bash
         run: |
           case "${ENV_BUILD_TYPE}" in
-            "REL and DBG") BUILD_TYPE="SOME" ;;
+            "REL and DBG") BUILD_TYPE="TWO" ;;
             "REL Only")    BUILD_TYPE="REL" ;;
             "DBG Only")    BUILD_TYPE="DBG" ;;
             "NPT Only")    BUILD_TYPE="NPT" ;;
@@ -225,7 +219,7 @@ jobs:
               local file="Unsigned_${target}/${base}.efi"
               local xout="${filepath}/${base}_SIGNED--${NOW_FLAG}.efi"
 
-              if [ -f "${file}" ]; then
+              if [[ -f "${file}" ]]; then
                 echo "Signing ${xout}"
                 sbsign --key "${KEY_PATH}" \
                   --cert "${CRT_PATH}" \
@@ -238,7 +232,7 @@ jobs:
               local file="Unsigned_${target}/${base}.efi"
               local xout="${filepath}/${base}_SIGNED--${NOW_FLAG}.efi"
 
-              if [ -f "${file}" ]; then
+              if [[ -f "${file}" ]]; then
                 echo "Signing ${xout}"
                 sbsign --key "${KEY_PATH}" \
                   --cert "${CRT_PATH}" \
@@ -252,23 +246,15 @@ jobs:
             echo ""
           }
 
-          if [ "${BUILD_TYPE}" == "REL" ] || [ "${BUILD_TYPE}" == "ALL" ] || [ "${BUILD_TYPE}" == "SOME" ] ; then
-            sign_artefacts REL
-          fi
-
-          if [ "${BUILD_TYPE}" == "DBG" ] || [ "${BUILD_TYPE}" == "ALL" ] || [ "${BUILD_TYPE}" == "SOME" ] ; then
-            sign_artefacts DBG
-          fi
-
-          if [ "${BUILD_TYPE}" == "NPT" ] || [ "${BUILD_TYPE}" == "ALL" ] ; then
-            sign_artefacts NPT
-          fi
+          [[ "${BUILD_TYPE}" == "REL" || "${BUILD_TYPE}" == "ALL" || "${BUILD_TYPE}" == "TWO" ]] && sign_artefacts REL
+          [[ "${BUILD_TYPE}" == "DBG" || "${BUILD_TYPE}" == "ALL" || "${BUILD_TYPE}" == "TWO" ]] && sign_artefacts DBG
+          [[ "${BUILD_TYPE}" == "NPT" || "${BUILD_TYPE}" == "ALL" ]] && sign_artefacts NPT
 
       - name: Update Artefacts (REL)
         if: contains(github.event.inputs.build_type, 'REL')
         uses: actions/upload-artifact@v4
         with:
-          name: x64_RefindPlus-Artefacts_REL [Signed]
+          name: x64_RefindPlus-Artefacts_REL [[Signed]]
           path: |
               ${{ env.CER_PATH }}
               ${{ env.CRT_PATH }}
@@ -278,7 +264,7 @@ jobs:
         if: contains(github.event.inputs.build_type, 'DBG')
         uses: actions/upload-artifact@v4
         with:
-          name: x64_RefindPlus-Artefacts_DBG [Signed]
+          name: x64_RefindPlus-Artefacts_DBG [[Signed]]
           path: |
               ${{ env.CER_PATH }}
               ${{ env.CRT_PATH }}
@@ -288,7 +274,7 @@ jobs:
         if: contains(github.event.inputs.build_type, 'NPT')
         uses: actions/upload-artifact@v4
         with:
-          name: x64_RefindPlus-Artefacts_NPT [Signed]
+          name: x64_RefindPlus-Artefacts_NPT [[Signed]]
           path: |
               ${{ env.CER_PATH }}
               ${{ env.CRT_PATH }}
