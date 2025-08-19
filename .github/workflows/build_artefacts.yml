@@ -78,7 +78,7 @@ jobs:
             fi
 
             # Use Target Branch Commit
-            BRANCH=$(echo "${BranchList}" | head -n 1 | tr -d '[[:space:]]')
+            BRANCH=$(printf "%s\n" "${BranchList}" | head -n 1 | tr -d '[:space:]')
             if ! git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
               echo "Error: Remote Branch Not Found:- ${BRANCH}"
               echo "       Paranoia Check Failed!"
