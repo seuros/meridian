@@ -78,8 +78,8 @@ jobs:
           labels: 'Enhancement'
 
   # Add Labels - https://github.com/actions-cool/issues-helper
-  add_label_user_open_drop:
-    name: Dropped Issue Label
+  add_label_user_open_drop1:
+    name: Drop Modified Code Build
     needs: [add_label_user_open_enhance]
     runs-on: ubuntu-latest
 
@@ -125,7 +125,7 @@ jobs:
       - uses: actions-cool/issues-helper@v3
         with:
           actions: 'close-issue'
-          close-reason: 'completed'
+          close-reason: 'not planned'
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.issue.number }}
 
@@ -143,6 +143,7 @@ jobs:
           ENV_ISSUE_ID: ${{ github.event.issue.number }}
         shell: bash
         run: |
+          # Tag as 'Unknown Provenance'
           NewTitle="RefindPlus of Unknown Provenance: Exhibits Issues"
           curl -f -X PATCH \
             -H "Authorization: token ${ENV_TOKEN}" \
@@ -150,9 +151,105 @@ jobs:
             https://api.github.com/repos/${ENV_REPO}/issues/${ENV_ISSUE_ID} \
             -d "{\"title\": \"${NewTitle}\"}" || { echo "Title Update Failed"; exit 1; }
 
+  # Add Labels - https://github.com/actions-cool/issues-helper
+  add_label_user_open_drop2:
+    name: Drop for Ignored Logs
+    needs: [add_label_user_open_drop1]
+    runs-on: ubuntu-latest
+
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED') }}
+    steps:
+      - id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      # Add Comment
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'create-comment'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |-
+            Issues without debug logs cannot be looked into at this time.
+
+            Thank you.
+
+      # Add 'Dropped' Label
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'add-labels'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.issue.number }}
+          labels: 'Dropped'
+
+      # Close Issue
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'close-issue'
+          close-reason: 'not planned'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.issue.number }}
+
+      # Lock Issue
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'lock-issue'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.issue.number }}
+
+  # Add Labels - https://github.com/actions-cool/issues-helper
+  add_label_user_open_drop3:
+    name: Drop for Ignored Tests
+    needs: [add_label_user_open_drop2]
+    runs-on: ubuntu-latest
+
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') }}
+    steps:
+      - id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      # Add Comment
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'create-comment'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |-
+            Running the test items before raising an issue is required.
+
+            Thank you.
+
+      # Add 'Dropped' Label
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'add-labels'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.issue.number }}
+          labels: 'Dropped'
+
+      # Close Issue
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'close-issue'
+          close-reason: 'not planned'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.issue.number }}
+
+      # Lock Issue
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'lock-issue'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.issue.number }}
+
   add_label_user_outdated:
-    name: Outdated Version Issue
-    needs: [add_label_user_open_enhance]
+    name: Handle Outdated Version
+    needs: [add_label_user_open_drop3]
     runs-on: ubuntu-latest
 
     if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && contains(github.event.issue.body, 'Official Older Released Version') }}
@@ -188,6 +285,7 @@ jobs:
 
             > [!IMPORTANT]
             > Add debug logging from the new run to the thread update if the issue remains.
+            > That is, run the RefindPlus `DBG` efi file to generate a log file.
 
       - id: outdated_3_1
         uses: actions-cool/issues-helper@v3
@@ -198,12 +296,34 @@ jobs:
           labels: 'Queries'
 
   # Add Labels - https://github.com/actions-cool/issues-helper
-  add_label_user_open:
+  add_label_user_open1:
     name: Default Issue Label
-    needs: [add_label_user_open_enhance]
+    needs: [add_label_user_outdated]
     runs-on: ubuntu-latest
 
-    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') }}
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED') }}
+    steps:
+      - id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      # Add 'Triage' Label
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'add-labels'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.issue.number }}
+          labels: 'Triage'
+
+  # Add Labels - https://github.com/actions-cool/issues-helper
+  add_label_user_open2:
+    name: Log Absent Label
+    needs: [add_label_user_open1]
+    runs-on: ubuntu-latest
+
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED') && !contains(github.event.issue.body, 'Suggested Feature') && !contains(github.event.issue.body, 'Background Information') && !contains(github.event.issue.body, 'Additional Context') }}
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1
@@ -227,8 +347,8 @@ jobs:
                 });
 
                 const bodyCombined = [issue.data.body, ...comments.map(c => c.body)].join('\n');
-                const hasLogLikeAttachment = /\b(\.log|\.txt|\.zip)\b/i.test(bodyCombined);
-                const labelsToAdd = hasLogLikeAttachment ? ['Triage'] : ['Triage', 'No-Log'];
+                const hasLogLikeAttachment = /\b(\.log|\.txt|\.zip|\.tgz|\.gz)\b/i.test(bodyCombined);
+                const labelsToAdd = ['No-Log'];
 
                 await github.rest.issues.addLabels({
                   ...context.repo,
@@ -239,10 +359,10 @@ jobs:
   # Check Similarity - https://github.com/actions-cool/issues-similarity-analysis
   similarity_analysis:
     name: Check Similarity
-    needs: [add_label_user_open]
+    needs: [add_label_user_open2]
     runs-on: ubuntu-latest
 
-    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') }}
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED') }}
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v1

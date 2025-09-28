@@ -360,9 +360,11 @@ VOID RotateCsrValue (
     if (UnsetDynamic || !GlobalConfig.NormaliseCSR) {
         NormaliseCall = FALSE;
     }
-    else if ((TargetCsr & CSR_ALLOW_APPLE_INTERNAL) != 0) {
-        TargetCsr &= ~CSR_ALLOW_APPLE_INTERNAL;
-        NormaliseCall = TRUE;
+    else {
+        if ((TargetCsr & CSR_ALLOW_APPLE_INTERNAL) != 0) {
+            TargetCsr &= ~CSR_ALLOW_APPLE_INTERNAL;
+            NormaliseCall = TRUE;
+        }
     }
 
     // 'ShowResult' is based on 'UnsetDynamic'

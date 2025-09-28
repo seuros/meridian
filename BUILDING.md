@@ -1,4 +1,21 @@
-# REMOTE BUILD (GITHUB)
+# BUILDING REFINDPLUS
+<table>
+ <tr>
+   <td style="background-color: LightYellow;">
+       <div>
+       <h2>Table of Contents</h2>
+       <ul>
+           <li><a href="https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#remote-build-github">REMOTE BUILD (GITHUB)</a></li>
+           <li><a href="https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#local-build-docker">LOCAL BUILD (DOCKER)</a></li>
+           <li><a href="https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#local-build-mac-os">LOCAL BUILD (MAC OS)</a></li>
+           <li><a href="https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#repository-sync">REPOSITORY SYNC</a></li>
+       </ul>
+       </div>
+   </td>
+ </tr>
+</table>
+
+## Remote Build (GitHub)
 
 RefindPlus can be built by leveraging GitHub's `Workflow Artefact` creation and storage capabilities.\
 A GitHub `Workflow Action` is included in this repository to facilitate this.
@@ -22,11 +39,7 @@ Once the workflow run is completed, click on the action instance displayed and l
 
 > [!TIP]
 >
-> You might want to `disable Github Actions` on your fork after downloading the artefact builds, and only enable the workflow action when needed, to prevent periodic RefindPlusRepo-specific workflows from running on your fork.
-
-> [!TIP]
->
-> If your repository fork has `diverged from RefindPlusRepo`, refer to the [REPOSITORY SYNC](https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#repository-sync) section for sync options.
+> If your repository fork has `diverged from RefindPlusRepo`, refer to the [Repository Sync](https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#repository-sync) section for sync options.
 
 
 <br><br>
@@ -35,7 +48,7 @@ Once the workflow run is completed, click on the action instance displayed and l
 
 <br><br>
 
-# LOCAL BUILD (DOCKER)
+## Local Build (Docker)
 
 RefindPlus can be built on any operating system environment that supports Docker virtualisation. A Docker image has been created by a third party developer and is available on the DockerHub website (https://hub.docker.com/r/xaionaro2/edk2-builder).
 
@@ -51,9 +64,9 @@ Please refer to that project's repository (https://github.com/xaionaro/edk2-buil
 >
 > The process outlined below *HAS NOT* been verified on Mac OS 26.x Tahoe/Newer.
 
-# LOCAL BUILD (MAC OS)
+## Local Build (Mac OS)
 
-## Python
+### Python
 
 The build process requires Python 2 but Python was essentially removed from Mac OS in 12.x Monterey.\
 If running this version of Mac OS or newer, download and install Python 2.7.18 from the Python website (https://www.python.org/downloads/release/python-2718).
@@ -62,14 +75,14 @@ If running this version of Mac OS or newer, download and install Python 2.7.18 f
 >
 > Python 2 is available by default on Mac OS 11.x Big Sur and older.
 
-## Xcode
+### Xcode
 
-### Base Installation
+#### Base Installation
 
 Download the version of Xcode for your Mac OS version from the Mac App Store and install.\
 The third-party maintained XcodeReleases website (https://xcodereleases.com) provides convenient links to Xcode packages on Apple's servers.
 
-### Commandline Tools Installation
+#### Commandline Tools Installation
 
 After installing Xcode, you will need to additionally install its commandline tools.\
 To do this, at a Terminal prompt, enter:
@@ -78,9 +91,9 @@ To do this, at a Terminal prompt, enter:
 $ xcode-select --install
 ```
 
-## HomeBrew
+### HomeBrew
 
-### Background
+#### Background
 
 While Xcode provides a full development environment as well as a suite of different utilities, it does not provide all the tools required for TianoCore EDK II development as required to build RefindPlus on Mac OS natively.
 
@@ -89,7 +102,7 @@ Substitute equivalent commands in as required.
 
 You will find HomeBrew installation instructions on the project website (https://brew.sh)
 
-### Install Build Assembler
+#### Install Build Assembler
 
 The assembler used for TianoCore EDK II is the Netwide Assembler (NASM).
 
@@ -97,7 +110,7 @@ The assembler used for TianoCore EDK II is the Netwide Assembler (NASM).
 $ brew install nasm && brew upgrade nasm
 ```
 
-### Install ACPI Compiler
+#### Install ACPI Compiler
 
 ACPICA is required to compile code in ACPI Source Language for TianoCore EDK II firmware builds.
 
@@ -105,7 +118,7 @@ ACPICA is required to compile code in ACPI Source Language for TianoCore EDK II 
 $ brew install acpica && brew upgrade acpica
 ```
 
-### Install Image Converter
+#### Install Image Converter
 
 The ocmtoc utility converts the Mach-O image format generated on Mac OS to the PE/COFF format required by the UEFI specifications.
 
@@ -119,13 +132,13 @@ $ brew uninstall mtoc && brew install ocmtoc && brew upgrade ocmtoc
 >
 > Pre-built files can be found here: https://github.com/acidanthera/ocmtoc/releases.
 
-## Prepare RefindPlus Environment
+### Prepare RefindPlus Environment
 
-### Fork the RefindPlus Repository
+#### Fork the RefindPlus Repository
 
 Navigate to `https://github.com/RefindPlusRepo/RefindPlus` and fork the repository.
 
-### Clone the Forked RefindPlus Repository
+#### Clone the Forked RefindPlus Repository
 
 In Terminal, clone the forked `RefindPlus` repository into a `RefindPlus/Working` folder under your `Documents` directory as follows:
 
@@ -142,13 +155,13 @@ $ git remote add upstream https://github.com/RefindPlusRepo/RefindPlus.git
 
 Your local RefindPlus repository will be under `Documents/RefindPlus/Working`.
 
-## Prepare UDK2018 Environment
+### Prepare UDK2018 Environment
 
-### Fork the RefindPlusUDK Repository
+#### Fork the RefindPlusUDK Repository
 
 Navigate to `https://github.com/RefindPlusRepo/RefindPlusUDK` and fork the repository
 
-### Clone the Forked RefindPlusUDK Repository
+#### Clone the Forked RefindPlusUDK Repository
 
 In Terminal, clone the forked `RefindPlusUDK` repository into a `RefindPlus/edk2` folder under your `Documents` directory as follows:
 
@@ -165,7 +178,7 @@ $ git remote add upstream https://github.com/RefindPlusRepo/RefindPlusUDK.git
 
 Your local RefindPlusUDK repository will be under `Documents/RefindPlus/edk2`.
 
-## Run Build Script
+### Run Build Script
 
 - Navigate to your `/Documents/RefindPlus/edk2/000-BuildScript` folder in the Finder.
 - Separately, open a new Terminal window.
@@ -176,11 +189,11 @@ Your local RefindPlusUDK repository will be under `Documents/RefindPlus/edk2`.
   - If nothing is entered, the script will build on the default `GOPFix` branch.
   - The "chmod +x" step is typically only required the first time the script file is ever run.
 
-# REPOSITORY SYNC
+## Repository Sync
 
 If some time has passed since your last build or since you initially created your repositories, you will need to ensure your repositories are aligned with the source repositories to incorporate updates added in the intervening period.
 
-## OPTION 1: Scripted Sync (Recommended)
+### OPTION 1: Scripted Sync (Recommended)
 
 > [!NOTE]
 >
@@ -199,9 +212,9 @@ If some time has passed since your last build or since you initially created you
 >
 > If the script still fails after a third attempt, try the manual sync steps outlined below instead.
 
-## OPTION 2: Manual Sync
+### OPTION 2: Manual Sync
 
-### Sync RefindPlus Manually
+#### Sync RefindPlus Manually
 
 ```
 $ cd ~/Documents/RefindPlus/Working && git checkout GOPFix
@@ -211,7 +224,7 @@ $ git push origin HEAD -f && git pull upstream GOPFix
 $ git push
 ```
 
-### Sync RefindPlusUDK Manually
+#### Sync RefindPlusUDK Manually
 
 ```
 $ cd ~/Documents/RefindPlus/edk2 && git checkout rudk
@@ -221,7 +234,7 @@ $ git push origin HEAD -f && git pull upstream rudk
 $ git push
 ```
 
-## OPTION 3: GitHub Sync
+### OPTION 3: GitHub Sync
 
 GitHub includes an interface for syncing forks.\
 While, unlike Option 3, Options 1 and 2 will always leave your fork with a clean history consistent with the source repositories, some may find the GitHub interface convenient.

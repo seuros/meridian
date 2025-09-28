@@ -100,10 +100,28 @@ UINTN write_sector (
 //
 
 static
+VOID GPTSyncStall (
+    UINTN Loops
+) {
+    UINTN StallIndex;
+
+
+    for (StallIndex = 0; StallIndex < Loops; ++StallIndex) {
+        REFIT_CALL_1_WRAPPER(gBS->Stall, 9999);
+    } // for
+
+    // DA-TAG: Add Stall Difference
+    REFIT_CALL_1_WRAPPER(
+        gBS->Stall, (StallIndex + 1)
+    );
+}
+
+static
 BOOLEAN ReadAllKeyStrokes (VOID) {
     EFI_STATUS          Status;
     BOOLEAN             GotKeyStrokes;
     EFI_INPUT_KEY       Key;
+
 
     GotKeyStrokes = FALSE;
     while (1) {
@@ -111,32 +129,26 @@ BOOLEAN ReadAllKeyStrokes (VOID) {
             gST->ConIn->ReadKeyStroke,
             gST->ConIn, &Key
         );
-        if (!EFI_ERROR(Status)) {
-            GotKeyStrokes = TRUE;
-            continue;
-        }
+        if (EFI_ERROR(Status)) break;
 
-        break;
+        GotKeyStrokes = TRUE;
     } // while {Infinite}
+
     return GotKeyStrokes;
 }
 
 static
 VOID PauseForKey (VOID) {
     UINTN Index;
-    UINTN StallIndex;
+
 
     Print (L"\n* Press a Key to Continue *");
 
     // Remove buffered key strokes
     if (ReadAllKeyStrokes()) {
-        // 5 second delay
+        // 1 second delay
         // DA-TAG: 100 Loops == 1 Sec
-        for (StallIndex = 0; StallIndex < 500; ++StallIndex) {
-            REFIT_CALL_1_WRAPPER(gBS->Stall, 9999);
-        } // for
-        // DA-TAG: Add Stall Difference
-        REFIT_CALL_1_WRAPPER(gBS->Stall, (StallIndex + 1));
+        GPTSyncStall (100);
 
         // Empty the buffer again
         ReadAllKeyStrokes();
@@ -161,6 +173,7 @@ UINTN input_boolean (
     UINTN               Index;
     EFI_INPUT_KEY       Key;
 
+
     Print(prompt);
 
     ReadAllKeyStrokes(); // Remove buffered key strokes
@@ -180,7 +193,9 @@ UINTN input_boolean (
         }
     } while (Status == EFI_NOT_READY);
 
-    if (Key.UnicodeChar == 'y' || Key.UnicodeChar == 'Y') {
+    if (Key.UnicodeChar == 'y' ||
+        Key.UnicodeChar == 'Y'
+    ) {
         Print(L"Yes\n");
         *bool_out = TRUE;
     }
@@ -218,27 +233,82 @@ VOID InitializeLib (
 
 #endif
 
-// Performs a case-insensitive string comparison. This function is necesary
-// because some EFIs have buggy StriCmp() functions that actually perform
-// case-sensitive comparisons.
-// Returns TRUE if strings are identical, FALSE otherwise.
+/*
+ * Routine Description:
+ *
+ *  Confirms FirstString is shorter than or equal to SecondString.
+ *
+ * Arguments:
+ *
+ *  String1  - Null-terminated string to check length of.
+ *  String2  - Null-terminated string to check against.
+ *
+ * Returns:
+ *  False if String1 is longer than String2 or
+ *  True if String1 is shorter than or equal to String2.
+ */
 static
-BOOLEAN MyStriCmp (
-    IN CHAR16 *FirstString,
-    IN CHAR16 *SecondString
+BOOLEAN IsValidStrComp (
+    IN CHAR16  *String1,
+    IN CHAR16  *String2
 ) {
-    if (!FirstString || !SecondString) {
+    UINTN  Len1;
+    UINTN  Len2;
+
+    if (String1 == NULL ||
+        String2 == NULL
+    ) {
         return FALSE;
     }
-    else {
-        while ((*FirstString != L'\0') && ((*FirstString & ~0x20) == (*SecondString & ~0x20))) {
-            FirstString++;
-            SecondString++;
-        }
 
-        return (*FirstString == *SecondString);
+    Len1 = StrLen (String1);
+    Len2 = StrLen (String2);
+
+    if (Len1 > Len2) {
+        // String1 is longer than String2
+        return FALSE;
     }
-} // BOOLEAN MyStriCmp()
+
+    // String1 is shorter than or equal to String2
+    return TRUE;
+} // static BOOLEAN IsValidStrComp()
+
+// Checks whether String2 starts with String1
+// Returns TRUE on match or FALSE.
+static
+BOOLEAN MyStrBegins (
+    IN CHAR16 *String1,
+    IN CHAR16 *String2
+) {
+    UINTN        i;
+    UINTN     Len1;
+    BOOLEAN IsGood;
+
+
+    // String1 cannot be longer than String2.
+    // In addition, neither can be NULL.
+    IsGood = IsValidStrComp (String1, String2);
+    if (!IsGood) {
+        return FALSE;
+    }
+
+    Len1 = StrLen (String1);
+
+    // Compare from the start of each string
+    // 'IsGood' is curently 'TRUE'
+    for (i = 0; i < Len1; i++) {
+        if ((CHAR16)(String1[i] | 0x20) !=
+            (CHAR16)(String2[i] | 0x20)
+        ) {
+            // Exit ... Mismatch found
+            IsGood = FALSE;
+
+            break;
+        }
+    }
+
+    return IsGood;
+} // BOOLEAN MyStrBegins()
 
 // Check firmware vendor; get verification to continue if it is not Apple.
 // Returns TRUE if Apple firmware or if user assents to use, FALSE otherwise.
@@ -248,10 +318,10 @@ BOOLEAN VerifyGoOn (VOID) {
     UINTN invalid;
 
     GoOn = TRUE;
-    if (!MyStriCmp(L"Apple", gST->FirmwareVendor)) {
-        Print (L"Your firmware is made by %s.\n", gST->FirmwareVendor);
-        Print (L"Ordinarily, a hybrid MBR (which this program creates) should be used ONLY on\n");
-        Print (L"Apple Macs that dual-boot with Windows or some other BIOS-mode OS. Are you\n");
+    if (!MyStrBegins(L"Apple", gST->FirmwareVendor)) {
+        Print (L" Your firmware is made by %s.\n", gST->FirmwareVendor);
+        Print (L" Ordinarily, a hybrid MBR (which this program creates) should be used ONLY on\n");
+        Print (L" Apple Macs that dual-boot with Legacy Windows or other BIOS-mode OS. Are you\n");
         invalid = input_boolean (STR("SURE you want to continue? [y/N] "), &GoOn);
 
         if (invalid) {

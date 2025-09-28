@@ -177,7 +177,7 @@ jobs:
           actions: 'remove-labels'
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.inputs.item_id }}
-          labels: 'Triage,No-Log,Tagged,Stale,Queries,Parked,Prorogued,Unclear,Uncertain,Unresolved,Confirmed,Known-Issue,Invalid,Incomplete,Cannot-Replicate'
+          labels: 'Triage,Noted,No-Log,Tagged,Stale,Queries,Parked,Prorogued,Unclear,Uncertain,Unresolved,Confirmed,Known-Issue,Invalid,Incomplete,Cannot-Replicate'
 
       - if: ${{ env.isclosed == 'false' }}
         id: part_4

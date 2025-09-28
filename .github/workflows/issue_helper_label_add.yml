@@ -8,14 +8,17 @@ on:
         type: choice
         options:
         - 'Label - Add - Abandoned'
+        - 'Label - Add - Bug'
         - 'Label - Add - Cancelled'
         - 'Label - Add - Config'
         - 'Label - Add - Cannot-Replicate'
         - 'Label - Add - Discussion'
+        - 'Label - Add - Dropped'
         - 'Label - Add - Enhancement - Only'
         - 'Label - Add - Incomplete - Issues'
         - 'Label - Add - Incomplete - Enhancement'
         - 'Label - Add - Invalid'
+        - 'Label - Add - Noted'
         - 'Label - Add - Not-Planned_and_Enhancement'
         - 'Label - Add - Not-Planned - Only'
         - 'Label - Add - Parked'
@@ -69,6 +72,46 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.inputs.item_id }}
           labels: 'Abandoned'
+
+  label_add_bug:
+    name: Label - Add - Bug
+    runs-on: ubuntu-latest
+
+    if: github.event.inputs.operation == 'Label - Add - Bug'
+    steps:
+      - id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Label - Add - Bug - 0
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'create-comment'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.inputs.item_id }}
+          body: |
+            Thank you for taking the time to report a problem with RefindPlus.
+            The problem has been confirmed and will be addressed presently.
+
+            ${{ github.event.inputs.comment_data }}
+
+      - name: Label - Add - Bug - 1
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'add-labels'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.inputs.item_id }}
+          labels: 'Bug'
+
+      - name: Label - Add - Bug - 2
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'remove-labels'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.inputs.item_id }}
+          labels: 'Not-Planned, Uncertain, Confirmed, Cancelled, Accepted, Resolved, Triage, No-Log, Parked, Tagged, Stale, Config, Queries, Unclear, Invalid, Prorogued, Incomplete, Known-Issue, Cannot-Replicate'
 
   label_add_cancelled:
     name: Label - Add - Cancelled
@@ -130,6 +173,7 @@ jobs:
           ENV_ITEM_ID: ${{ github.event.inputs.item_id }}
         shell: bash
         run: |
+          # Generate Comment
           issue=$(curl -s -H "Accept: application/vnd.github.v3+json" \
             -H "Authorization: token ${ENV_TOKEN}" \
             "https://api.github.com/repos/${ENV_REPO}/issues/${ENV_ITEM_ID}")
@@ -247,6 +291,49 @@ jobs:
 
       - name: Label - Add - Discussion - 7
         id: lock-original-issue
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'lock-issue'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.inputs.item_id }}
+
+  label_add_dropped:
+    name: Label - Add - Dropped
+    runs-on: ubuntu-latest
+
+    if: github.event.inputs.operation == 'Label - Add - Dropped'
+    steps:
+      - id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Label - Add - Dropped - 1
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'add-labels'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.inputs.item_id }}
+          labels: 'Dropped'
+
+      - name: Label - Add - Dropped - 2
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'remove-labels'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.inputs.item_id }}
+          labels: 'Not-Planned, Unresolved, Uncertain, Confirmed, Cancelled, Accepted, Resolved, Triage, No-Log, Parked, Tagged, Stale, Bug, Config, Queries, Unclear, Invalid, Prorogued, Incomplete, Known-Issue, Cannot-Replicate'
+
+      - name: Label - Add - Dropped - 3
+        uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'close-issue'
+          close-reason: 'completed'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.inputs.item_id }}
+
+      - name: Label - Add - Dropped - 4
         uses: actions-cool/issues-helper@v3
         with:
           actions: 'lock-issue'

@@ -2,7 +2,7 @@
  * AmendSysTable.c
  * Amends the SystemTable to provide CreateEventEx and a UEFI 2.3 Revision Number
  *
- * Copyright (c) 2020-2022 Dayo Akanji (sf.net/u/dakanji/profile)
+ * Copyright (c) 2020-2025 Dayo Akanji (sf.net/u/dakanji/profile)
  * Portions Copyright (c) 2020 Joe van Tunen (joevt@shaw.ca)
  * Portions Copyright (c) 2004-2008 The Intel Corporation
  *
@@ -19,7 +19,7 @@ EFI_STATUS AmendSysTable (VOID);
   @retval EFI_INCOMPATIBLE_VERSION  Not running on compatible TianoCore compiled version
 **/
 EFI_STATUS AmendSysTable (VOID) {
-    // NOOP if not compiled using EDK II
+    // Exit *IF NOT* compiled with EDK II
     return EFI_INCOMPATIBLE_VERSION;
 }
 
@@ -67,13 +67,13 @@ UINT32 rEventTable[] = {
     EVT_TIMER|EVT_NOTIFY_WAIT
 };
 
-EFI_TPL EFIAPI OurRaiseTpl (IN EFI_TPL  NewTpl);
-VOID    EFIAPI OurRestoreTpl (IN EFI_TPL  NewTpl);
-VOID           OurSetInterruptState (IN BOOLEAN  Enable);
-VOID           OurDispatchEventNotifies (IN EFI_TPL  Priority);
-VOID           OurAcquireLock (IN EFI_LOCK  *Lock);
-VOID           OurReleaseLock (IN EFI_LOCK  *Lock);
-EFI_STATUS     OurCreateEventEx (
+EFI_TPL    EFIAPI OurRaiseTpl (IN EFI_TPL  NewTpl);
+VOID       EFIAPI OurRestoreTpl (IN EFI_TPL  NewTpl);
+VOID              OurSetInterruptState (IN BOOLEAN  Enable);
+VOID              OurDispatchEventNotifies (IN EFI_TPL  Priority);
+VOID              OurAcquireLock (IN EFI_LOCK  *Lock);
+VOID              OurReleaseLock (IN EFI_LOCK  *Lock);
+EFI_STATUS EFIAPI OurCreateEventEx (
     UINT32             Type,
     EFI_TPL            NotifyTpl,
     EFI_EVENT_NOTIFY   NotifyFunction,
@@ -287,7 +287,7 @@ VOID OurReleaseLock (
 } // VOID OurReleaseLock()
 
 
-EFI_STATUS OurCreateEventEx (
+EFI_STATUS EFIAPI OurCreateEventEx (
     IN        UINT32             Type,
     IN        EFI_TPL            NotifyTpl,
     IN        EFI_EVENT_NOTIFY   NotifyFunction OPTIONAL,
@@ -339,8 +339,10 @@ EFI_STATUS OurCreateEventEx (
         if (CompareGuid (EventGroup, &gEfiEventExitBootServicesGuid)) {
             Type = EVT_SIGNAL_EXIT_BOOT_SERVICES;
         }
-        else if (CompareGuid (EventGroup, &gEfiEventVirtualAddressChangeGuid)) {
-            Type = EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE;
+        else {
+            if (CompareGuid (EventGroup, &gEfiEventVirtualAddressChangeGuid)) {
+                Type = EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE;
+            }
         }
     }
     else {
@@ -348,8 +350,10 @@ EFI_STATUS OurCreateEventEx (
         if (Type == EVT_SIGNAL_EXIT_BOOT_SERVICES) {
             EventGroup = &gEfiEventExitBootServicesGuid;
         }
-        else if (Type == EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE) {
-            EventGroup = &gEfiEventVirtualAddressChangeGuid;
+        else {
+            if (Type == EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE) {
+                EventGroup = &gEfiEventVirtualAddressChangeGuid;
+            }
         }
     }
 

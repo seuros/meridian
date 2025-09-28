@@ -1,5 +1,9 @@
 name: Build Artefacts
 
+permissions:
+  actions: write
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:
@@ -11,23 +15,17 @@ on:
         - 'DBG Only'
         - 'NPT Only'
         - 'REL and DBG'
-        - 'REL, DBG and NPT'
+        - 'REL, DBG, NPT'
         default: 'REL and DBG'
-      secure_boot_support:
-        description: >
-          Generate Signed Binaries for Secure Boot Support?
-          If enabled, the workflow will sign binaries with a
-          one-off private key. The certificate will be saved
-          along with the artefacts for enrollment later. The
-          the private key is not saved as there is no secure
-          way to privately transfer the key file over to you
+      sign_output:
+        description: 'Sign Binaries for Secure Boot?'
         type: choice
         options:
         - 'NO'
         - 'YES'
         default: 'NO'
       commit_id:
-        description: "Commit ID (Blank for GOPFix Latest)"
+        description: 'Commit ID (Blank for GOPFix Latest)'
         type: string
         required: false
 
@@ -37,12 +35,31 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Get Repositories
+      - name: List Inputs
         env:
-          ENV_REPO: ${{ github.repository }}
-          ENV_COMMIT_ID: ${{ github.event.inputs.commit_id }}
+          SET_REPO: ${{ github.repository }}
+          SET_COMMIT_ID: ${{ github.event.inputs.commit_id }}
+          SET_BUILD_TYPE: ${{ github.event.inputs.build_type }}
+          SET_SIGN_OUTPUT: ${{ github.event.inputs.sign_output }}
         shell: bash
         run: |
+          # List Misc Inputs
+          echo "ENV_REPO=${SET_REPO}" >> "${GITHUB_ENV}"
+          echo "REPO       : '${SET_REPO}'"
+
+          USE_COMMIT_ID="${SET_COMMIT_ID:-GOPFix Latest}"
+          echo "ENV_COMMIT_ID=${USE_COMMIT_ID}" >> "${GITHUB_ENV}"
+          echo "COMMIT_ID  : '${USE_COMMIT_ID}'"
+
+          echo "ENV_BUILD_TYPE=${SET_BUILD_TYPE}" >> "${GITHUB_ENV}"
+          echo "BUILD_FLAG : '${SET_BUILD_TYPE}'"
+
+          echo "SECURE_BOOT: '${SET_SIGN_OUTPUT}'"
+
+      - name: Get Repositories
+        shell: bash
+        run: |
+          # Create Directories
           mkdir ~/Documents/RefindPlus || exit 1
           cd ~/Documents/RefindPlus || exit 1
 
@@ -54,25 +71,24 @@ jobs:
           cd Working || exit 1
 
           # Find Target Branch
-          if [[ -z "${ENV_COMMIT_ID}" ]]; then
-            # Use Default Branch
+          if [[ "${ENV_COMMIT_ID}" == 'GOPFix Latest' ]] ; then
+            echo "Blank Commit ID Input ... Use Defaults"
             BRANCH=GOPFix
           else
-            # Get All Branches
-            git fetch --all
-            git branch -r | grep -v '\->' | while read -r RemoteName; do
-              LocalName="${RemoteName#origin/}"
-              git branch --track "${LocalName}" "${RemoteName}" || true
-
-              # Redundant update below is delibrate
-              git checkout "${LocalName}"
-              git pull
-            done
+            echo "Find User Defined Branch via Commit ID"
+            # Validate Input 'Commit ID'
+            if [[ ! "${ENV_COMMIT_ID}" =~ ^[a-fA-F0-9]{7,40}$ ]]; then
+              echo "Error: Invalid Commit ID Format: '${ENV_COMMIT_ID}'"
+              echo "       Must be Valid Git SHA (7-40 Hex Chars)"
+              echo "       Exiting Now"
+              exit 1
+            fi
 
             # Get Candidate Branches
+            git fetch --all
             BranchList=$(git branch -r --contains "${ENV_COMMIT_ID}" | grep 'origin/' | sed 's|origin/||')
             if [[ -z "${BranchList}" ]]; then
-              echo "Error: Commit ID Not Located on Any Branch"
+              echo "Error: Not Located on Any Branch: '${ENV_COMMIT_ID}'"
               echo "       Exiting Now"
               exit 1
             fi
@@ -80,217 +96,314 @@ jobs:
             # Use Target Branch Commit
             BRANCH=$(printf "%s\n" "${BranchList}" | head -n 1 | tr -d '[:space:]')
             if ! git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
-              echo "Error: Remote Branch Not Found:- ${BRANCH}"
+              echo "Error: Remote Branch Not Found: '${BRANCH}'"
               echo "       Paranoia Check Failed!"
               echo "       Exiting Now"
               exit 1
             fi
 
+            # Set Target Branch to Commit ID
             git checkout "${BRANCH}"
             git reset --hard "${ENV_COMMIT_ID}"
           fi
           echo "BRANCH=${BRANCH}" >> "${GITHUB_ENV}"
-          echo "Using Branch: ${BRANCH}"
+          echo "Branch     : '${BRANCH}'"
 
-      - name: Set Targets
-        env:
-          ENV_BUILD_TYPE: ${{ github.event.inputs.build_type }}
+          printf "Commit     : '%s'\nTitle      : '%s'\n" \
+            "$(git rev-parse --short HEAD)" \
+            "$(git log -1 --pretty=%B | sed 's/%/%%/g')"
+
+          printf "Author     : '%s'\nDate       : '%s'\n" \
+            "$(git log -1 --pretty='%an <%ae>')" \
+            "$(git log -1 --pretty='%ad' --date=iso-strict)"
+
+      - name: Set Type Target
         shell: bash
         run: |
+          # Set Build Type(s)
           case "${ENV_BUILD_TYPE}" in
-            "REL and DBG") BUILD_TYPE="TWO" ;;
-            "REL Only")    BUILD_TYPE="REL" ;;
-            "DBG Only")    BUILD_TYPE="DBG" ;;
-            "NPT Only")    BUILD_TYPE="NPT" ;;
-            *)             BUILD_TYPE="ALL" ;;
+            "REL and DBG") BUILD_FLAG="TWO" ;;
+            "REL Only")    BUILD_FLAG="REL" ;;
+            "DBG Only")    BUILD_FLAG="DBG" ;;
+            "NPT Only")    BUILD_FLAG="NPT" ;;
+            *)             BUILD_FLAG="ALL" ;;
           esac
-          echo "BUILD_TYPE=${BUILD_TYPE}" >> "${GITHUB_ENV}"
-          echo "Using Build Type: ${BUILD_TYPE}"
+          echo "BUILD_FLAG=${BUILD_FLAG}" >> "${GITHUB_ENV}"
+          echo "Build Type : '${BUILD_FLAG}'"
 
       - name: Install Prerequisites
+        env:
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
         shell: bash
         run: |
           # Install Additional Build Tools
-          brew install nasm
-          brew install acpica
-          brew install ocmtoc
+          brew install nasm acpica ocmtoc
 
           # Install Final Python 2 Version
-          curl -O https://www.python.org/ftp/python/2.7.18/python-2.7.18-macosx10.9.pkg
-          sudo installer -pkg python-2.7.18-macosx10.9.pkg -target /
+          PYTHON_VER='2.7.18'
+          PYTHON_PKG="python-${PYTHON_VER}-macosx10.9.pkg"
+          PYTHON_URL="https://www.python.org/ftp/python/${PYTHON_VER}/${PYTHON_PKG}"
+          EXPECT_MD5='ce98eeb7bdf806685adc265ec1444463'
+
+          printf "\nDownloading Python %s\n" "${PYTHON_VER}"
+          curl --retry 3 --fail -O "${PYTHON_URL}"
+
+          printf "\nVerify Python %s Download\n" "${PYTHON_VER}"
+          ACTUAL_MD5=$(md5 -q "${PYTHON_PKG}")
+          if [[ "${ACTUAL_MD5}" != "${EXPECT_MD5}" ]]; then
+            echo "ERROR: Package Checksum Check Failure"
+            echo "       Expect: ${EXPECT_MD5}"
+            echo "       Actual: ${ACTUAL_MD5}"
+            echo "       Exiting Now"
+            exit 1
+          fi
+
+          printf "\nVerified ... Installing Python %s\n" "${PYTHON_VER}"
+          sudo installer -pkg "${PYTHON_PKG}" -target /
+
+      - name: Misc Prep
+        continue-on-error: true
+        shell: bash
+        run: |
+          # Tag Build
+          ADD_TAG="${HOME}/Documents/RefindPlus/Working/BootMaster/main.c"
+          [[ -f "${ADD_TAG}" ]] && /usr/bin/perl -i -p -e 's~\(Local\)~(Outer)~' "${ADD_TAG}"
 
       - name: Main Script
         env:
           TERM: xterm
         shell: bash
         run: |
+          # Main Build Script
           cd ~/Documents/RefindPlus/edk2/000-BuildScript || exit 1
           chmod +x RefindPlusBuilder.sh
-          ./RefindPlusBuilder.sh "${BRANCH}" "${BUILD_TYPE}"
+          ./RefindPlusBuilder.sh "${BRANCH}" "${BUILD_FLAG}"
 
+
+        ##
+        # If signing is active, prefix with 'NOT_SIGNED---' for the
+        # signing job to handle without collision with final outputs
+        ##
       - name: Upload Artefact (RELEASE)
         if: success() && contains(github.event.inputs.build_type, 'REL')
         uses: actions/upload-artifact@v4
         with:
-          name: x64_RefindPlus-Artefacts_REL
+          name: "${{ github.event.inputs.sign_output == 'NO' && 'x64_RefindPlus-Artefacts_REL' || 'NOT_SIGNED---x64_RefindPlus-Artefacts_REL' }}"
           path: ~/Documents/RefindPlus/edk2/Build/RefindPlus/RELEASE_XCODE5/x64/*.efi
 
       - name: Upload Artefact (DEBUG)
         if: success() && contains(github.event.inputs.build_type, 'DBG')
         uses: actions/upload-artifact@v4
         with:
-          name: x64_RefindPlus-Artefacts_DBG
+          name: "${{ github.event.inputs.sign_output == 'NO' && 'x64_RefindPlus-Artefacts_DBG' || 'NOT_SIGNED---x64_RefindPlus-Artefacts_DBG' }}"
           path: ~/Documents/RefindPlus/edk2/Build/RefindPlus/DEBUG_XCODE5/x64/*.efi
 
       - name: Upload Artefact (NOOPT)
         if: success() && contains(github.event.inputs.build_type, 'NPT')
         uses: actions/upload-artifact@v4
         with:
-          name: x64_RefindPlus-Artefacts_NPT
+          name: "${{ github.event.inputs.sign_output == 'NO' && 'x64_RefindPlus-Artefacts_NPT' || 'NOT_SIGNED---x64_RefindPlus-Artefacts_NPT' }}"
           path: ~/Documents/RefindPlus/edk2/Build/RefindPlus/NOOPT_XCODE5/x64/*.efi
 
   sign-binaries:
     name: Sign Binaries
     needs: make-binaries
-    if: ${{ github.event.inputs.secure_boot_support == 'YES' }}
+    if: ${{ github.event.inputs.sign_output == 'YES' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch Artefacts (REL)
+      - name: Fetch Interim Artefact (RELEASE)
         if: contains(github.event.inputs.build_type, 'REL')
         uses: actions/download-artifact@v4
         with:
-          name: x64_RefindPlus-Artefacts_REL
+          name: NOT_SIGNED---x64_RefindPlus-Artefacts_REL
           path: Unsigned_REL
 
-      - name: Fetch Artefacts (DBG)
+      - name: Fetch Interim Artefact (DEBUG)
         if: contains(github.event.inputs.build_type, 'DBG')
         uses: actions/download-artifact@v4
         with:
-          name: x64_RefindPlus-Artefacts_DBG
+          name: NOT_SIGNED---x64_RefindPlus-Artefacts_DBG
           path: Unsigned_DBG
 
-      - name: Fetch Artefacts (NPT)
+      - name: Fetch Interim Artefact (NOOPT)
         if: contains(github.event.inputs.build_type, 'NPT')
         uses: actions/download-artifact@v4
         with:
-          name: x64_RefindPlus-Artefacts_NPT
+          name: NOT_SIGNED---x64_RefindPlus-Artefacts_NPT
           path: Unsigned_NPT
 
-      - name: Set Target Type(s)
-        env:
-          ENV_BUILD_TYPE: ${{ github.event.inputs.build_type }}
+      - name: Prepare to Sign Binaries
         shell: bash
         run: |
-          case "${ENV_BUILD_TYPE}" in
-            "REL and DBG") BUILD_TYPE="TWO" ;;
-            "REL Only")    BUILD_TYPE="REL" ;;
-            "DBG Only")    BUILD_TYPE="DBG" ;;
-            "NPT Only")    BUILD_TYPE="NPT" ;;
-            *)             BUILD_TYPE="ALL" ;;
-          esac
-          echo "BUILD_TYPE=${BUILD_TYPE}" >> "${GITHUB_ENV}"
-
-      - name: Generate Signing Key
-        shell: bash
-        run: |
-          mkdir certs
+          # Generate Certificate and Private Key
+          Certs="Artefact_Certs"
+          mkdir "${Certs}"
           NOW=$(date +%y%m%d%H%M%S)
           openssl req -new -x509 -newkey rsa:2048 \
-            -keyout certs/build_cert_${NOW}.key \
-            -out certs/build_cert_${NOW}.crt \
+            -keyout ${Certs}/build_cert_${NOW}.key \
+            -out ${Certs}/build_cert_${NOW}.crt \
             -days 3650 -nodes \
             -subj "/CN=RefindPlus Artefact Build ${NOW}/"
-          cp "certs/build_cert_${NOW}.crt" "certs/build_cert_${NOW}.cer"
-          echo "CER_PATH=certs/build_cert_${NOW}.cer" >> $GITHUB_ENV
-          echo "CRT_PATH=certs/build_cert_${NOW}.crt" >> $GITHUB_ENV
-          echo "KEY_PATH=certs/build_cert_${NOW}.key" >> $GITHUB_ENV
-          echo "NOW_FLAG=${NOW}"                      >> $GITHUB_ENV
 
-      - name: Sign Requested Artefacts
+          # Create Alternative Certificate Format
+          cp "${Certs}/build_cert_${NOW}.crt" "${Certs}/build_cert_${NOW}.cer"
+
+          # Store Outputs
+          echo "CER_PATH=${Certs}/build_cert_${NOW}.cer" >> $GITHUB_ENV
+          echo "CRT_PATH=${Certs}/build_cert_${NOW}.crt" >> $GITHUB_ENV
+          echo "KEY_PATH=${Certs}/build_cert_${NOW}.key" >> $GITHUB_ENV
+          echo "NOW_FLAG=${NOW}"                         >> $GITHUB_ENV
+
+      - name: Sign Requested Binaries
+        env:
+          ENV_TYPE: ${{ github.event.inputs.build_type }}
         shell: bash
         run: |
-          sign_artefacts() {
+          # Sign Files
+          sign_files() {
             local target=$1
+
+            local base=""
+            local infile=""
+            local outfile=""
+
             local outdir="${target}_signed_DIR"
             mkdir -p "${outdir}"
-            echo "=== Signing target: ${target} ==="
-            echo ""
 
-            # Sign main binaries
-            for prefix in "x64_RefindPlus" "x64_gptsync"; do
-              local base="${prefix}_${target}"
-              local infile="Unsigned_${target}/${base}.efi"
-              local outfile="${outdir}/${base}_SIGNED--${NOW_FLAG}.efi"
-              
-              if [[ -f "${infile}" ]]; then
-                echo "[SIGN] ${infile} -> ${outfile}"
+            printf "\n\n"
+            echo "===== Signing Target: ${target} ====="
+
+            # Sign Main Binaries
+            echo "Sign Main Binaries..."
+            for prefix in x64_RefindPlus x64_gptsync; do
+              base="UEFI_APP---${prefix}_${target}"
+              infile="Unsigned_${target}/${base}.efi"
+              outfile="${outdir}/SIGNED_${NOW_FLAG}___${base}.efi"
+
+              if [[ ! -f "${infile}" ]]; then
+                echo "[WARN] Not Found: '${infile}' ... SKIPPED"
+              else
+                echo "[SIGN] '${infile}' >>---> as >>---> '${outfile}'"
                 sbsign --key "${KEY_PATH}" \
                        --cert "${CRT_PATH}" \
                        --output "${outfile}" "${infile}" || {
-                  echo "Failed signing ${infile}"
+                  echo "ERROR: Failed While Signing ${infile}"
                   exit 1
                 }
-              else
-                echo "[SKIP] File not found: ${infile}"
               fi
             done
 
-            # Sign filesystem drivers
+            # Sign Filesystem Drivers
+            echo "Sign Filesystem Drivers..."
             for fs in btrfs ext2 ext4 hfs iso9660 ntfs reiserfs; do
-              local base="DRIVER_${target}--x64_${fs}"
-              local infile="Unsigned_${target}/${base}.efi"
-              local outfile="${outdir}/${base}_SIGNED--${NOW_FLAG}.efi"
+              base="DRIVER_${target}---x64_${fs}"
+              infile="Unsigned_${target}/${base}.efi"
+              outfile="${outdir}/SIGNED_${NOW_FLAG}_${base}.efi"
 
-              if [[ -f "${infile}" ]]; then
-                echo "[SIGN] ${infile} -> ${outfile}"
+              if [[ ! -f "${infile}" ]]; then
+                echo "[WARN] Not Found: '${infile}' ... SKIPPED"
+              else
+                echo "[SIGN] '${infile}' >>--> as >>--> '${outfile}'"
                 sbsign --key "${KEY_PATH}" \
                        --cert "${CRT_PATH}" \
                        --output "${outfile}" "${infile}" || {
-                  echo "Failed signing ${infile}"
+                  echo "ERROR: Failed While Signing ${infile}"
                   exit 1
                 }
-              else
-                echo "[SKIP] File not found: ${infile}"
               fi
             done
-  
-            echo ""
-            echo "Completed signing target: ${target}"
-            echo ""
+
+            echo "= = = = Signed Target = = = ="
           }
 
-          # Execute based on BUILD_TYPE
+          # Set Types
+          case "${ENV_TYPE}" in
+            "REL and DBG") FLAG="TWO" ;;
+            "REL Only")    FLAG="REL" ;;
+            "DBG Only")    FLAG="DBG" ;;
+            "NPT Only")    FLAG="NPT" ;;
+            *)             FLAG="ALL" ;;
+          esac
+
+          # Sign Binaries
           set +e  # Disable fail-fast
-          [[ "${BUILD_TYPE}" == "REL" || "${BUILD_TYPE}" == "ALL" || "${BUILD_TYPE}" == "TWO" ]] && sign_artefacts REL
-          [[ "${BUILD_TYPE}" == "DBG" || "${BUILD_TYPE}" == "ALL" || "${BUILD_TYPE}" == "TWO" ]] && sign_artefacts DBG
-          [[ "${BUILD_TYPE}" == "NPT" || "${BUILD_TYPE}" == "ALL" ]] && sign_artefacts NPT
+          [[ "${FLAG}" == "REL" || "${FLAG}" == "ALL" || "${FLAG}" == "TWO" ]] && sign_files REL
+          [[ "${FLAG}" == "DBG" || "${FLAG}" == "ALL" || "${FLAG}" == "TWO" ]] && sign_files DBG
+          [[ "${FLAG}" == "NPT" || "${FLAG}" == "ALL" ]]                       && sign_files NPT
           set -e  # Restore fail-fast
 
-      - name: Update Artefacts (REL)
+          # Job Final Spacing
+          printf "\n\n"
+
+
+        ##
+        # Handle interim artefacts, which are now deleted to leave
+        # a final definititve set of artefacts with the same names
+        # as produced when signing for secure boot is not required
+        ##
+      - name: Remove Interim Unsigned Artefacts
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENV_REPO: ${{ github.repository }}
+          ENV_GHID: ${{ github.run_id }}
+        shell: bash
+        run: |
+          echo "Remove Interim Unsigned Artefacts"
+          artifacts=$(gh api "repos/${ENV_REPO}/actions/runs/${ENV_GHID}/artifacts" \
+            --jq '.artifacts[] | select(.name | startswith("NOT_SIGNED---")) | "\(.id):\(.name)"')
+
+          if [[ -z "${artifacts}" ]]; then
+            echo "Interim Unsigned Artefacts Not Found"
+            exit 0
+          fi
+
+          FirstPass='True'
+          while IFS=":" read -r artifact_id artifact_name; do
+            echo "Found: ${artifact_name} (${artifact_id})"
+            CleanStrip='True'
+            [[ "${FirstPass}" == 'False' ]] && sleep 2
+            gh api --method DELETE repos/"${ENV_REPO}"/actions/artifacts/"${artifact_id}" || CleanStrip='False'
+
+            if [[ "${CleanStrip}" == 'True' ]]; then
+              echo "Removed Interim Artefact: ${artifact_name} (ID: ${artifact_id})"
+              FirstPass='False'
+            else
+              echo "[WARN] Failed to Remove Interim Artefact: ${artifact_name} (ID: ${artifact_id})"
+              FirstPass='True'
+            fi
+          done <<< "${artifacts}"
+
+
+        ##
+        # Always include the certificate files along with the
+        # signed binaries for users to enroll for Secure Boot
+        ##
+      - name: Upload Signed Binaries (RELEASE)
         if: contains(github.event.inputs.build_type, 'REL')
         uses: actions/upload-artifact@v4
         with:
-          name: x64_RefindPlus-Artefacts_REL [Signed]
+          name: x64_RefindPlus-Artefacts_REL
           path: |
               ${{ env.CER_PATH }}
               ${{ env.CRT_PATH }}
               REL_signed_DIR/*.efi
 
-      - name: Update Artefacts (DBG)
+      - name: Upload Signed Binaries (DEBUG)
         if: contains(github.event.inputs.build_type, 'DBG')
         uses: actions/upload-artifact@v4
         with:
-          name: x64_RefindPlus-Artefacts_DBG [Signed]
+          name: x64_RefindPlus-Artefacts_DBG
           path: |
               ${{ env.CER_PATH }}
               ${{ env.CRT_PATH }}
               DBG_signed_DIR/*.efi
 
-      - name: Update Artefacts (NPT)
+      - name: Upload Signed Binaries (NOOPT)
         if: contains(github.event.inputs.build_type, 'NPT')
         uses: actions/upload-artifact@v4
         with:
-          name: x64_RefindPlus-Artefacts_NPT [Signed]
+          name: x64_RefindPlus-Artefacts_NPT
           path: |
               ${{ env.CER_PATH }}
               ${{ env.CRT_PATH }}

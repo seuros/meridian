@@ -11,7 +11,7 @@ body:
         ---
 
 
-        **Try the item below on Apple Macs first if RefindPlus fails to display but responds to key inputs.**
+        **Try the item below first if RefindPlus fails to display but responds to key inputs on Apple Macs.**
         Especially if running 5k monitors on Pre-2020 units as the firmware restricts third-party loaders.
         - Run RefindPlus with these config settings active:- `disable_set_consolegop` and `disable_set_applefb`.
 
@@ -26,7 +26,7 @@ body:
         2. Run RefindPlus with `disable_rescan_dxe` active and `ransom_drives` inactive if that fails.
         3. Run RefindPlus with both `ransom_drives` and `disable_rescan_dxe` active if that fails.
 
-        **NB:** A hang is manifested by an unresponsive partially, or not-loaded, RefindPlus screen.
+        **NB:** A hang is manifested by an unresponsive, partially / not-loaded, RefindPlus screen.
 
 
         ---
@@ -39,10 +39,10 @@ body:
       label: Issue Screened
       description: |
           Confirm the items above have been read and applied as required.
-      multiple: true
+      type: choice
       options:
-        - 'SUGGESTED TESTS IGNORED although a condition above applies'
-        - 'SUGGESTED TESTS EXECUTED or none of conditions above apply'
+        - 'SUGGESTED TESTS IGNORED despite applicable item'
+        - 'SUGGESTED TESTS EXECUTED or no applicable item'
     validations:
       required: true
   - type: dropdown
@@ -50,7 +50,7 @@ body:
     attributes:
       label: RefindPlus Version
       description: Which version of RefindPlus is affected?
-      multiple: true
+      type: choice
       options:
         - 'Official v0.14.2.AC Release'
         - 'Official Older Released Version'
@@ -98,8 +98,8 @@ body:
   - type: dropdown
     id: os-type
     attributes:
-      label: Affected Items
-      description: What item is affected?
+      label: Affected Item(s)
+      description: What aspect is affected?
       multiple: true
       options:
         - 'One/More Tools (2nd Row Items)'
@@ -132,20 +132,18 @@ body:
     attributes:
       label: Log Requirement
       description: |
-          Debug logs are avaialbe by running the 'DBG' efi and almost always required.\
+          Debug logs are almost always required and produced by running the 'DBG' efi.\
           Confirm log files are provided or that you are certain this is not required.
-      multiple: true
+      type: choice
       options:
-        - 'DEBUG LOGS NOT PROVIDED - ignoring all guidance above'
+        - 'DEBUG LOGS NOT PROVIDED - disregarding guidance given'
         - 'DEBUG LOGS ARE PROVIDED or omission clearly justified'
-    validations:
-      required: true
   - type: textarea
     id: extra-info
     attributes:
       label: Additional Context
       description: |
-        Additional details that may further make the problem clear.
+        Additional details that may further make the problem clearer.
       placeholder: |
         You can attach files by dragging/dropping them on this field.
         You can also add screenshots to shed more light on the issue.

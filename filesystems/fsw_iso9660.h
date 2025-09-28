@@ -52,7 +52,7 @@
 //but we should use ParentBlockIo
 //#define ISO9660_SUPERBLOCK_BLOCKNO   0
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 typedef struct {
     fsw_u16     lsb;
@@ -130,7 +130,7 @@ struct iso9660_primary_volume_descriptor {
 //#fail Structure fsw_iso9660_volume_descriptor has wrong size
 //#endif
 
-#pragma pack()
+#pragma pack(pop)
 
 struct iso9660_dirrec_buffer {
     fsw_u32     ino;

@@ -101,6 +101,7 @@ jobs:
           ENV_ISSUE_ID: ${{ github.event.inputs.item_id }}
         shell: bash
         run: |
+          # Set Title
           NewTitle="RefindPlus of Unknown Provenance: Exhibits Issues"
           echo "Updating issue #${ENV_ISSUE_ID} with title: ${NewTitle}"
           curl -f -X PATCH \

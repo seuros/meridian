@@ -29,7 +29,7 @@
 ///
 ///
 ///
-#pragma pack(1)
+#pragma pack(push, 1)
 
 typedef UINT8                       SERIAL_MODE;
 typedef UINT8                       PARALLEL_MODE;
@@ -964,7 +964,7 @@ typedef struct {
 //
 // Restore default pack value
 //
-#pragma pack()
+#pragma pack(pop)
 
 #define EFI_LEGACY_BIOS_PROTOCOL_GUID \
   { \

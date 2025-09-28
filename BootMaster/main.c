@@ -146,6 +146,8 @@ REFIT_CONFIG GlobalConfig = {
     .ScanAllESP                =                    TRUE,
     .ScanAllLinux              =                    TRUE,
     .FoldLinuxKernels          =                    TRUE,
+    .BootLogoScale             =                    TRUE,
+    .BootLogoClear             =                    TRUE,
     .RescanDXE                 =                    TRUE,
     .HiddenTags                =                    TRUE,
     .LegacySync                =                    TRUE,
@@ -229,6 +231,8 @@ UINT32                 AccessFlagsBoot      =     ACCESS_FLAGS_BOOT;
 UINT32                 AccessFlagsFull      =     ACCESS_FLAGS_FULL;
 CHAR16                *ArchType             =                  NULL;
 CHAR16                *ArchBits             =                  NULL;
+CHAR16                *OurToolTag           =                  NULL;
+CHAR16                *OurTypeTag           =                  NULL;
 CHAR16                *VendorInfo           =                  NULL;
 CHAR16                *gHiddenTools         =                  NULL;
 CHAR16                *AllToolLocations     =                  NULL;
@@ -2721,7 +2725,6 @@ VOID AboutRefindPlus (VOID) {
     UINT32             CsrStatus;
     CHAR16            *TmpStr;
     INTN               DefaultEntry;
-    UINTN              MenuExit;
     UINTN              ScreenW;
     UINTN              ScreenH;
     BOOLEAN            RetVal;
@@ -2756,12 +2759,15 @@ VOID AboutRefindPlus (VOID) {
 
     AddMenuInfoLine (
         AboutMenu,
-        #if defined(__MAKEWITH_TIANO)
-            L"Built with TianoCore EDK II",
-        #else
-            L"Built with GNU-EFI",
-        #endif
-        FALSE
+        PoolPrint (
+#if defined(__MAKEWITH_TIANO)
+            L"Built with TianoCore EDK II via %s %s",
+#else
+            L"Built with GNU-EFI via %s %s",
+#endif
+            OurToolTag, OurTypeTag
+        ),
+        TRUE
     );
 
     if (ScreenSize == 0) {
@@ -2775,28 +2781,28 @@ VOID AboutRefindPlus (VOID) {
         LimitStringLength (TmpStr, (MAX_LINE_LENGTH - 16));
     }
 
-    AddMenuInfoLine (AboutMenu, PoolPrint (L"Firmware      : %s", TmpStr),   TRUE);
-    AddMenuInfoLine (AboutMenu, PoolPrint (L"Platform      : %s", ArchType), TRUE);
+    AddMenuInfoLine (AboutMenu, PoolPrint (L"Firmware           : %s", TmpStr),   TRUE);
+    AddMenuInfoLine (AboutMenu, PoolPrint (L"Platform           : %s", ArchType), TRUE);
     MY_FREE_POOL(TmpStr);
     AddMenuInfoLine (
         AboutMenu,
         PoolPrint (
-            L"EFI Version   : %s %d.%02d%s",
+            L"EFI Version        : %s %d.%02d%s",
             (EfiMajorVersion > 1) ? L"UEFI" : L"EFI",
             EfiMajorVersion,
             gST->Hdr.Revision & ((1 << 16) - 1),
             (WarnVersionEFI)
-                ? L" (Spoofed by Others)"
+                ? L" (Spoof by Others)"
                 : (SetSysTab)
-                    ? L" (Spoofed)" : L""
+                    ? L" (Self Spoof)" : L""
         ),
         TRUE
     );
 
-    if (!AppleFirmware && !HasMacOS) {
-        TmpStr = StrDuplicate (L"Not Applicable");
-    }
-    else {
+    // Always show CSR status on Apple Mac
+    //   even if Mac OS is not detected.
+    // Only show on UEFI-PC if Mac OS is detected
+    if (AppleFirmware || HasMacOS) {
         #if REFIT_DEBUG > 0
         MY_MUTELOGGER_SET;
         #endif
@@ -2822,18 +2828,30 @@ VOID AboutRefindPlus (VOID) {
         TmpStr = (!EFI_ERROR(Status))
             ? StrDuplicate (gCsrStatus)
             : PoolPrint (L"%s ... %r", gCsrStatus, Status);
-        // More than ~65 causes empty info page on 800x600 display ... '16' is current preamble length
+        // More than ~65 causes empty info page on 800x600 display
+        // Current preamble length is 21
         if (ScreenSize < 801) {
-            LimitStringLength (TmpStr, (MAX_LINE_LENGTH - 16));
+            LimitStringLength (
+                TmpStr,
+                MAX_LINE_LENGTH - 21
+            );
         }
+
+        AddMenuInfoLine (
+            AboutMenu,
+            PoolPrint (
+                L"CSR Setting        : %s",
+                TmpStr
+            ),
+            TRUE
+        );
+        MY_FREE_POOL(TmpStr);
     }
-    AddMenuInfoLine (AboutMenu, PoolPrint (L"CSR Setting   : %s", TmpStr), TRUE);
-    MY_FREE_POOL(TmpStr);
 
     AddMenuInfoLine (
         AboutMenu,
         PoolPrint (
-            L"Secure Boot   : %s",
+            L"Secure Boot (UEFI) : %s",
             (SecureFlag)
                 ? (ShimFound) ? L"Active and Shim Present"   : L"Active but Shim Absent"
                 : (ShimFound) ? L"Inactive but Shim Present" : L"Inactive and Shim Absent"
@@ -2844,9 +2862,12 @@ VOID AboutRefindPlus (VOID) {
     TmpStr = egScreenDescription();
     // More than ~65 causes empty info page on 800x600 display ... '16' is current preamble length
     if (ScreenSize < 801) {
-        LimitStringLength (TmpStr, (MAX_LINE_LENGTH - 16));
+        LimitStringLength (
+            TmpStr,
+            MAX_LINE_LENGTH - 16
+        );
     }
-    AddMenuInfoLine (AboutMenu, PoolPrint (L"Screen Output : %s", TmpStr), TRUE);
+    AddMenuInfoLine (AboutMenu, PoolPrint (L"Screen Mode/Output : %s", TmpStr), TRUE);
     MY_FREE_POOL(TmpStr);
 
     AddMenuInfoLine (AboutMenu, L"",                                                         FALSE);
@@ -2854,13 +2875,19 @@ VOID AboutRefindPlus (VOID) {
     AddMenuInfoLine (AboutMenu, L"Copyright 2012-2024 Roderick W. Smith (Portions)",         FALSE);
     AddMenuInfoLine (AboutMenu, L"Copyright 2006-2010 Christoph Pfisterer (Portions)",       FALSE);
     AddMenuInfoLine (AboutMenu, L"Copyright The Intel Corporation and Others (Portions)",    FALSE);
-    AddMenuInfoLine (AboutMenu, L"Provided under the GNU General Public License (v3/Later)", FALSE);
+    AddMenuInfoLine (AboutMenu, L"Provided Under the GNU General Public License (v3/Later)", FALSE);
 
     RetVal = GetMenuEntryReturn (&AboutMenu);
     if (RetVal) {
         DefaultEntry = 9999; // Use the Max Index
-        Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
-        MenuExit = DrawMenuScreen (AboutMenu, Style, &DefaultEntry, NULL);
+        Style = (
+            AllowGraphicsMode
+        ) ? GraphicsMenuStyle : TextMenuStyle;
+
+        DrawMenuScreen (
+            AboutMenu, Style,
+            &DefaultEntry, NULL
+        );
     }
 
     FreeMenuScreen (&AboutMenu);
@@ -3766,7 +3793,6 @@ EFI_STATUS EFIAPI efi_main (
     CHAR16            *EntryTitle;
     CHAR16            *EntryPath;
     CHAR16            *VarNVram;
-    CHAR16             KeyAsString[2];
     BOOLEAN            FoundTool;
     BOOLEAN            RunOurTool;
     BOOLEAN            MokProtocol;
@@ -3868,34 +3894,61 @@ EFI_STATUS EFIAPI efi_main (
     ArchType = LABEL_UNKNOWN;
 #endif
 
-    #if REFIT_DEBUG > 0
+#if REFIT_DEBUG > 0
     if (ArchBits == NULL) {
         LOG_MSG("Arch/Type:- '%s'", ArchType);
     }
     else {
-        LOG_MSG("Arch/Type:- '%s (%s)'", ArchType, ArchBits);
+        LOG_MSG("Arch/Type:- '%s' (%s)", ArchType, ArchBits);
     }
     LOG_MSG("\n");
 
     /* Build Engine */
     LOG_MSG("Made With:- ");
-#if defined(__MAKEWITH_TIANO)
+#   if defined(__MAKEWITH_TIANO)
     LOG_MSG("'TianoCore EDK II'");
-#elif defined(__MAKEWITH_GNUEFI)
+#   elif defined(__MAKEWITH_GNUEFI)
     LOG_MSG("'GNU-EFI'");
-#else
+#   else
     LOG_MSG("Unknown DevKit");
+#   endif
+    LOG_MSG("\n");
 #endif
+
+    /* Toolchain */
+    OurTypeTag = L"(Local)";
+    #if defined(__clang__)
+        #if defined(__APPLE__)
+            #if defined(__GNUC__)
+                OurToolTag = L"MacOS/XCODE5";
+            #else
+                OurToolTag = L"MacOS/CLANG";
+            #endif
+        #else
+            OurToolTag = L"Other/CLANG";
+        #endif
+    #elif defined(__GNUC__)
+        #if defined(__APPLE__)
+            OurToolTag = L"MacOS/GCC5";
+        #else
+            OurToolTag = L"Other/GCC5";
+        #endif
+    #else
+        OurToolTag = L"Other/Unknown";
+    #endif
+
+#if REFIT_DEBUG > 0
+    LOG_MSG("Toolchain:- '%s' %s", OurToolTag, OurTypeTag);
     LOG_MSG("\n");
 
     /* TimeStamp */
     LOG_MSG(
-        "Timestamp:- '%d-%02d-%02d %02d:%02d:%02d (UTC)'",
+        "Timestamp:- '%d-%02d-%02d %02d:%02d:%02d' (Base)",
         NowYear, NowMonth,
         NowDay, NowHour,
         NowMinute, NowSecond
     );
-    #endif
+#endif
 
     /* Run Secure Boot Update and Proceed Accordingly */
     MokProtocol = SecureBootSetup();
@@ -4128,7 +4181,7 @@ EFI_STATUS EFIAPI efi_main (
 
     LOG_MSG("%s      FollowSymlinks:- ",      OffsetNext                           );
     if (GlobalConfig.FollowSymlinks == NULL ||
-        MyStriCmp (SYMLINK_VOLUMES_TAG, GlobalConfig.FollowSymlinks)
+        MyStriCmp (SYM_TAG_OFF, GlobalConfig.FollowSymlinks)
     ) {
         LOG_MSG("'Inactive'"                                                       );
     }
@@ -4269,9 +4322,6 @@ EFI_STATUS EFIAPI efi_main (
                 gST->ConIn, &key
             );
             if (!EFI_ERROR(Status)) {
-                KeyAsString[0] = key.UnicodeChar;
-                KeyAsString[1] = 0;
-
                 if (key.ScanCode    == SCAN_ESC    ||
                     key.UnicodeChar == CHAR_BACKSPACE
                 ) {
@@ -4654,7 +4704,7 @@ EFI_STATUS EFIAPI efi_main (
         // Wait 1 second
         // DA-TAG: 100 Loops == 1 Sec
         RefitStall (100);
-    }
+    } // if SecureBootFailure
 
     // Show TagBadRAM Error
     if (WarnTagBadRAM) {
@@ -4720,7 +4770,7 @@ EFI_STATUS EFIAPI efi_main (
         // Wait 1 second
         // DA-TAG: 100 Loops == 1 Sec
         RefitStall (100);
-    }
+    } // if WarnTagBadRAM
 
     // Set CSR if required
     AlignCSR();

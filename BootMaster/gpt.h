@@ -23,7 +23,7 @@
 #include "../include/tiano_includes.h"
 #endif
 
-#pragma pack(1)
+#pragma pack(push, 1)
 typedef struct {
    UINT8   flags;
    UINT8   start_chs[3];
@@ -78,7 +78,7 @@ typedef struct _gpt_data {
    struct _gpt_data   *NextEntry;
 } GPT_DATA;
 
-#pragma pack(0)
+#pragma pack(pop)
 
 VOID ClearGptData(GPT_DATA *Data);
 EFI_STATUS ReadGptData(REFIT_VOLUME *Volume, GPT_DATA **Data);

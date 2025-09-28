@@ -54,7 +54,7 @@ Some features:
 
 ## Installation
 
-[MyBootMgr](https://www.dakanji.com/creations/index.html) is recommended to automate installing RefindPlus when running Mac OS on Intel-based Macs. Alternatively, as the RefindPlus efi file can function as a drop-in replacement for the upstream efi file, the [rEFInd package](https://www.rodsbooks.com/refind/installing.html) can be installed first and its efi file replaced with the RefindPlus efi file (Rename RefindPlus file to match). This allows installing RefindPlus on other compatible operating systems supported upstream. See `UEFI Secure Boot` under the [Divergence Section](https://github.com/RefindPlusRepo/RefindPlus#divergence) for how to enable this if required.
+An easy way is to name the RefindPlus efi file as a UEFI Fallback Loader, `BOOT{ARCH}.efi`, and then place this in the `EFI System Partition (ESP)` of a disk on your computer. [MyBootMgr](https://www.dakanji.com/creations/index.html) is recommended to automate installing RefindPlus when running Mac OS on Intel-based Macs. Alternatively, as the RefindPlus efi file can function as a drop-in replacement for the upstream efi file, the [rEFInd package](https://www.rodsbooks.com/refind/installing.html) can be installed first and its efi file replaced with the RefindPlus efi file (Rename RefindPlus file to match). This allows installing RefindPlus on other compatible operating systems supported upstream. See `UEFI Secure Boot` under the [Divergence Section](https://github.com/RefindPlusRepo/RefindPlus#divergence) for how to enable this if required.
 
 > [!NOTE]
 >
@@ -98,9 +98,11 @@ decline_help_text     |Disables feature that sets screen text to complementary c
 decouple_key_f10      |Unmaps the `F10` key from native screenshots (the `\` key remains mapped)
 disable_apfs_load     |Disables inbuilt provision of APFS filesystem capability
 disable_apfs_sync     |Disables feature allowing direct APFS/FileVault boot (Without "PreBoot")
-disable_bootlogo      |Disables display of boot logos on loading some items if required
-disable_check_amfi    |Disables AMFI Checks on Mac OS if required
-disable_check_compat  |Disables Mac version compatibility checks if required
+disable_bootlogo_clear|Disables clearing displayed boot logo images on exit screens
+disable_bootlogo_image|Disables display of boot logo images on exit screens
+disable_bootlogo_scale|Disables scaling displayed boot logo images on exit screens
+disable_check_amfi    |Disables AMFI Checks on Mac OS
+disable_check_compat  |Disables Mac version compatibility checks
 disable_pass_gop_thru |Disables feature that provides GOP instance on UGA for some loading screens
 disable_legacy_sync   |Disables detailed indentification of Mac legacy BIOS boot capability
 disable_nvram_paniclog|Disables logging Mac OS kernel panics to nvRAM
@@ -110,7 +112,7 @@ disable_rescan_dxe    |Disables scanning for newly revealed DXE drivers when con
 disable_set_applefb   |Disables provision, under some circumstances, of missing Apple Framebuffers
 disable_set_consolegop|Disables feature that fixes some issues with GOP graphics on legacy units
 enable_esp_filter     |Prevents other ESPs other than the RefindPlus ESP being scanned for loaders
-force_trim            |Forces `TRIM` on Third-Party SSDs on Macs if required
+force_trim            |Allows forcing `TRIM` on Third-Party SSDs on Macs
 hidden_icons_external |Allows scanning for `.VolumeIcon` icons on external volumes
 hidden_icons_ignore   |Disables scanning for `.VolumeIcon` image icons if not required
 hidden_icons_prefer   |Prioritises `.VolumeIcon` and `.VolumeBadge` image icons when available
@@ -145,7 +147,7 @@ In addition to the new functionality listed above, the following upstream tokens
   - `none` option to _disable_ graphics mode loading for everything.
   - `everything` option to _enable_ graphics mode loading for everything.
   - `SystemD`, `OpenCore`, and `Clover` can be set to load in graphics mode.
-- **"showtools":** Additional tool added:
+- **"showtools":** Defaults changed and additional tool added:
   - `clean_nvram` : Allows resetting nvRAM directly from RefindPlus.
     - When run on Apple firmware, RefindPlus will additionally trigger nvRAM garbage collection
 - **menuentry:** Additional OSTypes added for manual stanzas:
@@ -208,7 +210,7 @@ Significant visible implementation differences vis-a-vis the upstream base are:
   - > RefindPlus enforces the limitation for inclusion to secondary configuration files.
 - **Shortcut Keys:** RefindPlus does not allocate shortcut keys based on the operating system type/name as there is no way of knowing what would actually be loaded in many cases.
   - > Keys are allocated based on display position in the order of `Key 1` to `Key Z`.
-  - > Alphabetic `Keys I and O` are not used while Numeric `Key 0` is reserved for internal use.
+  - > Alphabetic `Keys I and O` are not used, while Numeric `Key 0` is reserved for internal use.
   - > Keys are not allocated to `Tools` apart from `Key A` for `About Refindplus` and `Key Z` for `System Shutdown`.
 - **Disabled Manual Stanzas:** The processing of a user configured boot stanza is halted, and the `Entry` object immediately discarded, once a `Disabled` setting is encountered. The outcome is the same as upstream, which always continues to create and return a fully built object that is later discarded in such cases. The approach adopted in RefindPlus allows for an optimised loading process particularly when such `Disabled` tokens are placed immediately after the `menuentry` line (see examples near the bottom of the `config.conf-sample` file).
   - > This also applies to `submenuentry` items which can be enabled or disabled separately.

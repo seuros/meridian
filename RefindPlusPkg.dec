@@ -6,3 +6,6 @@
 
 [Includes]
     ../StdLib/Include
+
+[Includes.GCC5]
+    # Empty to Override StdLib/Include

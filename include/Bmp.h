@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #ifndef _BMP_H__
 #define _BMP_H__
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 typedef struct {
 
@@ -47,6 +47,6 @@ typedef struct {
 
 } BMP_IMAGE_HEADER;
 
-#pragma pack()
+#pragma pack(pop)
 
 #endif

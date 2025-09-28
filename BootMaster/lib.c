@@ -2356,6 +2356,8 @@ VOID ScanVolume (
     EFI_DEVICE_PATH_PROTOCOL  *RemainingDevicePath;
     EFI_HANDLE                 WholeDiskHandle;
     UINTN                      PartialLength;
+    BOOLEAN                    CheckTagAll;
+    BOOLEAN                    CheckTagOff;
     BOOLEAN                    Bootable;
 
 
@@ -2363,14 +2365,14 @@ VOID ScanVolume (
     MY_HYBRIDLOGGER_SET;
     #endif
 
-    // Get device path
+    // Get Device Path
     Volume->DevicePath = DuplicateDevicePath (
         DevicePathFromHandle (Volume->DeviceHandle)
     );
 
-    Volume->DiskKind = DISK_KIND_INTERNAL;  // default
+    Volume->DiskKind = DISK_KIND_INTERNAL;  // Default
 
-    // Get block i/o
+    // Get Block I/O
     Status = REFIT_CALL_3_WRAPPER(
         gBS->HandleProtocol, Volume->DeviceHandle,
         &BlockIoProtocol, (VOID **) &(Volume->BlockIO)
@@ -2410,7 +2412,7 @@ VOID ScanVolume (
                 DevicePathSubType (DevicePath) == MSG_FIBRECHANNEL_DP
             )
         ) {
-            // USB/FireWire/FC device -> external
+            // USB/FireWire/FC Device is External Disk
             Volume->DiskKind = DISK_KIND_EXTERNAL;
             FoundExternalDisk = TRUE;
         }
@@ -2418,12 +2420,12 @@ VOID ScanVolume (
         if (DevicePathType    (DevicePath) == MEDIA_DEVICE_PATH &&
             DevicePathSubType (DevicePath) == MEDIA_CDROM_DP
         ) {
-            // El Torito entry -> optical disk
+            // El Torito Entry is Optical Disk
             Volume->DiskKind = DISK_KIND_OPTICAL;
         }
 
         if (DevicePathType (DevicePath) == MESSAGING_DEVICE_PATH) {
-            // Make a device path for the whole device
+            // Make Device Path for Whole Device
             PartialLength  = (UINT8 *) NextDevicePath - (UINT8 *)(Volume->DevicePath);
             DiskDevicePath = (EFI_DEVICE_PATH_PROTOCOL *) AllocatePool (
                 PartialLength + sizeof (EFI_DEVICE_PATH)
@@ -2439,7 +2441,7 @@ VOID ScanVolume (
                 EndDevicePath, sizeof (EFI_DEVICE_PATH)
             );
 
-            // Get the handle for that path
+            // Get Handle for Path
             RemainingDevicePath = DiskDevicePath;
             Status = REFIT_CALL_3_WRAPPER(
                 gBS->LocateDevicePath, &BlockIoProtocol,
@@ -2464,7 +2466,7 @@ VOID ScanVolume (
                 #endif
             }
             else {
-                // Get the device path for later
+                // Get Device Path for Later
                 Status = REFIT_CALL_3_WRAPPER(
                     gBS->HandleProtocol, WholeDiskHandle,
                     &DevicePathProtocol, (VOID **) &DiskDevicePath
@@ -2490,13 +2492,13 @@ VOID ScanVolume (
                     Volume->WholeDiskDevicePath = DuplicateDevicePath (DiskDevicePath);
                 }
 
-                // Look at the BlockIO protocol
+                // Check BlockIO Protocol
                 Status = REFIT_CALL_3_WRAPPER(
                     gBS->HandleProtocol, WholeDiskHandle,
                     &BlockIoProtocol, (VOID **) &Volume->WholeDiskBlockIO
                 );
                 if (!EFI_ERROR(Status)) {
-                    // Check the media block size
+                    // Check Media Block Size
                     if (Volume->WholeDiskBlockIO->Media->BlockSize == 2048) {
                         Volume->DiskKind = DISK_KIND_OPTICAL;
                     }
@@ -2525,7 +2527,7 @@ VOID ScanVolume (
         DevicePath = NextDevicePath;
     } // while
 
-    // Scan for bootcode and MBR table
+    // Scan for Bootcode and MBR Table
     Bootable = FALSE;
     ScanVolumeBootcode (Volume, &Bootable);
     if (Volume->DiskKind == DISK_KIND_OPTICAL) {
@@ -2572,26 +2574,38 @@ VOID ScanVolume (
 
     // Set 'IsReadable' Flag
     Volume->IsReadable = (
-        Volume->HasBootCode || Volume->RootDir != NULL
+        Volume->HasBootCode ||
+        Volume->RootDir != NULL
     ) ? TRUE : FALSE;
 
-    // Set default 'AllowSymlinks' Flag
+    // Default 'AllowSymlinks'
+    // 'FALSE' == Skip Symlinks
     Volume->AllowSymlinks = FALSE;
-    
+
 	if (GlobalConfig.FollowSymlinks == NULL) {
-        // No config ... Never follow symlinks
+        // No Config ... Never Follow Symlinks
 		return;
     }
-    
-	// Handles the case of config being 'SYMLINK_VOLUMES_TAG'.
-    // This signifies a complete symlink exclusion list.
-    // Return early ... Never follow symlinks.
-    if (MyStriCmp (SYMLINK_VOLUMES_TAG, GlobalConfig.FollowSymlinks)) {
-        return;
+
+    CheckTagAll = MyStriCmp (
+        SYM_TAG_ALL, GlobalConfig.FollowSymlinks
+    );
+    CheckTagOff = MyStriCmp (
+        SYM_TAG_OFF, GlobalConfig.FollowSymlinks
+    );
+    if (CheckTagAll || CheckTagOff) {
+        // Handle 'Global List' Config Setting
+        if (CheckTagAll) {
+            Volume->AllowSymlinks = TRUE;
+        }
+
+        // Early Return ... Global Allow/Deny
+		return;
     }
 
     VolGuid = GuidAsString (&(Volume->PartGuid));
-    if (MyStrBegins (SYMLINK_VOLUMES_TAG,  GlobalConfig.FollowSymlinks)) {
+    if (MyStrBegins (SYM_TAG_OFF,  GlobalConfig.FollowSymlinks)) {
+        // Handle 'Exclusion List' Config Setting
         if (!IsListItem (Volume->VolName,  GlobalConfig.FollowSymlinks) &&
             !IsListItem (Volume->FsName,   GlobalConfig.FollowSymlinks) &&
             !IsListItem (Volume->PartName, GlobalConfig.FollowSymlinks) &&
@@ -2601,8 +2615,8 @@ VOID ScanVolume (
         }
     }
     else {
-        if (MyStriCmp  (L"all",           GlobalConfig.FollowSymlinks) ||
-            IsListItem (Volume->VolName,  GlobalConfig.FollowSymlinks) ||
+        // Handle 'Inclusion List' Config Setting
+        if (IsListItem (Volume->VolName,  GlobalConfig.FollowSymlinks) ||
             IsListItem (Volume->FsName,   GlobalConfig.FollowSymlinks) ||
             IsListItem (Volume->PartName, GlobalConfig.FollowSymlinks) ||
             IsListItem (VolGuid,          GlobalConfig.FollowSymlinks)

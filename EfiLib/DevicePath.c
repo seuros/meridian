@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 /**
  * Modified for RefindPlus
- * Copyright (c) 2021-2024 Dayo Akanji (sf.net/u/dakanji/profile)
+ * Copyright (c) 2021-2025 Dayo Akanji (sf.net/u/dakanji/profile)
  *
  * Modifications distributed under the preceding terms.
 **/
@@ -263,9 +263,11 @@ VOID DevPathVendor (
                 MyCatPrint (Str, L"%x)", (UINTN) ((SAS_DEVICE_PATH *) Vendor)->Reserved);
                 return;
             }
-            else if (CompareGuid (&Vendor->Guid, &gEfiDebugPortProtocolGuid)) {
-                MyCatPrint (Str, L"DebugPort()");
-                return;
+            else {
+                if (CompareGuid (&Vendor->Guid, &gEfiDebugPortProtocolGuid)) {
+                    MyCatPrint (Str, L"DebugPort()");
+                    return;
+                }
             }
 
             break;

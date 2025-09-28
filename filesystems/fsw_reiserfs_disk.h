@@ -60,7 +60,7 @@ typedef __u64   __le64;
 #endif
 
 
-#pragma pack(1)
+#pragma pack(push, 1)
 
 /*
  * Disk Data Structures
@@ -708,5 +708,5 @@ struct disk_child {
 #define MAX_HEIGHT 5		/* maximal height of a tree. do not change this without changing JOURNAL_PER_BALANCE_CNT */
 
 
-#pragma pack()
+#pragma pack(pop)
 #endif

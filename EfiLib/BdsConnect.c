@@ -115,6 +115,7 @@ EFI_STATUS ScanDeviceHandles (
     UINTN                                 OpenInfoCount;
     UINTN                                 OpenInfoIndex;
     UINTN                                 ChildIndex;
+    BOOLEAN                               SameGUID;
     EFI_OPEN_PROTOCOL_INFORMATION_ENTRY  *OpenInfo;
 
     *HandleCount  = 0;
@@ -129,17 +130,16 @@ EFI_STATUS ScanDeviceHandles (
         HandleCount, HandleBuffer
     );
     if (EFI_ERROR(Status)) {
-        MY_FREE_POOL(*HandleType);
-        MY_FREE_POOL(*HandleBuffer);
         *HandleCount  = 0;
 
         // Early Return
         return Status;
     }
 
-    *HandleType = AllocatePool (*HandleCount * sizeof (UINT32));
+    *HandleType = AllocatePool (
+        *HandleCount * sizeof (UINT32)
+    );
     if (*HandleType == NULL) {
-        MY_FREE_POOL(*HandleType);
         MY_FREE_POOL(*HandleBuffer);
         *HandleCount  = 0;
 
@@ -155,75 +155,57 @@ EFI_STATUS ScanDeviceHandles (
             gBS->ProtocolsPerHandle, (*HandleBuffer)[k],
             &ProtocolGuidArray, &ArrayCount
         );
-        if (EFI_ERROR(Status)) {
-            continue;
-        }
+        if (EFI_ERROR(Status)) continue;
 
         for (ProtocolIndex = 0; ProtocolIndex < ArrayCount; ProtocolIndex++) {
-            if (CompareGuid (
-                    ProtocolGuidArray[ProtocolIndex],
-                    &gEfiLoadedImageProtocolGuid
-                )
-            ) {
-                (*HandleType)[k] |= EFI_HANDLE_TYPE_IMAGE_HANDLE;
-            }
+            SameGUID = CompareGuid (
+                ProtocolGuidArray[ProtocolIndex],
+                &gEfiLoadedImageProtocolGuid
+            );
+            if (SameGUID) (*HandleType)[k] |= EFI_HANDLE_TYPE_IMAGE_HANDLE;
 
-            if (CompareGuid (
-                    ProtocolGuidArray[ProtocolIndex],
-                    &gEfiDriverBindingProtocolGuid
-                )
-            ) {
-                (*HandleType)[k] |= EFI_HANDLE_TYPE_DRIVER_BINDING_HANDLE;
-            }
+            SameGUID = CompareGuid (
+                ProtocolGuidArray[ProtocolIndex],
+                &gEfiDriverBindingProtocolGuid
+            );
+            if (SameGUID) (*HandleType)[k] |= EFI_HANDLE_TYPE_DRIVER_BINDING_HANDLE;
 
-            if (CompareGuid (
-                    ProtocolGuidArray[ProtocolIndex],
-                    &gEfiDriverConfigurationProtocolGuid
-                )
-            ) {
-                (*HandleType)[k] |= EFI_HANDLE_TYPE_DRIVER_CONFIGURATION_HANDLE;
-            }
+            SameGUID = CompareGuid (
+                ProtocolGuidArray[ProtocolIndex],
+                &gEfiDriverConfigurationProtocolGuid
+            );
+            if (SameGUID) (*HandleType)[k] |= EFI_HANDLE_TYPE_DRIVER_CONFIGURATION_HANDLE;
 
-            if (CompareGuid (
-                    ProtocolGuidArray[ProtocolIndex],
-                    &gEfiDriverDiagnosticsProtocolGuid
-                )
-            ) {
-                (*HandleType)[k] |= EFI_HANDLE_TYPE_DRIVER_DIAGNOSTICS_HANDLE;
-            }
+            SameGUID = CompareGuid (
+                ProtocolGuidArray[ProtocolIndex],
+                &gEfiDriverDiagnosticsProtocolGuid
+            );
+            if (SameGUID) (*HandleType)[k] |= EFI_HANDLE_TYPE_DRIVER_DIAGNOSTICS_HANDLE;
 
-            if (CompareGuid (
-                    ProtocolGuidArray[ProtocolIndex],
-                    &gEfiComponentName2ProtocolGuid
-                )
-            ) {
-                (*HandleType)[k] |= EFI_HANDLE_TYPE_COMPONENT_NAME_HANDLE;
-            }
+            SameGUID = CompareGuid (
+                ProtocolGuidArray[ProtocolIndex],
+                &gEfiComponentName2ProtocolGuid
+            );
+            if (SameGUID) (*HandleType)[k] |= EFI_HANDLE_TYPE_COMPONENT_NAME_HANDLE;
 
-            if (CompareGuid (
-                    ProtocolGuidArray[ProtocolIndex],
-                    &gEfiComponentNameProtocolGuid
-                )
-            ) {
-                (*HandleType)[k] |= EFI_HANDLE_TYPE_COMPONENT_NAME_HANDLE;
-            }
+            SameGUID = CompareGuid (
+                ProtocolGuidArray[ProtocolIndex],
+                &gEfiComponentNameProtocolGuid
+            );
+            if (SameGUID) (*HandleType)[k] |= EFI_HANDLE_TYPE_COMPONENT_NAME_HANDLE;
 
-            if (CompareGuid (
-                    ProtocolGuidArray[ProtocolIndex],
-                    &gEfiDevicePathProtocolGuid
-                )
-            ) {
-                (*HandleType)[k] |= EFI_HANDLE_TYPE_DEVICE_HANDLE;
-            }
+            SameGUID = CompareGuid (
+                ProtocolGuidArray[ProtocolIndex],
+                &gEfiDevicePathProtocolGuid
+            );
+            if (SameGUID) (*HandleType)[k] |= EFI_HANDLE_TYPE_DEVICE_HANDLE;
 
             // Retrieve the list of agents that have opened each protocol
             Status = REFIT_CALL_4_WRAPPER(
                 gBS->OpenProtocolInformation, (*HandleBuffer)[k],
                 ProtocolGuidArray[ProtocolIndex], &OpenInfo, &OpenInfoCount
             );
-            if (EFI_ERROR(Status)) {
-                continue;
-            }
+            if (EFI_ERROR(Status)) continue;
 
             for (OpenInfoIndex = 0; OpenInfoIndex < OpenInfoCount; OpenInfoIndex++) {
                 if (OpenInfo[OpenInfoIndex].ControllerHandle == ControllerHandle) {
@@ -540,7 +522,6 @@ EFI_STATUS BdsLibConnectMostlyAllEfi (VOID) {
                 #if REFIT_DEBUG > 0
                 if (FoundGOP) {
                     DeviceDataTmp = StrDevicePath = NULL;
-                    // DA-TAG; Do not change if/else arrangement below
                     if (GopDevicePathStr != NULL) {
                         StrDevicePath = ConvertDevicePathToText (
                             DevicePathFromHandle (AllHandleBuffer[i]),
@@ -554,13 +535,6 @@ EFI_STATUS BdsLibConnectMostlyAllEfi (VOID) {
                                 DeviceDataTmp
                             );
                         }
-                    }
-                    else if (MyStriCmp (DeviceData, L"GraphicsFX Card")) {
-                        DeviceDataTmp = DeviceData;
-                        DeviceData    = PoolPrint (
-                            L"%s : Leverages GOP (Assumed)",
-                            DeviceDataTmp
-                        );
                     }
 
                     MY_FREE_POOL(DeviceDataTmp);
@@ -580,8 +554,8 @@ EFI_STATUS BdsLibConnectMostlyAllEfi (VOID) {
                     DeviceData = StrDuplicate (L"");
                 }
                 else {
-                    if (MyStrBegins (L"Monitor Display", DeviceData) ||
-                        MyStrBegins (L"GraphicsFX Card", DeviceData)
+                    if (MyStriCmp (DeviceData, L"Monitor Display") ||
+                        MyStriCmp (DeviceData, L"GraphicsFX Card")
                     ) {
                         FillStr = L"  x  ";
                     }

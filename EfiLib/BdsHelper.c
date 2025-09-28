@@ -15,13 +15,13 @@
 **/
 /**
  * Modified for RefindPlus
- * Copyright (c) 2020-2022 Dayo Akanji (sf.net/u/dakanji/profile)
+ * Copyright (c) 2020-2025 Dayo Akanji (sf.net/u/dakanji/profile)
  *
  * Modifications distributed under the preceding terms.
 **/
 
-#include "BdsHelper.h"
 #include "legacy.h"
+#include "BdsHelper.h"
 #include "../BootMaster/lib.h"
 #include "../BootMaster/mystrings.h"
 #include "../BootMaster/screenmgt.h"
@@ -50,7 +50,7 @@ VOID UpdateBbsTable (
     BDS_COMMON_OPTION *Option
 ) {
     UINT16                     Idx;
-    EFI_LEGACY_BIOS_PROTOCOL  *LegacyBios;
+    EFI_LEGACY_BIOS_PROTOCOL  *LegacyBIOS;
     EFI_STATUS                 Status;
     UINT16                     HddCount;
     HDD_INFO                  *HddInfo;
@@ -61,7 +61,7 @@ VOID UpdateBbsTable (
 
     Status = REFIT_CALL_3_WRAPPER(
         gBS->LocateProtocol, &gEfiLegacyBootProtocolGuid,
-        NULL, (VOID **) &LegacyBios
+        NULL, (VOID **) &LegacyBIOS
     );
     if (EFI_ERROR(Status) || Option == NULL) {
         return;
@@ -72,7 +72,7 @@ VOID UpdateBbsTable (
     LocalBbsTable = NULL;
     OptionBBS = (BBS_BBS_DEVICE_PATH *) Option->DevicePath;
     REFIT_CALL_5_WRAPPER(
-        LegacyBios->GetBbsInfo, LegacyBios,
+        LegacyBIOS->GetBbsInfo, LegacyBIOS,
         &HddCount, &HddInfo,
         &BbsCount, &LocalBbsTable
     );
@@ -96,10 +96,12 @@ VOID UpdateBbsTable (
                 LocalBbsTable[Idx].BootPriority = 1;
             }
         }
-        else if (LocalBbsTable[Idx].BootPriority <= 1) {
-            // Something has got a high enough boot priority to interfere with booting
-            // our chosen entry, so bump it down a bit.
-            LocalBbsTable[Idx].BootPriority = 2;
+        else {
+            if (LocalBbsTable[Idx].BootPriority <= 1) {
+                // Something has got a high enough boot priority to interfere with booting
+                // our chosen entry, so bump it down a bit.
+                LocalBbsTable[Idx].BootPriority = 2;
+            }
         }
     } // for
 } // UpdateBbsTable();
@@ -110,14 +112,15 @@ VOID UpdateBbsTable (
     @param  Option           Legacy boot option with BBS device paths
 
     @retval EFI_UNSUPPORTED  No legacybios protocol. Does not support legacy boot.
-    @retval EFI_STATUS       Return the status of LegacyBios->LegacyBoot().
+    @retval EFI_STATUS       Return the status of LegacyBIOS->LegacyBoot().
 
 **/
 EFI_STATUS BdsLibDoLegacyBoot (
     IN  BDS_COMMON_OPTION     *Option
 ) {
     EFI_STATUS                 Status;
-    EFI_LEGACY_BIOS_PROTOCOL  *LegacyBios;
+    EFI_LEGACY_BIOS_PROTOCOL  *LegacyBIOS;
+
 
     #if REFIT_DEBUG > 0
     OUT_TAG();
@@ -125,7 +128,7 @@ EFI_STATUS BdsLibDoLegacyBoot (
 
     Status = REFIT_CALL_3_WRAPPER(
         gBS->LocateProtocol, &gEfiLegacyBootProtocolGuid,
-        NULL, (VOID **) &LegacyBios
+        NULL, (VOID **) &LegacyBIOS
     );
     if (EFI_ERROR(Status)) {
         return EFI_UNSUPPORTED;
@@ -134,8 +137,9 @@ EFI_STATUS BdsLibDoLegacyBoot (
     UpdateBbsTable (Option);
 
     Status = REFIT_CALL_4_WRAPPER(
-        LegacyBios->LegacyBoot, LegacyBios,
-        (BBS_BBS_DEVICE_PATH *) Option->DevicePath, Option->LoadOptionsSize, Option->LoadOptions
+        LegacyBIOS->LegacyBoot, LegacyBIOS,
+        (BBS_BBS_DEVICE_PATH *) Option->DevicePath,
+        Option->LoadOptionsSize, Option->LoadOptions
     );
 
     return Status;

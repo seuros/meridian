@@ -292,6 +292,31 @@ CHAR16 * FindInitrd (
 } // static CHAR16 * FindInitrd()
 
 
+static
+VOID AddMenuEntrySpacer (
+    IN OUT REFIT_MENU_SCREEN **Screen
+) {
+    REFIT_MENU_ENTRY *MenuEntrySpacer;
+
+
+    if (Screen == NULL || *Screen == NULL) {
+        // Early Return
+        return;
+    }
+
+    MenuEntrySpacer = AllocateZeroPool (
+        sizeof (REFIT_MENU_ENTRY)
+    );
+    if (MenuEntrySpacer == NULL) {
+        // Early Return
+        return;
+    }
+
+    MenuEntrySpacer->Title = StrDuplicate (GEN_TAG);
+    MenuEntrySpacer->Tag = TAG_SPACER;
+    AddMenuEntry (*Screen, MenuEntrySpacer);
+} // static VOID AddMenuEntrySpacer()
+
 // Adds InitrdPath to Options, but only if Options does not already include an
 // initrd= line or a `%v` variable. Done to enable overriding the default initrd
 // selection in a refindplus_linux.conf or refind_linux.conf file's options list.
@@ -321,34 +346,52 @@ CHAR16 * AddInitrdToOptions (
     }
 
     BREAD_CRUMB(L"%a:  2", __func__);
-    if (InitrdPath != NULL) {
-        BREAD_CRUMB(L"%a:  2a 1", __func__);
-        if (NewOptions != NULL && FindSubStr (NewOptions, L"%v")) {
-            BREAD_CRUMB(L"%a:  2a 1a 1", __func__);
-            InitrdVersion = FindNumbers (InitrdPath);
+    if (InitrdPath == NULL) {
+        BREAD_CRUMB(L"%a:  2a 1 - END:- return CHAR16 *NewOptions = '%s' ... NULL 'InitrdPath' Input", __func__,
+            (NewOptions != NULL) ? NewOptions : L"NULL"
+        );
+        LOG_DECREMENT();
+        LOG_SEP(L"X");
 
-            BREAD_CRUMB(L"%a:  2a 1a 2", __func__);
-            ReplaceSubstring (&NewOptions, L"%v", InitrdVersion);
-
-            BREAD_CRUMB(L"%a:  2a 1a 3", __func__);
-            MY_FREE_POOL(InitrdVersion);
-        }
-        else {
-            BREAD_CRUMB(L"%a:  2a 1b 1", __func__);
-            if (NewOptions == NULL || !FindSubStr (NewOptions, L"initrd=")) {
-                BREAD_CRUMB(L"%a:  2a 1b 1a 1", __func__);
-                MergeStrings (&NewOptions, L"initrd=", L' ');
-
-                BREAD_CRUMB(L"%a:  2a 1b 1a 2", __func__);
-                MergeStrings (&NewOptions, InitrdPath, 0);
-            }
-            BREAD_CRUMB(L"%a:  2a 1b 2", __func__);
-        }
-        BREAD_CRUMB(L"%a:  2a 2", __func__);
+        return NewOptions;
     }
 
-    BREAD_CRUMB(L"%a:  3 - END:- return CHAR16 *NewOptions = '%s'", __func__,
-        NewOptions ? NewOptions : L"NULL"
+    BREAD_CRUMB(L"%a:  3", __func__);
+    if (NewOptions != NULL && FindSubStr (NewOptions, L"%v")) {
+        BREAD_CRUMB(L"%a:  3a 1", __func__);
+        InitrdVersion = FindNumbers (
+            InitrdPath
+        );
+
+        BREAD_CRUMB(L"%a:  3a 2", __func__);
+        ReplaceSubstring (
+            &NewOptions,
+            L"%v", InitrdVersion
+        );
+
+        BREAD_CRUMB(L"%a:  3a 3", __func__);
+        MY_FREE_POOL(InitrdVersion);
+    }
+    else {
+        BREAD_CRUMB(L"%a:  3b 1", __func__);
+        if (NewOptions == NULL || !FindSubStr (NewOptions, L"initrd=")) {
+            BREAD_CRUMB(L"%a:  3b 1a 1", __func__);
+            MergeStrings (
+                &NewOptions,
+                L"initrd=", L' '
+            );
+
+            BREAD_CRUMB(L"%a:  3b 1a 2", __func__);
+            MergeStrings (
+                &NewOptions,
+                InitrdPath, 0
+            );
+        }
+        BREAD_CRUMB(L"%a:  3b 2", __func__);
+    }
+
+    BREAD_CRUMB(L"%a:  4 - END:- return CHAR16 *NewOptions = '%s'", __func__,
+        (NewOptions != NULL) ? NewOptions : L"NULL"
     );
     LOG_DECREMENT();
     LOG_SEP(L"X");
@@ -639,19 +682,26 @@ VOID GuessLinuxDistribution (
     LOG_SEP(L"X");
 } // VOID GuessLinuxDistribution()
 
-// Add a Linux kernel as submenu entry for another (pre-existing) kernel entry
+// Add Linux kernel as submenu entry for pre-existing kernel entry
 VOID AddKernelToSubmenu (
     LOADER_ENTRY *TargetLoader,
     CHAR16       *FileName,
     REFIT_VOLUME *Volume
 ) {
+    #if REFIT_DEBUG > 0
+    BOOLEAN  CheckMute = FALSE;
+    #endif
+
     REFIT_FILE          *File;
     CHAR16             **TokenList = NULL;
     CHAR16              *Path;
     CHAR16              *VolName;
+    CHAR16              *KernFile;
     CHAR16              *InitrdName;
-    CHAR16              *SubmenuName;
+    CHAR16              *ActualLoader;
     CHAR16              *KernelVersion;
+    CHAR16              *BootTypeTag;
+    CHAR16              *OutputData;
     REFIT_MENU_SCREEN   *SubScreen;
     LOADER_ENTRY        *SubEntry;
     UINTN                TokenCount;
@@ -664,7 +714,10 @@ VOID AddKernelToSubmenu (
     LOG_SEP(L"X");
     LOG_INCREMENT();
     BREAD_CRUMB(L"%a:  1 - START", __func__);
-    File = ReadLinuxOptionsFile (TargetLoader->LoaderPath, Volume);
+    File = ReadLinuxOptionsFile (
+        TargetLoader->LoaderPath,
+        Volume
+    );
 
     BREAD_CRUMB(L"%a:  2", __func__);
     if (File == NULL) {
@@ -686,71 +739,107 @@ VOID AddKernelToSubmenu (
     KernelVersion = FindNumbers (FileName);
 
     BREAD_CRUMB(L"%a:  6", __func__);
-    Path = VolName = SubmenuName = NULL;
+    ActualLoader = StrDuplicate (FileName);
+    CleanUpPathNameSlashes (ActualLoader);
+
+    BREAD_CRUMB(L"%a:  7", __func__);
+    #if REFIT_DEBUG > 0
+    MY_MUTELOGGER_SET;
+    #endif
+    AddMenuEntrySpacer (&SubScreen);
+    #if REFIT_DEBUG > 0
+    MY_MUTELOGGER_OFF;
+    #endif
+
+    BREAD_CRUMB(L"%a:  8", __func__);
+    Path = VolName = BootTypeTag = NULL;
     while (1) {
         TokenCount = ReadTokenLine (File, &TokenList);
         if (TokenCount < 2) {
             FreeTokenLine (&TokenList, &TokenCount);
-
             break;
         }
 
         LOG_SEP(L"X");
-        BREAD_CRUMB(L"%a:  6a 1 - WHILE LOOP:- START", __func__);
-        ReplaceSubstring (&(TokenList[1]), KERNEL_VERSION, KernelVersion);
+        BREAD_CRUMB(L"%a:  8a 1 - WHILE LOOP:- START", __func__);
+        ReplaceSubstring (
+            &(TokenList[1]),
+            KERNEL_VERSION,
+            KernelVersion
+        );
 
-        BREAD_CRUMB(L"%a:  6a 2", __func__);
+        BREAD_CRUMB(L"%a:  8a 2", __func__);
         SubEntry = CopyLoaderEntry (TargetLoader);
 
-        BREAD_CRUMB(L"%a:  6a 3", __func__);
-        if (SubEntry != NULL) {
-            BREAD_CRUMB(L"%a:  6a 3a 1", __func__);
-            SplitPathName (FileName, &VolName, &Path, &SubmenuName);
+        BREAD_CRUMB(L"%a:  8a 3", __func__);
+        if (SubEntry == NULL) {
+            BREAD_CRUMB(L"%a:  8a 3a 1 - WHILE LOOP:- BREAK", __func__);
+            LOG_SEP(L"X");
 
-            BREAD_CRUMB(L"%a:  6a 3a 2", __func__);
-            MergeStrings (&SubmenuName, L": ", '\0');
-
-            BREAD_CRUMB(L"%a:  6a 3a 3", __func__);
-            MergeStrings (
-                &SubmenuName,
-                TokenList[0] ? TokenList[0] : L"Boot Linux",
-                '\0'
-            );
-
-            BREAD_CRUMB(L"%a:  6a 3a 4", __func__);
-            SubEntry->me.Title = StrDuplicate (SubmenuName);
-            LimitStringLength (SubEntry->me.Title, MAX_LINE_LENGTH);
-
-            BREAD_CRUMB(L"%a:  6a 3a 5", __func__);
-            MY_FREE_POOL(SubEntry->LoadOptions);
-            SubEntry->LoadOptions = AddInitrdToOptions (
-                TokenList[1], InitrdName
-            );
-
-            BREAD_CRUMB(L"%a:  6a 3a 6", __func__);
-            MY_FREE_POOL(SubEntry->LoaderPath);
-            SubEntry->LoaderPath = StrDuplicate (FileName);
-            CleanUpPathNameSlashes (SubEntry->LoaderPath);
-
-            BREAD_CRUMB(L"%a:  6a 3a 7", __func__);
-            SubEntry->Volume = Volume;
-            SubEntry->UseGraphicsMode = GlobalConfig.GraphicsFor & GRAPHICS_FOR_LINUX;
-            AddMenuEntry (SubScreen, (REFIT_MENU_ENTRY *) SubEntry);
-
-            BREAD_CRUMB(L"%a:  6a 3a 8", __func__);
-            MY_FREE_POOL(SubmenuName);
-            MY_FREE_POOL(VolName);
-            MY_FREE_POOL(Path);
+            FreeTokenLine (&TokenList, &TokenCount);
+            continue;
         }
 
-        BREAD_CRUMB(L"%a:  6a 4", __func__);
+        BREAD_CRUMB(L"%a:  8a 4", __func__);
+        BootTypeTag = (
+            TokenList[0] != NULL
+        ) ? CapitalisedCase (
+            TokenList[0], TRUE
+        ) : StrDuplicate (
+            L"Boot Linux"
+        );
+
+        BREAD_CRUMB(L"%a:  8a 5", __func__);
+        SplitPathName (
+            FileName, &VolName,
+            &Path, &KernFile
+        );
+
+        BREAD_CRUMB(L"%a:  8a 6", __func__);
+        OutputData = PoolPrint (
+            L"%s : %s",
+            BootTypeTag, KernFile
+        );
+
+        BREAD_CRUMB(L"%a:  8a 7", __func__);
+        LimitStringLength (OutputData, MAX_LINE_LENGTH);
+
+        BREAD_CRUMB(L"%a:  8a 8", __func__);
+        SubEntry->me.Title = OutputData;
+
+        BREAD_CRUMB(L"%a:  8a 9", __func__);
+        // DA-TAG: Sets 'LoadOptions' to 'TokenList[1]'
+        //         Adds 'InitrdName' if available and needed
+        MY_FREE_POOL(SubEntry->LoadOptions);
+        SubEntry->LoadOptions = AddInitrdToOptions (
+            TokenList[1], InitrdName
+        );
+
+        BREAD_CRUMB(L"%a:  8a 10", __func__);
+        MY_FREE_POOL(SubEntry->LoaderPath);
+
+        BREAD_CRUMB(L"%a:  8a 11", __func__);
+        SubEntry->LoaderPath = StrDuplicate (ActualLoader);
+
+        BREAD_CRUMB(L"%a:  8a 12", __func__);
+        SubEntry->Volume = Volume;
+        SubEntry->UseGraphicsMode = GlobalConfig.GraphicsFor & GRAPHICS_FOR_LINUX;
+        AddMenuEntry (SubScreen, (REFIT_MENU_ENTRY *) SubEntry);
+
+        BREAD_CRUMB(L"%a:  8a 13", __func__);
         FreeTokenLine (&TokenList, &TokenCount);
 
-        BREAD_CRUMB(L"%a: 6a 5 - WHILE LOOP:- END", __func__);
+        BREAD_CRUMB(L"%a:  8a 14", __func__);
+        MY_FREE_POOL(BootTypeTag);
+        MY_FREE_POOL(KernFile);
+        MY_FREE_POOL(VolName);
+        MY_FREE_POOL(Path);
+
+        BREAD_CRUMB(L"%a:  8a 15 - WHILE LOOP:- END", __func__);
         LOG_SEP(L"X");
     } // while {Infinite}
 
-    BREAD_CRUMB(L"%a:  7", __func__);
+    BREAD_CRUMB(L"%a:  9", __func__);
     MY_FREE_POOL(KernelVersion);
     MY_FREE_POOL(InitrdName);
     MY_FREE_FILE(File);
@@ -762,7 +851,7 @@ VOID AddKernelToSubmenu (
     );
     #endif
 
-    BREAD_CRUMB(L"%a:  8 - END:- VOID", __func__);
+    BREAD_CRUMB(L"%a:  10 - END:- VOID", __func__);
     LOG_DECREMENT();
     LOG_SEP(L"X");
 } // VOID AddKernelToSubmenu()
@@ -783,8 +872,8 @@ BOOLEAN HasSignedCounterpart (
 
 
     NewFile = NULL;
-    MergeStrings(&NewFile, FullName, 0);
-    MergeStrings(&NewFile, L".efi.signed", 0);
+    MergeStrings (&NewFile, FullName, 0);
+    MergeStrings (&NewFile, L".efi.signed", 0);
 
     retval = FALSE;
     if (NewFile != NULL) {

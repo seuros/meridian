@@ -1,7 +1,7 @@
 /*
  * EfiLib/legacy.h
  * CSM/legacy boot support functions
- * 
+ *
  * Taken from Tianocore source code (mostly IntelFrameworkModulePkg/Universal/BdsDxe/BootMaint/BBSsupport.c)
  *
  * Copyright (c) 2004 - 2011, Intel Corporation. All rights reserved.<BR>
@@ -9,7 +9,7 @@
  * are licensed and made available under the terms and conditions of the BSD License
  * which accompanies this distribution.  The full text of the license may be found at
  * http://opensource.org/licenses/bsd-license.php
- * 
+ *
  * THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
  * WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
  *
@@ -27,7 +27,7 @@ typedef UINT8 BBS_TYPE;
 
 #define VAR_FLAG  EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE
 
-#pragma pack(1)
+#pragma pack(push, 1)
 ///
 /// For each legacy boot option in BBS table, a corresponding Boot#### variables is created.
 /// The structure saves the mapping relationship between #### and the index in the BBS table.
@@ -37,9 +37,7 @@ typedef struct {
    UINT16    BbsIndex;
    UINT16    BbsType;
 } BOOT_OPTION_BBS_MAPPING;
-#pragma pack()
 
-#pragma pack(1)
 typedef struct {
    BBS_TYPE  BbsType;
    ///
@@ -48,7 +46,7 @@ typedef struct {
    UINT16    Length;
    UINT16    Data[1];
 } LEGACY_DEV_ORDER_ENTRY;
-#pragma pack()
+#pragma pack(pop)
 
 EFI_STATUS
 BdsAddNonExistingLegacyBootOptions (

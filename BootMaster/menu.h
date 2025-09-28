@@ -76,8 +76,6 @@
 #define MENU_EXIT_SCREENSHOT (7)
 #define MENU_EXIT_SHOWSCREEN (8)
 
-#define TAG_RETURN          (99)
-
 // Scrolling definitions
 
 typedef struct {

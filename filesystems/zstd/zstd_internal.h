@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016-present, Yann Collet, Facebook, Inc.
+ * Copyright (c) 2016-2020, Yann Collet, Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -12,6 +12,12 @@
  * Free Software Foundation. This program is dual-licensed; you may select
  * either version 2 of the GNU General Public License ("GPL") or BSD license
  * ("BSD").
+ */
+/*
+ * Modified for RefindPlus
+ * Copyright (c) 2025 Dayo Akanji (sf.net/u/dakanji/profile)
+ *
+ * Modifications distributed under the preceding terms.
  */
 
 #ifndef ZSTD_CCOMMON_H_MODULE
@@ -39,32 +45,34 @@
 #include "mem.h"
 #include "xxhash.h"
 #include "zstd.h"
+#include "../fsw_efi_base.h"
 
 /**************************************
 *  shared macros
 ***************************************/
+#define MEMCPY_ALT(a, b, c) fsw_memcpy(a, b, c);
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
-#define CHECK_F(f)                       \
-	{                                \
-		size_t const errcod = f; \
-		if (ERR_isError(errcod)) \
-			return errcod;   \
+#define CHECK_F(f)                                      \
+    {                                                   \
+        size_t const errcod = f;                        \
+        if (ERR_isError(errcod))                        \
+            return errcod;                              \
 	} /* check and Forward error code */
-#define CHECK_E(f, e)                    \
-	{                                \
-		size_t const errcod = f; \
-		if (ZSTD_isError(errcod)) \
-			return ERROR(e); \
+#define CHECK_E(f, e)                                   \
+    {                                                   \
+        size_t const errcod = f;                        \
+        if (ZSTD_isError(errcod))                       \
+            return ERROR(e);                            \
 	} /* check and send Error code */
-#define ZSTD_STATIC_ASSERT(c)                                   \
-	{                                                       \
-		enum { ZSTD_static_assert = 1 / (int)(!!(c)) }; \
-	}
+#define ZSTD_STATIC_ASSERT(c)                           \
+    {                                                   \
+        enum { ZSTD_static_assert = 1 / (int)(!!(c)) }; \
+    }
 
 /**************************************
 *  Common constants
@@ -127,28 +135,27 @@ static const U32 OF_defaultNormLog = OF_DEFAULTNORMLOG;
 *  Shared functions to include for inlining
 *********************************************/
 ZSTD_STATIC void ZSTD_copy8(void *dst, const void *src) {
-	memcpy(dst, src, 8);
+    MEMCPY_ALT(dst, src, 8);
 }
 /*! ZSTD_wildcopy() :
 *   custom version of memcpy(), can copy up to 7 bytes too many (8 bytes if length==0) */
 #define WILDCOPY_OVERLENGTH 8
 ZSTD_STATIC void ZSTD_wildcopy(void *dst, const void *src, ptrdiff_t length)
 {
-	const BYTE* ip = (const BYTE*)src;
-	BYTE* op = (BYTE*)dst;
-	BYTE* const oend = op + length;
-	/* Work around https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81388.
-	 * Avoid the bad case where the loop only runs once by handling the
-	 * special case separately. This does not trigger the bug because it
-	 * does not involve pointer/integer overflow.
-	 */
-	if (length <= 8)
-		return ZSTD_copy8(dst, src);
-	do {
-		ZSTD_copy8(op, ip);
-		op += 8;
-		ip += 8;
-	} while (op < oend);
+    const BYTE* ip = (const BYTE*)src;
+    BYTE* op = (BYTE*)dst;
+    BYTE* const oend = op + length;
+    /* Work around https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81388.
+     * Avoid the bad case where the loop only runs once by handling the
+     * special case separately. This does not trigger the bug because it
+     * does not involve pointer/integer overflow.
+     */
+    if (length <= 8) return ZSTD_copy8(dst, src);
+    do {
+        ZSTD_copy8(op, ip);
+        op += 8;
+        ip += 8;
+    } while (op < oend);
 }
 
 /*======  common function  ======*/

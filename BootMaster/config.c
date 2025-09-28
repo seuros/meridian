@@ -62,8 +62,8 @@
 #include "../include/refit_call_wrapper.h"
 
 #define LINUX_OPTIONS_FILENAMES \
-L"refind_linux.conf,refind-linux.conf,\
-refindplus_linux.conf,refindplus-linux.conf"
+L"refindplus_linux.conf,refindplus-linux.conf,\
+refind_linux.conf,refind-linux.conf"
 
 #define ENCODING_ISO8859_1                  (0)
 #define ENCODING_UTF8                       (1)
@@ -290,18 +290,11 @@ VOID SyncShowTools (VOID) {
     }
 
     SetShowTools               =              TRUE;
-    GlobalConfig.ShowTools[0]  =         TAG_SHELL;
-    GlobalConfig.ShowTools[1]  =       TAG_MEMTEST;
-    GlobalConfig.ShowTools[2]  =         TAG_GDISK;
-    GlobalConfig.ShowTools[3]  =  TAG_RECOVERY_MAC;
-    GlobalConfig.ShowTools[4]  =  TAG_RECOVERY_WIN;
-    GlobalConfig.ShowTools[5]  =           TAG_MOK;
-    GlobalConfig.ShowTools[6]  =         TAG_ABOUT;
-    GlobalConfig.ShowTools[7]  =        TAG_HIDDEN;
-    GlobalConfig.ShowTools[8]  =      TAG_SHUTDOWN;
-    GlobalConfig.ShowTools[9]  =        TAG_REBOOT;
-    GlobalConfig.ShowTools[10] =      TAG_FIRMWARE;
-    GlobalConfig.ShowTools[11] =      TAG_FWUPDATE;
+    GlobalConfig.ShowTools[0]  =         TAG_ABOUT;
+    GlobalConfig.ShowTools[1]  =        TAG_HIDDEN;
+    GlobalConfig.ShowTools[2]  =    TAG_CSR_ROTATE;
+    GlobalConfig.ShowTools[3]  =     TAG_BOOTORDER;
+    GlobalConfig.ShowTools[4]  =      TAG_SHUTDOWN;
 } // static VOID SyncShowTools()
 
 // Returns FALSE if *p points to the end of a token, TRUE otherwise.
@@ -1223,9 +1216,8 @@ LOADER_ENTRY * InitializeStanza (
                         #endif
 
                         SetLoaderDefaults (
-                            StanzaEntry,
-                            TokenList[1],
-                            CurrentVolume
+                            StanzaEntry, TokenList[1],
+                            CurrentVolume, NULL
                         );
 
                         DefaultsSet = TRUE;
@@ -1303,7 +1295,10 @@ LOADER_ENTRY * InitializeStanza (
         MY_FREE_POOL(StanzaEntry->LoaderPath);
         StanzaEntry->LoaderPath = StrDuplicate (LoaderToken);
 
-        SetLoaderDefaults (StanzaEntry, LoaderToken, CurrentVolume);
+        SetLoaderDefaults (
+            StanzaEntry, LoaderToken,
+            CurrentVolume, NULL
+        );
         MY_FREE_POOL(LoaderToken);
 
         DefaultsSet = TRUE;
@@ -1383,7 +1378,7 @@ LOADER_ENTRY * InitializeStanza (
         SetLoaderDefaults (
             StanzaEntry,
             L"\\EFI\\BOOT\\bogusnemo.efi",
-            CurrentVolume
+            CurrentVolume, NULL
         );
     }
 
@@ -3756,7 +3751,9 @@ VOID ReadConfig (
             MY_FREE_POOL(GlobalConfig.FollowSymlinks);
             if (TokenCount == 1) {
                 // Token set alone
-                GlobalConfig.FollowSymlinks = StrDuplicate (L"ALL");
+                GlobalConfig.FollowSymlinks = StrDuplicate (
+                    SYM_TAG_ALL
+                );
             }
             else {
                 // Token set with parameters
@@ -3765,14 +3762,14 @@ VOID ReadConfig (
                     !MyStriCmp (TokenList[1], L"0")
                 ) {
                     GlobalConfig.FollowSymlinks = StrDuplicate (
-                        (TokenCount == 2) ? L"ALL" : TokenList[2]
+                        (TokenCount == 2) ? SYM_TAG_ALL : TokenList[2]
                     );
                 }
                 else {
                     GlobalConfig.FollowSymlinks = (TokenCount == 2)
-                        ? StrDuplicate (SYMLINK_VOLUMES_TAG)
+                        ? StrDuplicate (SYM_TAG_OFF)
                         : PoolPrint (
-                            L"%s,%s", SYMLINK_VOLUMES_TAG, TokenList[2]
+                            L"%s,%s", SYM_TAG_OFF, TokenList[2]
                         );
                 }
             }
@@ -3860,7 +3857,10 @@ VOID ReadConfig (
         }
         else if (
             !GotNoneNoBootLogo &&
-            MyStriCmp (TokenList[0], L"disable_bootlogo")
+            (
+                MyStriCmp (TokenList[0], L"disable_bootlogo_image") ||
+                MyStriCmp (TokenList[0], L"disable_bootlogo")
+            )
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop && !OutLoopNoBootLogo) {
@@ -3901,6 +3901,30 @@ VOID ReadConfig (
                     }
                 }
             } // for
+        }
+        else if (MyStriCmp (TokenList[0], L"disable_bootlogo_scale")) {
+            #if REFIT_DEBUG > 0
+            if (!OuterLoop) {
+                UpdatedToken = LogUpdate (
+                    TokenList[0], NotRunBefore, TRUE
+                );
+            }
+            #endif
+
+            DeclineSetting = HandleBoolean (TokenList, TokenCount);
+            GlobalConfig.BootLogoScale = (DeclineSetting) ? FALSE : TRUE;
+        }
+        else if (MyStriCmp (TokenList[0], L"disable_bootlogo_clear")) {
+            #if REFIT_DEBUG > 0
+            if (!OuterLoop) {
+                UpdatedToken = LogUpdate (
+                    TokenList[0], NotRunBefore, TRUE
+                );
+            }
+            #endif
+
+            DeclineSetting = HandleBoolean (TokenList, TokenCount);
+            GlobalConfig.BootLogoClear = (DeclineSetting) ? FALSE : TRUE;
         }
         else if (MyStriCmp (TokenList[0], L"supply_nvme")) {
             #if REFIT_DEBUG > 0

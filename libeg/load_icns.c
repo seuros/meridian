@@ -33,6 +33,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/**
+ * Modified for RefindPlus
+ * Copyright (c) 2025 Dayo Akanji (sf.net/u/dakanji/profile)
+ *
+ * Modifications distributed under the preceding terms.
+**/
 
 #include "libegint.h"
 
@@ -157,13 +163,15 @@ EG_IMAGE * egDecodeICNS (
                         DataLen = BlockLen - 12;
                     }
                 }
-                else if (Ptr[0] == 't' &&
-                        Ptr[1]  == '8' &&
-                        Ptr[2]  == 'm' &&
-                        Ptr[3]  == 'k'
-                ) {
-                    MaskPtr =      Ptr + 8;
-                    MaskLen = BlockLen - 8;
+                else {
+                    if (Ptr[0] == 't' &&
+                        Ptr[1] == '8' &&
+                        Ptr[2] == 'm' &&
+                        Ptr[3] == 'k'
+                    ) {
+                        MaskPtr =      Ptr + 8;
+                        MaskLen = BlockLen - 8;
+                    }
                 }
             }
             else if (IconSize == 48) {
@@ -175,13 +183,15 @@ EG_IMAGE * egDecodeICNS (
                     DataPtr =      Ptr + 8;
                     DataLen = BlockLen - 8;
                 }
-                else if (Ptr[0] == 'h' &&
-                        Ptr[1]  == '8' &&
-                        Ptr[2]  == 'm' &&
-                        Ptr[3]  == 'k'
-                ) {
-                    MaskPtr =      Ptr + 8;
-                    MaskLen = BlockLen - 8;
+                else {
+                    if (Ptr[0] == 'h' &&
+                        Ptr[1] == '8' &&
+                        Ptr[2] == 'm' &&
+                        Ptr[3] == 'k'
+                    ) {
+                        MaskPtr =      Ptr + 8;
+                        MaskLen = BlockLen - 8;
+                    }
                 }
             }
             else if (IconSize == 32) {
@@ -193,31 +203,37 @@ EG_IMAGE * egDecodeICNS (
                     DataPtr =      Ptr + 8;
                     DataLen = BlockLen - 8;
                 }
-                else if (Ptr[0] == 'l' &&
-                        Ptr[1]  == '8' &&
-                        Ptr[2]  == 'm' &&
-                        Ptr[3]  == 'k'
-                ) {
-                    MaskPtr =      Ptr + 8;
-                    MaskLen = BlockLen - 8;
+                else {
+                    if (Ptr[0] == 'l' &&
+                        Ptr[1] == '8' &&
+                        Ptr[2] == 'm' &&
+                        Ptr[3] == 'k'
+                    ) {
+                        MaskPtr =      Ptr + 8;
+                        MaskLen = BlockLen - 8;
+                    }
                 }
             }
-            else if (IconSize == 16) {
-                if (Ptr[0] == 'i' &&
-                    Ptr[1] == 's' &&
-                    Ptr[2] == '3' &&
-                    Ptr[3] == '2'
-                ) {
-                    DataPtr =      Ptr + 8;
-                    DataLen = BlockLen - 8;
-                }
-                else if (Ptr[0] == 's' &&
-                        Ptr[1]  == '8' &&
-                        Ptr[2]  == 'm' &&
-                        Ptr[3]  == 'k'
-                ) {
-                    MaskPtr =      Ptr + 8;
-                    MaskLen = BlockLen - 8;
+            else {
+                if (IconSize == 16) {
+                    if (Ptr[0] == 'i' &&
+                        Ptr[1] == 's' &&
+                        Ptr[2] == '3' &&
+                        Ptr[3] == '2'
+                    ) {
+                        DataPtr =      Ptr + 8;
+                        DataLen = BlockLen - 8;
+                    }
+                    else {
+                        if (Ptr[0] == 's' &&
+                            Ptr[1] == '8' &&
+                            Ptr[2] == 'm' &&
+                            Ptr[3] == 'k'
+                        ) {
+                            MaskPtr =      Ptr + 8;
+                            MaskLen = BlockLen - 8;
+                        }
+                    }
                 }
             }
             Ptr += BlockLen;

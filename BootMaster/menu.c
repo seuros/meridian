@@ -696,13 +696,13 @@ CHAR16 * GetScanCodeText (
         case SCAN_LEFT:      Retval = L"ARROW_LEFT"  ; break;
         case SCAN_DOWN:      Retval = L"ARROW_DOWN"  ; break;
         case SCAN_RIGHT:     Retval = L"ARROW_RIGHT" ; break;
-        case SCAN_ESC:       Retval = L"ESC-Rescan"  ; break;
-        case SCAN_DELETE:    Retval = L"DEL-Hide"    ; break;
-        case SCAN_INSERT:    Retval = L"INS-Details" ; break;
-        case SCAN_F2:        Retval = L"F2-Details"  ; break;
-        case SCAN_F10:       Retval = L"F10-ScrnShot"; break;
-        case 0x0016:         Retval = L"F12-Eject"   ; break;
-        default:             Retval = L"KEY_UNKNOWN" ; break;
+        case SCAN_ESC:       Retval = L"RESCAN_ESC"  ; break;
+        case SCAN_DELETE:    Retval = L"HIDE_DEL"    ; break;
+        case SCAN_INSERT:    Retval = L"DETAILS_INS" ; break;
+        case SCAN_F2:        Retval = L"DETAILS_F2"  ; break;
+        case SCAN_F10:       Retval = L"SCRNSHOT_F10"; break;
+        case 0x0016:         Retval = L"EJECT_F12"   ; break;
+        default:             Retval = L"UNKNOWN_KEY" ; break;
     } // switch
 
     return Retval;
@@ -714,7 +714,7 @@ static
 VOID ShowTextInfoLines (
     IN REFIT_MENU_SCREEN *Screen
 ) {
-    INTN i;
+    UINTN i;
 
 
     if (Screen->InfoLineCount == 0) {
@@ -729,7 +729,7 @@ VOID ShowTextInfoLines (
         gST->ConOut, ATTR_BASIC
     );
 
-    for (i = 0; i < (INTN)Screen->InfoLineCount; i++) {
+    for (i = 0; i < Screen->InfoLineCount; i++) {
         REFIT_CALL_3_WRAPPER(
             gST->ConOut->SetCursorPosition, gST->ConOut,
             3, 4 + i
@@ -2383,7 +2383,7 @@ UINTN DrawMenuScreen (
         // DA-TAG: Investigate This
         //         Toggle the selection once to work around failure to
         //         display the default selection on load in text mode.
-        //         This is a Workaround ... Proper solution needed.
+        //         This is a workaround ... Proper solution needed.
         if (!Rotated) {
             Rotated = TRUE;
             if (State.ScrollMode == SCROLL_MODE_TEXT) {
@@ -2774,10 +2774,16 @@ UINTN DrawMenuScreen (
     do {
         if (UserKeyPress || UserKeyScan) {
             OneMainLoop = TRUE;
-            break;
         }
 
+        // Ignore MenuExit if time between loading main menu and detecting
+        // an 'Enter' keypress is too low. Primed Keystroke Buffers appear
+        // to only affect UEFI PC and provision is not made for Apple Macs
+        if (AppleFirmware) break;
+
+        // Others to be ignored
         if (!IsMainMenu              ||
+            OneMainLoop              ||
             ClearedBuffer            ||
             FlushFailReset           ||
             GlobalConfig.DirectBoot  ||
@@ -2785,11 +2791,6 @@ UINTN DrawMenuScreen (
         ) {
             break;
         }
-
-        // Ignore MenuExit if time between loading main menu and detecting
-        // an 'Enter' keypress is too low. Primed Keystroke Buffers appear
-        // to only affect UEFI PC and provision is not made for Apple Macs
-        if (AppleFirmware) break;
 
         MenuExitNumb = 768; // 512 + 256
         MenuExitGate = MenuExitNumb;
@@ -2854,7 +2855,7 @@ VOID TextMenuStyle (
     BOOLEAN         CheckMute = FALSE;
     #endif
 
-    INTN            i;
+    UINTN           i;
     UINTN           MenuWidth;
     UINTN           ItemWidth;
     UINTN           MenuHeight;
@@ -2889,8 +2890,11 @@ VOID TextMenuStyle (
                 }
             }
 
+            i = (
+                ConWidth > 2
+            ) ? ConWidth - 3 : 0;
+
             MenuWidth += 2;
-            i = ConWidth - 3;
             if (MenuWidth > i) {
                 MenuWidth = i;
             }
@@ -3109,6 +3113,7 @@ VOID GraphicsMenuStyle (
 
     INTN      i;
     UINTN     TmpDim;
+    BOOLEAN   VetStr;
     EG_IMAGE *Window;
     EG_PIXEL *BackgroundPixel = &(
         GlobalConfig.ScreenBackground->PixelData[0]
@@ -3207,7 +3212,7 @@ VOID GraphicsMenuStyle (
             EntriesPosY += (TextLineHeight() * 2);
 
             if (Screen->InfoLineCount > 0) {
-                for (i = 0; i < (INTN) Screen->InfoLineCount; i++) {
+                for (i = 0; i < Screen->InfoLineCount; i++) {
                     DrawText (
                         Screen->InfoLines[i],
                         FALSE, LineWidth,
@@ -3222,9 +3227,13 @@ VOID GraphicsMenuStyle (
             }
 
             for (i = 0; i <= State->MaxIndex; i++) {
+                VetStr = MyStriCmp (
+                    Screen->Entries[i]->Title, GEN_TAG
+                );
+
                 DrawText (
-                    Screen->Entries[i]->Title,
-                    (i == State->CurrentSelection),
+                    (!VetStr) ? Screen->Entries[i]->Title : L"",
+                    (!VetStr) ? (i == State->CurrentSelection) : FALSE,
                     LineWidth,
                     EntriesPosX,
                     EntriesPosY + i * TextLineHeight()
@@ -3259,16 +3268,43 @@ VOID GraphicsMenuStyle (
                 EntriesPosY + State->PreviousSelection * TextLineHeight()
             );
 
+            VetStr = MyStriCmp (
+                Screen->Entries[State->CurrentSelection]->Title, GEN_TAG
+            );
+            if (VetStr) {
+                if (State->CurrentSelection > State->PreviousSelection) {
+                    if (State->CurrentSelection < State->MaxIndex) {
+                        State->CurrentSelection += 1;
+                    }
+                }
+                else {
+                    if (State->CurrentSelection < State->PreviousSelection) {
+                        if (State->CurrentSelection > 0) {
+                            State->CurrentSelection -= 1;
+                        }
+                    }
+                }
+            }
+
+            // DA-TAG: IMPORTANT ... Delibrate/Required
+            VetStr = MyStriCmp (
+                Screen->Entries[State->CurrentSelection]->Title, GEN_TAG
+            );
             DrawText (
-                Screen->Entries[State->CurrentSelection]->Title,
-                TRUE, LineWidth,
+                (!VetStr) ? Screen->Entries[State->CurrentSelection]->Title : L"",
+                (!VetStr) ? TRUE : FALSE,
+                LineWidth,
                 EntriesPosX,
                 EntriesPosY + (TextLineHeight() * State->CurrentSelection)
             );
 
         break;
         case MENU_FUNCTION_PAINT_TIMEOUT:
-            DrawText (ParamText, FALSE, LineWidth, EntriesPosX, TimeoutPosY);
+            DrawText (
+                ParamText,
+                FALSE, LineWidth,
+                EntriesPosX, TimeoutPosY
+            );
 
         break;
     } // switch
@@ -4295,6 +4331,7 @@ UINTN RunMainMenu (
         Screen->TimeoutSeconds = 0;
 
         BREAD_CRUMB(L"%a:  9a 3", __func__);
+        SubScreenBoot = FALSE;
         if (MenuExit == MENU_EXIT_DETAILS) {
             BREAD_CRUMB(L"%a:  9a 3a 1", __func__);
             if (TempChosenOption->SubScreen == NULL) {
@@ -4306,7 +4343,7 @@ UINTN RunMainMenu (
                 SubScreenBoot = TRUE;
 
                 BREAD_CRUMB(L"%a:  9a 3a 1b 1", __func__);
-                DefaultSubmenuIndex = -1;
+                DefaultSubmenuIndex = 9999;
                 MenuExit = DrawMenuScreen (
                     TempChosenOption->SubScreen,
                     Style,

@@ -229,7 +229,6 @@ Bug:
       - 'Parked'
       - 'Tagged'
       - 'Stale'
-      - 'Bug'
       - 'Noted'
       - 'Config'
       - 'Queries'

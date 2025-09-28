@@ -3,7 +3,7 @@
 
 #ifdef __MAKEWITH_GNUEFI
 
-#if defined (EFIX64) | defined (AARCH64)
+#if defined (EFIX64) || defined (EFIAARCH64)
 # define REFIT_CALL_1_WRAPPER(f, a1) \
   uefi_call_wrapper(f, 1, (UINT64)(a1))
 # define REFIT_CALL_2_WRAPPER(f, a1, a2) \

@@ -109,6 +109,10 @@ CHAR16 * GetSubStrBefore (
     IN CHAR16 *InputDelimiter,
     IN CHAR16 *String
 );
+CHAR16 * CapitalisedCase (
+    IN CHAR16  *InputString,
+    IN BOOLEAN  SpecialCases
+);
 
 VOID ToUpper (IN OUT CHAR16 *MyString);
 VOID ToLower (IN OUT CHAR16 *MyString);

@@ -92,7 +92,7 @@ memtest86_x64.efi,memtest86x64.efi,memtest86+x64.efi,x64_memtest86.efi,\
 memtest86p_x64.efi,memtest86px64.efi,memtest86p+x64.efi,x64_memtest86p.efi"
 #   define SKIPNAME_PATTERNS       L"*ia32*.efi,*aa64*.efi,*mips*.efi"
 #   define FALLBACK_FULLNAME       L"EFI\\BOOT\\bootx64.efi"
-#   define FALLBACK_BASENAME       L"bootx64.efi"
+#   define FALLBACK_BASENAME       L"BOOTx64.efi"
 #   define NETBOOT_FILES           L"ipxe.efi,ipxe_x64.efi,ipxex64.efi,x64_ipxe.efi"
 #   define GPTSYNC_FILES           L"gptsync.efi,gptsync_x64.efi,gptsyncx64.efi,x64_gptsync.efi"
 #   define GDISK_FILES             L"gdisk.efi,gdisk_x64.efi,gdiskx64.efi,x64_gdisk.efi"
@@ -104,7 +104,7 @@ L"bootia32.efi,memtest.efi,memtest_ia32.efi,\
 memtestia32.efi,memtest+ia32.efi,ia32_memtest.efi"
 #   define SKIPNAME_PATTERNS       L"*x64*.efi,*aa64*.efi,*mips*.efi"
 #   define FALLBACK_FULLNAME       L"EFI\\BOOT\\bootia32.efi"
-#   define FALLBACK_BASENAME       L"bootia32.efi"
+#   define FALLBACK_BASENAME       L"BOOTia32.efi"
 #   define NETBOOT_FILES           L"ipxe.efi,ipxe_ia32.efi,ipxeia32.efi,ia32_ipxe.efi"
 #   define GPTSYNC_FILES           L"gptsync.efi,gptsync_ia32.efi,gptsyncia32.efi,ia32_gptsync.efi"
 #   define GDISK_FILES             L"gdisk.efi,gdisk_ia32.efi,gdiskia32.efi,ia32_gdisk.efi"
@@ -112,24 +112,21 @@ memtestia32.efi,memtest+ia32.efi,ia32_memtest.efi"
 #   define NVRAMCLEAN_FILES        L"CleanNvram.efi,CleanNvramia32.efi,CleanNvram_ia32.efi,ia32_CleanNvram.efi"
 #elif defined (EFIAARCH64)
 #   define MEMTEST_FILES \
-L"bootaa64.efi,memtest.efi,memtest86.efi,memtest86p.efi,\
-memtest_aa64.efi,memtestaa64.efi,memtest+aa64.efi,aa64_memtest.efi,\
-memtest86_aa64.efi,memtest86aa64.efi,memtest86+aa64.efi,aa64_memtest86.efi,\
-memtest86p_aa64.efi,memtest86paa64.efi,memtest86p+aa64.efi,aa64_memtest86p.efi"
+L"bootaa64.efi,memtest.efi,memtest_aa64.efi,\
+memtestaa64.efi,memtest+aa64.efi,aa64_memtest.efi"
 #   define SKIPNAME_PATTERNS       L"*x64*.efi,*ia32*.efi,*mips*.efi"
 #   define FALLBACK_FULLNAME       L"EFI\\BOOT\\bootaa64.efi"
-#   define FALLBACK_BASENAME       L"bootaa64.efi"
+#   define FALLBACK_BASENAME       L"BOOTaa64.efi"
 #   define NETBOOT_FILES           L"ipxe.efi,ipxe_aa64.efi,ipxeaa64.efi,aa64_ipxe.efi"
 #   define GPTSYNC_FILES           L"gptsync.efi,gptsync_aa64.efi,gptsyncaa64.efi,aa64_gptsync.efi"
 #   define GDISK_FILES             L"gdisk.efi,gdisk_aa64.efi,gdiskaa64.efi,aa64_gdisk.efi"
 #   define SHELL_FILES             L"shell.efi,shell_aa64.efi,shellaa64.efi,aa64_shell.efi"
 #   define NVRAMCLEAN_FILES        L"CleanNvram.efi,CleanNvramaa64.efi,CleanNvram_aa64.efi,aa64_CleanNvram.efi"
 #else
-#   define MEMTEST_FILES \
-L"boot.efi,memtest.efi"
+#   define MEMTEST_FILES           L"boot.efi,memtest.efi"
 #   define SKIPNAME_PATTERNS       L"*x64*.efi,*ia32*.efi,*aa64*.efi,*mips*.efi"
 #   define FALLBACK_FULLNAME       L"EFI\\BOOT\\boot.efi" // Not really correct
-#   define FALLBACK_BASENAME       L"boot.efi"            // Not really correct
+#   define FALLBACK_BASENAME       L"BOOT.efi"            // Not really correct
 #   define NETBOOT_FILES           L"ipxe.efi"
 #   define GPTSYNC_FILES           L"gptsync.efi"
 #   define GDISK_FILES             L"gdisk.efi"
@@ -166,7 +163,8 @@ VOID ScanForBootloaders (VOID);
 VOID SetLoaderDefaults (
     IN LOADER_ENTRY *Entry,
     IN CHAR16       *LoaderPath,
-    IN REFIT_VOLUME *Volume
+    IN REFIT_VOLUME *Volume,
+    IN CHAR16       *ShowName OPTIONAL
 );
 VOID GenerateSubScreen (
     IN OUT LOADER_ENTRY *Entry,

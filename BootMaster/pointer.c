@@ -96,16 +96,20 @@ VOID pdCleanup (VOID) {
         }
     }
 
-    NumAPointerDevices = 0;
-    NumSPointerDevices = 0;
+    LastXPos = (
+        ScreenW > 1
+    ) ? ScreenW / 2 : ScreenW;
+    LastYPos = (
+        ScreenH > 1
+    ) ? ScreenH / 2 : ScreenH;
 
-    LastXPos = ScreenW / 2;
-    LastYPos = ScreenH / 2;
+    State.X        = LastXPos;
+    State.Y        = LastYPos;
+    State.Press    =    FALSE;
+    State.Holding  =    FALSE;
 
-    State.X  = ScreenW / 2;
-    State.Y  = ScreenH / 2;
-    State.Press    = FALSE;
-    State.Holding  = FALSE;
+    NumAPointerDevices    = 0;
+    NumSPointerDevices    = 0;
 
     #if REFIT_DEBUG > 0
     MsgStr = L"Disable Pointer Protocols ... Success";
@@ -137,7 +141,9 @@ VOID pdInitialize (VOID) {
 
 
     #if REFIT_DEBUG > 0
-    MsgStr = StrDuplicate (L"M A N A G E   P O I N T E R   D E V I C E S");
+    MsgStr = StrDuplicate (
+        L"M A N A G E   P O I N T E R   D E V I C E S"
+    );
     ALT_LOG(1, LOG_LINE_SEPARATOR, L"%s", MsgStr);
     LOG_MSG("%s", MsgStr);
     LOG_MSG("\n");
@@ -164,7 +170,9 @@ VOID pdInitialize (VOID) {
 
         #if REFIT_DEBUG > 0
         // DA-TAG: Use LOG_THREE_STAR_END for this instance
-        MsgStr = StrDuplicate (L"Running in 'Keyboard Only' Mode");
+        MsgStr = StrDuplicate (
+            L"Running in 'Keyboard Only' Mode"
+        );
         ALT_LOG(1, LOG_STAR_HEAD_SEP, L"%s", MsgStr);
         ALT_LOG(1, LOG_BLANK_LINE_SEP, L"X");
         LOG_MSG("\n\n");
@@ -178,7 +186,9 @@ VOID pdInitialize (VOID) {
     }
 
     #if REFIT_DEBUG > 0
-    MsgStr = StrDuplicate (L"Activate Pointer Devices:");
+    MsgStr = StrDuplicate (
+        L"Activate Pointer Devices:"
+    );
     ALT_LOG(1, LOG_LINE_NORMAL, L"%s", MsgStr);
     LOG_MSG("\n");
     LOG_MSG("%s", MsgStr);
@@ -228,9 +238,9 @@ VOID pdInitialize (VOID) {
                         #endif
                     }
                 } // for
-            }
-        }
-    } // if GlobalConfig.EnableTouch
+            } // if ProtocolA
+        } // if EFI_ERROR(HandleStatus)
+    } // if GlobalConfig.EnableTouch && !RunningOC
 
     #if REFIT_DEBUG > 0
     MsgStr = PoolPrint (
@@ -296,7 +306,7 @@ VOID pdInitialize (VOID) {
                 } // for
             } // if ProtocolS
         } // if/else EFI_ERROR(HandleStatus)
-    } // if GlobalConfig.EnableMouse
+    } // if GlobalConfig.EnableMouse && !RunningOC
 
     #if REFIT_DEBUG > 0
     MsgStr = PoolPrint (
@@ -308,7 +318,9 @@ VOID pdInitialize (VOID) {
     MY_FREE_POOL(MsgStr);
     #endif
 
-    if (!RunningOC && pdCount() == 0) {
+    if (!RunningOC &&
+        pdCount()  == 0
+    ) {
         MouseTouchActive = FALSE;
         PointerAvailable = FALSE;
     }
@@ -344,7 +356,10 @@ VOID pdInitialize (VOID) {
         Status = EFI_DEVICE_ERROR;
     }
 
-    MsgStr = PoolPrint (L"Enable Pointer Devices ... %r", Status);
+    MsgStr = PoolPrint (
+        L"Enable Pointer Devices ... %r",
+        Status
+    );
     ALT_LOG(1, LOG_LINE_NORMAL, L"%s", MsgStr);
     ALT_LOG(1, LOG_BLANK_LINE_SEP, L"X");
     LOG_MSG("\n\n");
@@ -474,8 +489,10 @@ EFI_STATUS pdUpdateState (VOID) {
     EFI_ABSOLUTE_POINTER_STATE APointerState;
 
 
+    Status = EFI_NOT_READY;
+
     if (pdNotUsed()) {
-        return EFI_NOT_READY;
+        return Status;
     }
 
     LastHolding = State.Holding;
@@ -608,6 +625,7 @@ VOID pdDraw (VOID) {
             );
         }
     }
+
     LastXPos = State.X;
     LastYPos = State.Y;
 } // VOID pdDraw()
@@ -632,7 +650,11 @@ VOID pdClear (
     }
 
     if (Background != NULL) {
-        egDrawImage (Background, LastXPos, LastYPos);
+        egDrawImage (
+            Background,
+            LastXPos,
+            LastYPos
+        );
         MY_FREE_IMAGE(Background);
     }
 

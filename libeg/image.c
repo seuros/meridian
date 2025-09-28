@@ -56,21 +56,18 @@
  */
 /*
  * Modified for RefindPlus
- * Copyright (c) 2021-2024 Dayo Akanji (sf.net/u/dakanji/profile)
+ * Copyright (c) 2021-2025 Dayo Akanji (sf.net/u/dakanji/profile)
  * Portions Copyright (c) 2021 Joe van Tunen (joevt@shaw.ca)
  *
  * Modifications distributed under the preceding terms.
  */
 
-#include "libegint.h"
 #include "../BootMaster/lib.h"
 #include "../BootMaster/global.h"
 #include "../BootMaster/screenmgt.h"
 #include "../BootMaster/mystrings.h"
 #include "../include/refit_call_wrapper.h"
-#include "../include/egemb_refindplus_banner.h"
-#include "../include/egemb_refindplus_banner_lorez.h"
-#include "../include/egemb_refindplus_banner_hidpi.h"
+#include "libegint.h"
 #include "lodepng.h"
 #include "libeg.h"
 
@@ -80,7 +77,7 @@
 // A value of 4096 should keep us within limits on 32-bit systems, but I've
 // seen some minor artifacts at this level, so give it a bit more precision
 // on 64-bit systems.
-#if defined(EFIX64) | defined(EFIAARCH64)
+#if defined(EFIX64) || defined(EFIAARCH64)
 #   define FP_MULTIPLIER (UINTN) 65536
 #else
 #   define FP_MULTIPLIER (UINTN) 4096
@@ -90,6 +87,8 @@
 #   define LibLocateHandle gBS->LocateHandleBuffer
 #   define LibOpenRoot EfiLibOpenRoot
 #endif
+
+extern BOOLEAN   BootLogoFlag;
 
 #if REFIT_DEBUG > 0
 extern BOOLEAN   DefaultBanner;
@@ -105,7 +104,9 @@ EG_IMAGE * egCreateImage (
     EG_IMAGE   *NewImage;
 
 
-    NewImage = (EG_IMAGE *) AllocatePool (sizeof (EG_IMAGE));
+    NewImage = (EG_IMAGE *) AllocatePool (
+        sizeof (EG_IMAGE)
+    );
     if (NewImage == NULL) {
         return NULL;
     }
@@ -114,7 +115,8 @@ EG_IMAGE * egCreateImage (
         Width * Height * sizeof (EG_PIXEL)
     );
     if (NewImage->PixelData == NULL) {
-        MY_FREE_IMAGE(NewImage);
+        // Delibrate as PixelData is NULL
+        MY_FREE_POOL(NewImage);
 
         return NULL;
     }
@@ -149,6 +151,7 @@ EG_IMAGE * egCopyImage (
     IN EG_IMAGE *Image
 ) {
     EG_IMAGE  *NewImage;
+    UINTN      ImgSize;
 
 
     if (Image == NULL) {
@@ -156,15 +159,18 @@ EG_IMAGE * egCopyImage (
     }
 
     NewImage = egCreateImage (
-        Image->Width, Image->Height, Image->HasAlpha
+        Image->Width,
+        Image->Height,
+        Image->HasAlpha
     );
     if (NewImage == NULL) {
         return NULL;
     }
 
+    ImgSize = Image->Width * Image->Height * sizeof (EG_PIXEL);
     REFIT_CALL_3_WRAPPER(
         gBS->CopyMem, NewImage->PixelData,
-        Image->PixelData, Image->Width * Image->Height * sizeof (EG_PIXEL)
+        Image->PixelData, ImgSize
     );
 
     return NewImage;
@@ -609,14 +615,16 @@ EG_IMAGE * egLoadIcon (
                     Status, Path
                 );
             }
-            else if (!AllowGraphicsMode) {
-                ALT_LOG(1, LOG_THREE_STAR_MID,
-                    L"In egLoadIcon ... Skip Icon Load (%s Mode):- '%s'",
-                    (GlobalConfig.DirectBoot)
-                        ? L"DirectBoot"
-                        : L"Text Screen",
-                     Path
-                );
+            else {
+                if (!AllowGraphicsMode) {
+                    ALT_LOG(1, LOG_THREE_STAR_MID,
+                        L"In egLoadIcon ... Skip Icon Load (%s Mode):- '%s'",
+                        (GlobalConfig.DirectBoot)
+                            ? L"DirectBoot"
+                            : L"Text Screen",
+                         Path
+                    );
+                }
             }
         }
         #endif
@@ -659,6 +667,10 @@ EG_IMAGE * egLoadIcon (
 
         // Early Return
         return NULL;
+    }
+
+    if (!GlobalConfig.BootLogoScale && BootLogoFlag) {
+        return Image;
     }
 
     if (Image->Width  != IconSize ||

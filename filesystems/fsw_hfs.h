@@ -63,7 +63,7 @@
 #undef int32_t
 #undef int64_t
 
-#pragma pack(1)
+#pragma pack(push, 1)
 #ifdef _MSC_VER
 /* vasily: disable warning for non-standard anonymous struct/union
  * declarations
@@ -86,7 +86,7 @@ struct fsw_hfs_key
   } HFS_ALIGNMENT;
 } HFS_ALIGNMENT;
 
-#pragma pack()
+#pragma pack(pop)
 
 typedef enum {
     /* Regular HFS */

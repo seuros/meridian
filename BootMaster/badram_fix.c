@@ -57,7 +57,7 @@ EFI_STATUS GetMemoryMapWithBuffer (
     // Allocate required memory map size
     Status = REFIT_CALL_3_WRAPPER(
         gBS->AllocatePool, EfiBootServicesData,
-        *MemoryMapSize, (void **)MemoryMap
+        *MemoryMapSize, (VOID **) MemoryMap
     );
     if (!EFI_ERROR(Status)) {
         // Second call to get actual memory map data
@@ -86,7 +86,7 @@ BOOLEAN IsPageInUse (
     IsInUse = FALSE;
     for (MemoryMapEntry = MemoryMap;
          (UINT8 *) MemoryMapEntry < (UINT8 *) MemoryMap + MemoryMapSize;
-         MemoryMapEntry = (EFI_MEMORY_DESCRIPTOR *) ((UINT8 *)MemoryMapEntry + DescriptorSize)
+         MemoryMapEntry = (EFI_MEMORY_DESCRIPTOR *) ((UINT8 *) MemoryMapEntry + DescriptorSize)
      ) {
         if (PageAddress >= MemoryMapEntry->PhysicalStart &&
             PageAddress <  MemoryMapEntry->PhysicalStart + (MemoryMapEntry->NumberOfPages * EFI_PAGE_SIZE)
@@ -135,7 +135,7 @@ BOOLEAN IsPageEmpty (
 
 
     Ptr = (UINT64 *) Address;
-    for (i = 0; i < (EFI_PAGE_SIZE / sizeof(UINT64)); i++) {
+    for (i = 0; i < (EFI_PAGE_SIZE / sizeof (UINT64)); i++) {
         if (Ptr[i] != 0) {
             return FALSE;
         }
@@ -266,7 +266,10 @@ EFI_STATUS ScanRAM (
          MemoryMapEntry = (EFI_MEMORY_DESCRIPTOR *) ((UINT8 *) MemoryMapEntry + DescriptorSize)
     ) {
         PageAddress = 0;
-        ValidTarget = IsQualifyingTarget (MemoryMapEntry->Type, OurFixWide);
+        ValidTarget = IsQualifyingTarget (
+            MemoryMapEntry->Type,
+            OurFixWide
+        );
         if (ValidTarget) {
             if (XStatus == EFI_NOT_READY) {
                 XStatus = EFI_SUCCESS;
@@ -274,7 +277,9 @@ EFI_STATUS ScanRAM (
 
             for (i = 0; i < MemoryMapEntry->NumberOfPages; i++) {
                 PageAddress = MemoryMapEntry->PhysicalStart + (i * EFI_PAGE_SIZE);
-                CheckMemory = TestMemory (PageAddress);
+                CheckMemory = TestMemory (
+                    PageAddress
+                );
                 PageInUse = IsPageInUse (
                     PageAddress, MemoryMap,
                     MemoryMapSize, DescriptorSize, OurFixWide
@@ -289,7 +294,9 @@ EFI_STATUS ScanRAM (
 
                     if (!RecordOnly) {
                         // Mark page as unusable
-                        Status = MarkPageUnusable (PageAddress);
+                        Status = MarkPageUnusable (
+                            PageAddress
+                        );
                     }
                 }
                 else {
@@ -304,7 +311,9 @@ EFI_STATUS ScanRAM (
 
                     if (OurFixType == 8 && !RecordOnly) {
                         // Mark page as reserved
-                        Status = MarkPageReserved (PageAddress);
+                        Status = MarkPageReserved (
+                            PageAddress
+                        );
                     }
                 }
 
@@ -328,10 +337,14 @@ EFI_STATUS ScanRAM (
     MY_MUTELOGGER_SET;
     #endif
     if (BadRamInfo == NULL) {
-        BadRamInfo = StrDuplicate (L"AllGood");
+        BadRamInfo = StrDuplicate (
+            L"AllGood"
+        );
     }
 
-    ListSize = (StrLen (BadRamInfo) + 1) * sizeof (CHAR16);
+    ListSize = StrSize (
+        BadRamInfo
+    );
     EfivarSetRaw (
         &RefindPlusGuid, L"BadRamInfo",
         BadRamInfo, ListSize, TRUE

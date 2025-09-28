@@ -6,6 +6,8 @@
     - Linux `EFISTUB` images without `PE32` signatures were tagged `invalid`
     - Now considered valid if a `LINUX_PE_MAGIC` signature is found instead
     - Ref: https://github.com/torvalds/linux/blob/master/include/linux/pe.h
+- Fixes Scanning Linux Setups That Lack `Initrd` Files. Thanks @Mardekaar
+- Fixes Issues with Using the `banner_scale` Setting. Thanks @Mardekaar
 - Fixes `Auto Defined BadRAM` Handling
   * This element of the `TagBadRAM` feature was previously a `NOOP`
 - Improves `FollowSymlinks` Handling
@@ -30,6 +32,25 @@
     - German, Spanish, French, Portuguese, Italian, Finnish, Dutch, Croatian
   * English is still given preference for technical reasons
   * TODO: Process that does not rely on this tag is best.
+- Improves `BootLogo` Handling
+  * Auto scaling of BootLogo image can now be skipped
+    - Via a new `disable_bootlogo_scale` configuration token
+  * Final clearing of BootLogo image can now be skipped
+    - Via a new `disable_bootlogo_clear` configuration token
+  * Adjusted image loading priority as follows:
+    - `boot_outlogo.[xyz]` file will be used if present
+    - `boot_[distro].[xyz]` will be used if present otherwise
+    - `os_[distro].[xyz]` will be used if present otherwise
+    - `os_[type].[xyz]` will be used if present otherwise
+    - Nothing will be displayed as boot logo otherwise
+  * Renames Configuration Token
+    - `disable_bootlogo` to `disable_bootlogo_image`
+- Amends Linux Options Definition File, `xyz_linux.conf`, Handling
+  * Now prioritises `refindplus_linux` and `refindplus-linux` conf files
+  * Upstream variants are now only sought if these are not found
+- Amends `ShowTools` Handling
+  * The default list is now limited to `internal` tools
+  * That is, tools that do not require external binaries
 
 
 0.14.2.AC (03 JUN 2025):

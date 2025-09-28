@@ -19,6 +19,8 @@
 #include "screenmgt.h"
 #include "../include/refit_call_wrapper.h"
 
+#define MAX_WORD_LEN    (64)
+
 BOOLEAN NestedStrStr = FALSE;
 
 
@@ -61,6 +63,238 @@ BOOLEAN IsValidStrComp (
     // String1 is shorter than or equal to String2
     return TRUE;
 } // static BOOLEAN IsValidStrComp()
+
+/*
+ * Routine Description:
+ *
+ *  Starts each word in string with uppercase character.
+ *
+ * Arguments:
+ *
+ *  InputString  - Null-terminated string to process.
+ *  SpecialCases - Change output for 'rEFIt-linux' files.
+ *
+ * Returns:
+ *  Converted string
+ */
+CHAR16 * CapitalisedCase (
+    IN CHAR16  *InputString,
+    IN BOOLEAN  SpecialCases
+) {
+    UINTN      WordLen, i;
+    UINTN      IndexIn;
+    UINTN      IndexOut;
+    CHAR16     StringChar;
+    CHAR16    *ResultString;
+    CHAR16     WordBuffer[MAX_WORD_LEN];
+    BOOLEAN    HandleCase;
+
+
+    if (InputString == NULL) {
+        return NULL;
+    }
+
+    if (!SpecialCases) {
+        // DA_TAG: Standard buffer size
+        ResultString = AllocatePool (
+            StrSize (InputString)
+        );
+    }
+    else {
+        // DA_TAG: Increased buffer size
+        ResultString = AllocatePool (
+            StrSize (InputString) * 2
+        );
+    }
+    if (ResultString == NULL) {
+        return NULL;
+    }
+
+    IndexIn  = 0;
+    IndexOut = 0;
+
+    while (1) {
+        StringChar = InputString[IndexIn];
+        if (StringChar == L'\0') {
+            break;
+        }
+
+        // Handle word characters
+        if ((
+                (StringChar < L'a') ||
+                (StringChar > L'z')
+            ) && (
+                (StringChar < L'A') ||
+                (StringChar > L'Z')
+            )
+        ) {
+            if (StringChar != L'-') {
+                // Whitespace/Other: Copy as-is
+                ResultString[IndexOut] = StringChar;
+            }
+            else {
+                if (InputString[IndexIn + 1] == L'\0') {
+                    ResultString[IndexOut] = StringChar;
+                }
+                else {
+                    if ((
+                            (InputString[IndexIn + 1] < L'a') ||
+                            (InputString[IndexIn + 1] > L'z')
+                        ) && (
+                            (InputString[IndexIn + 1] < L'A') ||
+                            (InputString[IndexIn + 1] > L'Z')
+                        )
+                    ) {
+                        // Whitespace/Other: Copy as-is
+                        ResultString[IndexOut] = StringChar;
+                    }
+                    else {
+                        if (IndexIn == 0) {
+                            // Whitespace/Other: Copy as-is
+                            ResultString[IndexOut] = StringChar;
+                        }
+                        else {
+                            if ((
+                                    (InputString[IndexIn - 1] < L'a') ||
+                                    (InputString[IndexIn - 1] > L'z')
+                                ) && (
+                                    (InputString[IndexIn - 1] < L'A') ||
+                                    (InputString[IndexIn - 1] > L'Z')
+                                )
+                            ) {
+                                // Whitespace/Other: Copy as-is
+                                ResultString[IndexOut] = StringChar;
+                            }
+                            else {
+                                // Hyphen: Replace with space
+                                ResultString[IndexOut] = L' ';
+                            }
+                        }
+                    }
+                }
+            }
+
+            IndexIn  += 1;
+            IndexOut += 1;
+
+            continue;
+        } // if StringChar
+
+        // Start collecting a word
+        WordLen = 0;
+        while (
+            (
+                (StringChar >= L'a') &&
+                (StringChar <= L'z')
+            ) || (
+                (StringChar >= L'A') &&
+                (StringChar <= L'Z')
+            )
+        ) {
+            if (WordLen < (MAX_WORD_LEN - 1)) {
+                WordBuffer[WordLen] = StringChar;
+
+                WordLen += 1;
+            }
+            IndexIn += 1;
+
+            StringChar = InputString[IndexIn];
+        } // while
+        if (WordLen == 0) continue;
+
+        WordBuffer[WordLen] = L'\0';
+
+        if (!SpecialCases) {
+            HandleCase = TRUE;
+        }
+        else {
+            HandleCase = FALSE;
+
+            // Handle "to" and "with" replacements
+            if (MyStriCmp (
+                    WordBuffer,
+                    L"to"
+                )
+            ) {
+                // Replace "to" with "into"
+                ResultString[IndexOut++] = L'i';
+                ResultString[IndexOut++] = L'n';
+                ResultString[IndexOut++] = L't';
+                ResultString[IndexOut++] = L'o';
+            }
+            else if (
+                MyStriCmp (
+                    WordBuffer,
+                    L"with"
+                )
+            ) {
+                // Force "with" to lowercase
+                ResultString[IndexOut++] = L'w';
+                ResultString[IndexOut++] = L'i';
+                ResultString[IndexOut++] = L't';
+                ResultString[IndexOut++] = L'h';
+            }
+            else if (
+                MyStriCmp (
+                    WordBuffer,
+                    L"into"
+                )
+            ) {
+                // Force "into" to lowercase
+                ResultString[IndexOut++] = L'i';
+                ResultString[IndexOut++] = L'n';
+                ResultString[IndexOut++] = L't';
+                ResultString[IndexOut++] = L'o';
+            }
+            else if (
+                MyStriCmp (
+                    WordBuffer,
+                    L"standard"
+                )
+            ) {
+                // Replace "standard" with "Default"
+                ResultString[IndexOut++] = L'D';
+                ResultString[IndexOut++] = L'e';
+                ResultString[IndexOut++] = L'f';
+                ResultString[IndexOut++] = L'a';
+                ResultString[IndexOut++] = L'u';
+                ResultString[IndexOut++] = L'l';
+                ResultString[IndexOut++] = L't';
+            }
+            else {
+                HandleCase = TRUE;
+            }
+        } // if !SpecialCases
+        if (!HandleCase) continue;
+
+        // Capitalise first letter
+        if (WordBuffer[0] >= L'a' &&
+            WordBuffer[0] <= L'z'
+        ) {
+            ResultString[IndexOut++] = WordBuffer[0] - L'a' + L'A';
+        }
+        else {
+            ResultString[IndexOut++] = WordBuffer[0];
+        }
+
+        // Keep rest as original
+        for (i = 1; i < WordLen; i++) {
+            ResultString[IndexOut++] = WordBuffer[i];
+        } // for
+    } // while {Infinite}
+
+    // Null-terminate
+    ResultString[IndexOut] = L'\0';
+
+    if (SpecialCases) {
+        ReplaceSubstring (
+            &ResultString,
+            L"Single User", L"SingleUser"
+        );
+    }
+
+    return ResultString;
+} // CHAR16 * CapitalisedCase()
 
 /*
  * Routine Description:
@@ -214,7 +448,10 @@ EFI_STATUS SafeStrCat (
         Dest[DestSize - 1] = L'\0';
     }
 
-    Status = StrnCatS (Dest, DestSize, Src, StrLen (Src));
+    Status = StrnCatS (
+        Dest, DestSize,
+        Src, StrLen (Src)
+    );
     return Status;
 } // EFI_STATUS SafeStrCat()
 
@@ -226,13 +463,19 @@ BOOLEAN MyStriCmp (
     IN CHAR16 *String1,
     IN CHAR16 *String2
 ) {
-    if (String1 == NULL || String2 == NULL) {
+    if (String1 == NULL ||
+        String2 == NULL
+    ) {
         return FALSE;
     }
 
-    while ((*String1 != L'\0') &&
-        ((*String1 & ~0x20) == (*String2 & ~0x20))
-    ) {
+    while (*String1 != L'\0') {
+        if ((*String1 | 0x20) !=
+            (*String2 | 0x20)
+        ) {
+            break;
+        }
+
         String1++;
         String2++;
     } // while
@@ -263,8 +506,8 @@ BOOLEAN MyStrBegins (
     // Compare from the start of each string
     // 'IsGood' is curently 'TRUE'
     for (i = 0; i < Len1; i++) {
-        if ((String1[i] & ~0x20) !=
-            (String2[i] & ~0x20)
+        if ((CHAR16)(String1[i] | 0x20) !=
+            (CHAR16)(String2[i] | 0x20)
         ) {
             // Exit ... Mismatch found
             IsGood = FALSE;
@@ -301,8 +544,8 @@ BOOLEAN MyStrEnds (
     // Compare from the end of each string
     // 'IsGood' is curently 'TRUE'
     for (i = 0; i < Len1; i++) {
-        if ((String1[Len1 - 1 - i] & ~0x20) !=
-            (String2[Len2 - 1 - i] & ~0x20)
+        if ((String1[Len1 - 1 - i] | 0x20) !=
+            (String2[Len2 - 1 - i] | 0x20)
         ) {
             // Exit ... Mismatch found
             IsGood = FALSE;
@@ -338,8 +581,8 @@ CHAR16 * MyStrStr (
     if (!NestedStrStr) LOG_SEP(L"X");
     LOG_INCREMENT();
     BREAD_CRUMB(L"%a:  1 - START:- Find '%s' in '%s'", __func__,
-        StrCharSet ? StrCharSet : L"NULL",
-        String     ? String     : L"NULL"
+        (StrCharSet != NULL) ? StrCharSet : L"NULL",
+        (String     != NULL) ? String     : L"NULL"
     );
     if (String == NULL || StrCharSet == NULL) {
         BREAD_CRUMB(L"%a:  return 'NULL'", __func__);
@@ -418,7 +661,7 @@ BOOLEAN IsStriStr (
             Terminate = TRUE;
         }
 
-        if ((SmallStr[SmallIndex] & ~0x20) == (BigStr[BigIndex] & ~0x20)) {
+        if ((SmallStr[SmallIndex] | 0x20) == (BigStr[BigIndex] | 0x20)) {
             SmallIndex++;
             BigIndex++;
         }
@@ -457,8 +700,8 @@ BOOLEAN FindSubStr (
     LOG_SEP(L"X");
     LOG_INCREMENT();
     BREAD_CRUMB(L"%a:  1 - START:- Find '%s' in '%s'", __func__,
-        RawStrCharSet ? RawStrCharSet : L"NULL",
-        RawString     ? RawString     : L"NULL"
+        (RawStrCharSet != NULL) ? RawStrCharSet : L"NULL",
+        (RawString     != NULL) ? RawString     : L"NULL"
     );
     if (RawString == NULL || RawStrCharSet == NULL) {
         BREAD_CRUMB(L"%a:  return 'FALSE'", __func__);
@@ -472,7 +715,7 @@ BOOLEAN FindSubStr (
     FoundStr = IsStriStr (RawString, RawStrCharSet);
 
     BREAD_CRUMB(L"%a:  3 - END:- return BOOLEAN FoundStr = '%s'", __func__,
-        FoundStr ? L"TRUE" : L"FALSE"
+        (FoundStr) ? L"TRUE" : L"FALSE"
     );
     LOG_DECREMENT();
     LOG_SEP(L"X");
@@ -609,11 +852,15 @@ VOID MergeStringsHelper (
     }
 
     Length1 = StrLen (*First);
-    Length2 = (Second != NULL) ? StrLen (Second) : 0;
+    Length2 = (
+        Second != NULL
+    ) ? StrLen (Second) : 0;
 
     // DA-TAG: Added 2 for AddChar and null terminator
     BufSize = Length1 + Length2 + 2;
-    NewString = AllocatePool (BufSize * sizeof (CHAR16));
+    NewString = AllocatePool (
+        BufSize * sizeof (CHAR16)
+    );
     if (NewString == NULL) {
         return;
     }
@@ -624,10 +871,18 @@ VOID MergeStringsHelper (
 
     NewString[0] = L'\0';
     if (*First != NULL) {
-        SafeStrCat (NewString, BufSize, *First);
+        SafeStrCat (
+            NewString,
+            BufSize,
+            *First
+        );
 
         if (AddChar) {
-            StrnCatS (NewString, BufSize, &AddChar, 1);
+            StrnCatS (
+                NewString,
+                BufSize,
+                &AddChar, 1
+            );
         }
     }
 
@@ -653,11 +908,17 @@ VOID MergeStringsHelper (
         }
 
         if (!SkipMerge) {
-            SafeStrCat (NewString, BufSize, Second);
+            SafeStrCat (
+                NewString,
+                BufSize,
+                Second
+            );
         }
-        else if (AddChar) {
-            // Remove AddChar if not merging this item
-            NewString[Length1] = L'\0';
+        else {
+            if (AddChar) {
+                // Remove AddChar if not merging this item
+                NewString[Length1] = L'\0';
+            }
         }
     }
 
@@ -683,7 +944,10 @@ VOID MergeStrings (
     LOG_INCREMENT();
     BREAD_CRUMB(L"%a:  1 - START", __func__);
 
-    MergeStringsHelper (First, Second, AddChar, FALSE);
+    MergeStringsHelper (
+        First, Second,
+        AddChar, FALSE
+    );
 
     BREAD_CRUMB(L"%a:  2 - END", __func__);
     LOG_DECREMENT();
@@ -700,7 +964,10 @@ VOID MergeUniqueStrings (
     LOG_INCREMENT();
     BREAD_CRUMB(L"%a:  1 - START", __func__);
 
-    MergeStringsHelper (First, Second, AddChar, TRUE);
+    MergeStringsHelper (
+        First, Second,
+        AddChar, TRUE
+    );
 
     BREAD_CRUMB(L"%a:  2 - END", __func__);
     LOG_DECREMENT();
@@ -722,7 +989,9 @@ VOID MergeWordsHelper (
         return;
     }
 
-    Temp = Word = p = StrDuplicate (InString);
+    Temp = Word = p = StrDuplicate (
+        InString
+    );
     if (Temp) {
         LineFinished = FALSE;
 
@@ -743,10 +1012,18 @@ VOID MergeWordsHelper (
 
                 if (*Word != L'\0') {
                     if (UniqueOnly) {
-                        MergeUniqueStrings (MergeTo, Word, AddChar);
+                        MergeUniqueStrings (
+                            MergeTo,
+                            Word,
+                            AddChar
+                        );
                     }
                     else {
-                        MergeStrings (MergeTo, Word, AddChar);
+                        MergeStrings (
+                            MergeTo,
+                            Word,
+                            AddChar
+                        );
                     }
                 }
 
@@ -768,7 +1045,10 @@ VOID MergeWords (
     CHAR16  *InString,
     CHAR16   AddChar
 ) {
-    MergeWordsHelper (MergeTo, InString, AddChar, FALSE);
+    MergeWordsHelper (
+        MergeTo, InString,
+        AddChar, FALSE
+    );
 } // VOID MergeWords()
 
 // As MergeWords, but only unique words are merged
@@ -777,7 +1057,10 @@ VOID MergeUniqueWords (
     CHAR16  *InString,
     CHAR16   AddChar
 ) {
-    MergeWordsHelper (MergeTo, InString, AddChar, TRUE);
+    MergeWordsHelper (
+        MergeTo, InString,
+        AddChar, TRUE
+    );
 } // VOID MergeUniqueWords()
 
 // As MergeUniqueWords, but items are separated by ','
@@ -801,7 +1084,11 @@ VOID MergeUniqueItems (
         );
         if (Item == NULL) break;
 
-        MergeUniqueStrings (MergeTo, Item, AddChar);
+        MergeUniqueStrings (
+            MergeTo,
+            Item,
+            AddChar
+        );
         MY_FREE_POOL(Item);
     } // while {Infinite}
 } // VOID MergeUniqueItems()
@@ -820,7 +1107,9 @@ CHAR16 * SanitiseString (
     }
 
     OutString = NULL;
-    Temp = Word = p = StrDuplicate (InString);
+    Temp = Word = p = StrDuplicate (
+        InString
+    );
     if (Temp) {
         LineFinished = FALSE;
 
@@ -840,7 +1129,10 @@ CHAR16 * SanitiseString (
                 *p = L'\0';
 
                 if (*Word != L'\0') {
-                    MergeStrings (&OutString, Word, L' ');
+                    MergeStrings (
+                        &OutString,
+                        Word, L' '
+                    );
                 }
 
                 Word = p + 1;
@@ -853,7 +1145,9 @@ CHAR16 * SanitiseString (
     }
 
     if (OutString == NULL) {
-        OutString = StrDuplicate (InString);
+        OutString = StrDuplicate (
+            InString
+        );
     }
 
     return OutString;
@@ -908,14 +1202,21 @@ BOOLEAN LimitStringLength (
             SubString[0] = '\0';
         }
         else {
-            TempString = StrDuplicate (&SubString[i]);
+            TempString = StrDuplicate (
+                &SubString[i]
+            );
             if (TempString == NULL) {
                 // Memory Allocation Problem ... abort to avoid potential infinite loop!
                 break;
             }
 
-            DestSize = StrSize (&SubString[1]) / sizeof (CHAR16);
-            StrCpyS (&SubString[1], DestSize, TempString);
+            DestSize = StrSize (
+                &SubString[1]
+            ) / sizeof (CHAR16);
+            StrCpyS (
+                &SubString[1],
+                DestSize, TempString
+            );
             MY_FREE_POOL(TempString);
         }
 
@@ -925,7 +1226,9 @@ BOOLEAN LimitStringLength (
     //BREAD_CRUMB(L"%a:  4 - WHILE LOOP:- END/EXIT", __func__);
 
     // Truncate if still too long.
-    WasTruncated = TruncateString (TheString, Limit);
+    WasTruncated = TruncateString (
+        TheString, Limit
+    );
 
     //BREAD_CRUMB(L"%a:  5", __func__);
     if (!HasChanged) {
@@ -934,7 +1237,7 @@ BOOLEAN LimitStringLength (
     }
 
     BREAD_CRUMB(L"%a:  6 - END:- return BOOLEAN HasChanged = '%s'", __func__,
-        HasChanged ? L"TRUE" : L"FALSE"
+        (HasChanged) ? L"TRUE" : L"FALSE"
     );
     LOG_DECREMENT();
     LOG_SEP(L"X");
@@ -992,7 +1295,7 @@ CHAR16 * FindNumbers (
         ExtraFound = MyStrStr (InString, LookFor);
         if (ExtraFound != NULL) {
             StartOfElement = ExtraFound - InString;
-            EndOfElement   = StartOfElement + StrLen (LookFor) - 1;
+            EndOfElement = (StrLen (LookFor) + StartOfElement) - 1;
         }
 
         MY_FREE_POOL(LookFor);
@@ -1017,7 +1320,9 @@ CHAR16 * FindNumbers (
         if (EndOfElement >= StartOfElement) {
             CopyLength = EndOfElement - StartOfElement + 1;
 
-            Found = StrDuplicate (&InString[StartOfElement]);
+            Found = StrDuplicate (
+                &InString[StartOfElement]
+            );
             if (Found != NULL) {
                 Found[CopyLength] = 0;
             }
@@ -1118,7 +1423,9 @@ CHAR16 * FindCommaDelimited (
 
     FoundString = NULL;
     if (Index == 0)  {
-        FoundString = StrDuplicate (&InString[StartPos]);
+        FoundString = StrDuplicate (
+            &InString[StartPos]
+        );
     }
 
     if (FoundString != NULL) {
@@ -1166,9 +1473,13 @@ BOOLEAN DeleteItemFromCsvList (
         else {
             // 'Found' is NOT the final element
             TmpStr = PoolPrint (L",%s", ToDelete);
-            PartA = GetSubStrBefore (TmpStr, *List);
+            PartA = GetSubStrBefore (
+                TmpStr, *List
+            );
             if (PartA == *List) {
-                PartA = GetSubStrBefore (ToDelete, *List);
+                PartA = GetSubStrBefore (
+                    ToDelete, *List
+                );
                 if (MyStriCmp (PartA, *List)) {
                     PartA = NULL;
                 }
@@ -1176,9 +1487,13 @@ BOOLEAN DeleteItemFromCsvList (
             MY_FREE_POOL(TmpStr);
 
             TmpStr = PoolPrint (L"%s,", ToDelete);
-            PartB = GetSubStrAfter (TmpStr, *List);
+            PartB = GetSubStrAfter (
+                TmpStr, *List
+            );
             if (PartB == *List) {
-                PartB = GetSubStrAfter (ToDelete, *List);
+                PartB = GetSubStrAfter (
+                    ToDelete, *List
+                );
                 if (MyStriCmp (PartB, *List)) {
                     PartB = NULL;
                 }
@@ -1189,13 +1504,20 @@ BOOLEAN DeleteItemFromCsvList (
                 MY_FREE_POOL(*List);
 
                 if (PartA != NULL && PartB != NULL) {
-                    *List = PoolPrint (L"%s,%s", PartA, PartB);
+                    *List = PoolPrint (
+                        L"%s,%s",
+                        PartA, PartB
+                    );
                 }
                 else if (PartA != NULL) {
-                    *List = StrDuplicate (PartA);
+                    *List = StrDuplicate (
+                        PartA
+                    );
                 }
                 else {
-                    *List = StrDuplicate (PartB);
+                    *List = StrDuplicate (
+                        PartB
+                    );
                 }
             }
         }
@@ -1216,7 +1538,9 @@ BOOLEAN IsIn (
         return FALSE;
     }
 
-    return IsListItem (SmallString, List);
+    return IsListItem (
+        SmallString, List
+    );
 } // BOOLEAN IsIn()
 
 // Replaced by IsListItemSubstringIn.
@@ -1229,7 +1553,9 @@ BOOLEAN IsInSubstring (
         return FALSE;
     }
 
-    return IsListItemSubstringIn (BigString, List);
+    return IsListItemSubstringIn (
+        BigString, List
+    );
 } // BOOLEAN IsInSubstring()
 
 // Returns TRUE if TestString matches a pattern in the comma-delimited List,
@@ -1358,9 +1684,9 @@ BOOLEAN ReplaceSubstring (
     LOG_SEP(L"X");
     LOG_INCREMENT();
     BREAD_CRUMB(L"%a:  1 - START:- Replace '%s' with '%s' in '%s'", __func__,
-        SearchString ? SearchString : L"NULL",
-        ReplString   ? ReplString   : L"NULL",
-        *MainString  ? *MainString  : L"NULL"
+        (SearchString != NULL) ? SearchString : L"NULL",
+        (ReplString   != NULL) ? ReplString   : L"NULL",
+        (*MainString  != NULL) ? *MainString  : L"NULL"
     );
     if (*MainString == NULL || SearchString == NULL || ReplString == NULL) {
         BREAD_CRUMB(L"%a:  1a - END:- return BOOLEAN 'FALSE' ... NULL Input!!", __func__);
@@ -1480,9 +1806,12 @@ UINT64 StrToHex (
         return 0;
     }
 
-    Input = GetSubStrAfter (L"0x", OurStr);
-
-    if (NumChars == 0 || NumChars > 16) {
+    Input = GetSubStrAfter (
+        L"0x", OurStr
+    );
+    if (NumChars == 0 ||
+        NumChars > 16
+    ) {
         return 0;
     }
 
@@ -1709,12 +2038,13 @@ VOID MyUnicodeFilterString (
 
             break;
         }
-        else if (
-            *String < 0x20 ||
-            *String == 0x7F
-        ) {
-            // Drop all unprintable spaces but space including tabs.
-            *String = L'_';
+        else {
+            if (*String < 0x20 ||
+                *String == 0x7F
+            ) {
+                // Drop all unprintable spaces but space including tabs.
+                *String = L'_';
+            }
         }
 
         ++String;
