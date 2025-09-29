@@ -4118,7 +4118,6 @@ EFI_STATUS EFIAPI efi_main (
     LOG_MSG("%s      SyncAPFS:- '%s'",       TAG_ITEM_C(GlobalConfig.SyncAPFS     ));
     LOG_MSG("%s      HelpIcon:- '%s'",       TAG_ITEM_C(GlobalConfig.HelpIcon     ));
     LOG_MSG("%s      CheckDXE:- '%s'",       TAG_ITEM_C(GlobalConfig.RescanDXE    ));
-
     LOG_MSG("%s      TextOnly:- ",           OffsetNext                            );
     if (ForceTextOnly) {
         LOG_MSG("'Forced'"                                                         );
@@ -4126,19 +4125,18 @@ EFI_STATUS EFIAPI efi_main (
     else {
         LOG_MSG("'%s'", (GlobalConfig.TextOnly) ? L"Active" : L"Inactive"          );
     }
-    LOG_MSG("%s      DirectGOP:- '%s'",      TAG_ITEM_C(GlobalConfig.UseDirectGop ));
 
+    LOG_MSG("%s      DirectGOP:- '%s'",      TAG_ITEM_C(GlobalConfig.UseDirectGop ));
+    LOG_MSG("%s      ScanAllESP:- '%s'",     TAG_ITEM_C(GlobalConfig.ScanAllESP   ));
     LOG_MSG("%s      LegacySync:- ",         OffsetNext                            );
     if (!AppleFirmware) {
         LOG_MSG("'Disabled'"                                                       );
     }
     else {
-        LOG_MSG("'%s'", (GlobalConfig.LegacySync) ? L"Enabled" : L"Inactive"       );
+        LOG_MSG("'%s'", (GlobalConfig.LegacySync) ? L"Active" : L"Inactive"        );
     }
 
-    LOG_MSG("%s      ScanAllESP:- '%s'",     TAG_ITEM_C(GlobalConfig.ScanAllESP   ));
     LOG_MSG("%s      DirectBoot:- '%s'",     TAG_ITEM_C(GlobalConfig.DirectBoot   ));
-
     LOG_MSG("%s      ProtectNvram:- ",       OffsetNext                            );
     if (!AppleFirmware || RunningOC) {
         if (!AppleFirmware) {
@@ -4152,6 +4150,8 @@ EFI_STATUS EFIAPI efi_main (
         LOG_MSG("'%s'", (GlobalConfig.NvramProtect) ? L"Active" : L"Inactive"      );
     }
 
+    LOG_MSG("%s      BootLogoClear:- '%s'",   TAG_ITEM_C(GlobalConfig.BootLogoClear));
+    LOG_MSG("%s      BootLogoScale:- '%s'",   TAG_ITEM_C(GlobalConfig.BootLogoScale));
     LOG_MSG("%s      RansomDrives:- ",       OffsetNext                            );
     if (AppleFirmware) {
         LOG_MSG("'Disabled'"                                                       );

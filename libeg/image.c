@@ -232,6 +232,9 @@ EG_IMAGE * egScaleImage (
     UINTN      x_diff, y_diff;
     UINTN      x_ratio, y_ratio;
 
+    if (!GlobalConfig.BootLogoScale && BootLogoFlag) {
+        return egCopyImage (Image);
+    }
 
     #if REFIT_DEBUG > 0
     ALT_LOG(

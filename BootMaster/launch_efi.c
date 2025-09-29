@@ -893,7 +893,8 @@ EFI_STATUS StartEFIImage (
                     !(GlobalConfig.DisableBootLogo & DISABLE_BOOTLOGO_WIN)
                 );
 
-                if (ShowLogoLin || ShowLogoWin) {
+                BootLogoFlag = (ShowLogoLin || ShowLogoWin);
+                if (BootLogoFlag) {
                     if (ScreenW > 1024 && ScreenH > 1024) {
                         // Stash current size
                         OrigIconBig = GlobalConfig.IconSizes[ICON_SIZE_BIG];
@@ -907,10 +908,6 @@ EFI_STATUS StartEFIImage (
 
                         // Apply scale factor
                         GlobalConfig.IconSizes[ICON_SIZE_BIG] *= ScaleLogo;
-                    }
-
-                    if (GlobalConfig.BootLogoScale) {
-                        BootLogoFlag = TRUE;
                     }
 
                     BootLogoImage = LoadOSIcon (
@@ -966,9 +963,9 @@ EFI_STATUS StartEFIImage (
                         // Reset to stashed size
                         GlobalConfig.IconSizes[ICON_SIZE_BIG] = OrigIconBig;
                     }
-                } // if ShowLogoLin || ShowLogoWin
 
-                BootLogoFlag = FALSE;
+                    BootLogoFlag = FALSE;
+                } // if BootLogoFlag
 
                 if (GlobalConfig.WriteSystemdVars && OSType == 'L') {
                     // Inform SystemD of RefindPlus ESP

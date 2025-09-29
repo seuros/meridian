@@ -1217,7 +1217,7 @@ LOADER_ENTRY * InitializeStanza (
 
                         SetLoaderDefaults (
                             StanzaEntry, TokenList[1],
-                            CurrentVolume, NULL
+                            CurrentVolume
                         );
 
                         DefaultsSet = TRUE;
@@ -1297,7 +1297,7 @@ LOADER_ENTRY * InitializeStanza (
 
         SetLoaderDefaults (
             StanzaEntry, LoaderToken,
-            CurrentVolume, NULL
+            CurrentVolume
         );
         MY_FREE_POOL(LoaderToken);
 
@@ -1378,7 +1378,7 @@ LOADER_ENTRY * InitializeStanza (
         SetLoaderDefaults (
             StanzaEntry,
             L"\\EFI\\BOOT\\bogusnemo.efi",
-            CurrentVolume, NULL
+            CurrentVolume
         );
     }
 

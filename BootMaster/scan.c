@@ -983,8 +983,7 @@ VOID GenerateSubScreen (
 VOID SetLoaderDefaults (
     IN LOADER_ENTRY *Entry,
     IN CHAR16       *LoaderPath,
-    IN REFIT_VOLUME *Volume,
-    IN CHAR16       *ShowName OPTIONAL
+    IN REFIT_VOLUME *Volume
 ) {
     UINTN            i;
     CHAR16          *Temp;
@@ -1856,14 +1855,6 @@ VOID SetLoaderDefaults (
         }
 
         BREAD_CRUMB(L"%a:  7a 1", __func__);
-        if (ShowName != NULL) {
-            BREAD_CRUMB(L"%a:  7a 1a 1", __func__);
-            MergeUniqueItems (
-                &OSIconName, ShowName, L','
-            );
-        }
-
-        BREAD_CRUMB(L"%a:  7a 2", __func__);
         if (!GotFlag  &&
             !MacFlag  &&
             ThisIconName
@@ -2479,8 +2470,9 @@ LOADER_ENTRY * AddLoaderEntry (
 
     LoaderEntry->Volume = Volume;
     SetLoaderDefaults (
-        LoaderEntry, LoaderPath,
-        Volume, ShowName
+        LoaderEntry,
+        LoaderPath,
+        Volume
     );
     GenerateSubScreen (
         LoaderEntry,

@@ -163,8 +163,7 @@ VOID ScanForBootloaders (VOID);
 VOID SetLoaderDefaults (
     IN LOADER_ENTRY *Entry,
     IN CHAR16       *LoaderPath,
-    IN REFIT_VOLUME *Volume,
-    IN CHAR16       *ShowName OPTIONAL
+    IN REFIT_VOLUME *Volume
 );
 VOID GenerateSubScreen (
     IN OUT LOADER_ENTRY *Entry,

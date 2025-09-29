@@ -201,7 +201,7 @@
 
 # RefindPlus defaults to cleaning the screen by clearing displayed "boot logo"
 # images before loading external targets. When this setting is active, images
-# used in exit screens, see 'with disable_bootlogo_image', will be left alone.
+# used in exit screens will be left alone on exit and the screen not cleaned.
 #
 # NOTES:
 # 1. See 'disable_bootlogo_image' and 'disable_bootlogo_scale'
