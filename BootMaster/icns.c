@@ -55,7 +55,8 @@
 #include "../include/egemb_tool_clean_nvram.h"
 
 
-BOOLEAN UsingAltImg = FALSE;
+BOOLEAN          UsingAltImg = FALSE;
+extern BOOLEAN   BootLogoFlag;
 
 //
 // well-known icons
@@ -224,7 +225,8 @@ INTN UpdateBaseIcon (
 
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_LINE_NORMAL,
-        L"Find Icon File '%s.xyz'",
+        L"Find %s Img: '%s.xyz'",
+        (BootLogoFlag) ? L"ExitLogo" : L"Icon",
         BaseName
     );
     #endif

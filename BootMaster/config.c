@@ -1533,7 +1533,7 @@ REFIT_FILE * GenerateOptionsFromEtcFstab (
 
                 BREAD_CRUMB(L"%a:  7a 1a 2a 2", __func__);
                 Line = PoolPrint (
-                    L"\"Boot with Normal Options\"    \"ro root=%s\"\n",
+                    L"\"Boot with Default Options\"    \"ro root=%s\"\n",
                     Root
                 );
 
@@ -1545,7 +1545,7 @@ REFIT_FILE * GenerateOptionsFromEtcFstab (
 
                 BREAD_CRUMB(L"%a:  7a 1a 2a 5", __func__);
                 Line = PoolPrint (
-                    L"\"Boot into Single User Mode\"  \"ro root=%s single\"\n",
+                    L"\"Boot into SingleUser Mode\"    \"ro root=%s single\"\n",
                     Root
                 );
 
@@ -1644,7 +1644,7 @@ REFIT_FILE * GenerateOptionsFromPartTypes (VOID) {
 
         BREAD_CRUMB(L"%a:  4a 2", __func__);
         Line = PoolPrint (
-            L"\"Boot with Normal Options\"    \"%s root=/dev/disk/by-partuuid/%s\"\n",
+            L"\"Boot with Default Options\"    \"%s root=/dev/disk/by-partuuid/%s\"\n",
             WriteStatus, GuidString
         );
         MergeStrings ((CHAR16 **) &(Options->Buffer), Line, 0);
@@ -1652,7 +1652,7 @@ REFIT_FILE * GenerateOptionsFromPartTypes (VOID) {
 
         BREAD_CRUMB(L"%a:  4a 3", __func__);
         Line = PoolPrint (
-            L"\"Boot into Single User Mode\"  \"%s root=/dev/disk/by-partuuid/%s single\"\n",
+            L"\"Boot into SingleUser Mode\"    \"%s root=/dev/disk/by-partuuid/%s single\"\n",
             WriteStatus, GuidString
         );
 
@@ -3858,6 +3858,7 @@ VOID ReadConfig (
         else if (
             !GotNoneNoBootLogo &&
             (
+                MyStriCmp (TokenList[0], L"disable_exitlogo_image") ||
                 MyStriCmp (TokenList[0], L"disable_bootlogo_image") ||
                 MyStriCmp (TokenList[0], L"disable_bootlogo")
             )
@@ -3902,7 +3903,10 @@ VOID ReadConfig (
                 }
             } // for
         }
-        else if (MyStriCmp (TokenList[0], L"disable_bootlogo_scale")) {
+        else if (
+            MyStriCmp (TokenList[0], L"disable_exitlogo_scale") ||
+            MyStriCmp (TokenList[0], L"disable_bootlogo_scale")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3914,7 +3918,10 @@ VOID ReadConfig (
             DeclineSetting = HandleBoolean (TokenList, TokenCount);
             GlobalConfig.BootLogoScale = (DeclineSetting) ? FALSE : TRUE;
         }
-        else if (MyStriCmp (TokenList[0], L"disable_bootlogo_clear")) {
+        else if (
+            MyStriCmp (TokenList[0], L"disable_exitlogo_clear") ||
+            MyStriCmp (TokenList[0], L"disable_bootlogo_clear")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (

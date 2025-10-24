@@ -117,6 +117,15 @@ VOID egFreeImageQEMU (
 #endif
 
 
+#if REFIT_DEBUG > 0
+static
+VOID LogClearScreen (
+    CHAR16          *LineSpace
+) {
+    LOG_MSG("%s  - Clear Screen", LineSpace);
+} // static VOID LogClearScreen()
+#endif
+
 VOID FixIconScale (VOID) {
     if (IconScaleSet || GlobalConfig.ScaleUI == 99) {
         // Early Return
@@ -286,15 +295,14 @@ VOID InitScreen (VOID) {
 // Set the screen resolution and mode (text vs. graphics).
 VOID SetupScreen (VOID) {
     #if REFIT_DEBUG > 0
-    CHAR16 *MsgStr;
-    CHAR16 *TmpStr;
+    CHAR16         *MsgStr;
+    CHAR16         *TmpStr;
     #endif
 
-    UINTN   NewWidth;
-    UINTN   NewHeight;
-    BOOLEAN TextOption;
-
-    static BOOLEAN BannerLoaded = FALSE;
+    UINTN           NewWidth;
+    UINTN           NewHeight;
+    BOOLEAN         TextOption;
+    static BOOLEAN  BannerLoaded = FALSE;
 
 
     #if REFIT_DEBUG > 0
@@ -336,13 +344,13 @@ VOID SetupScreen (VOID) {
     if (GlobalConfig.RequestedScreenWidth  > 0 &&
         GlobalConfig.RequestedScreenHeight > 0
     ) {
-        ScreenW = (ScreenW < GlobalConfig.RequestedScreenWidth)
-            ? ScreenW
-            : GlobalConfig.RequestedScreenWidth;
+        ScreenW = (
+            ScreenW < GlobalConfig.RequestedScreenWidth
+        ) ? ScreenW : GlobalConfig.RequestedScreenWidth;
 
-        ScreenH = (ScreenH < GlobalConfig.RequestedScreenHeight)
-            ? ScreenH
-            : GlobalConfig.RequestedScreenHeight;
+        ScreenH = (
+            ScreenH < GlobalConfig.RequestedScreenHeight
+        ) ? ScreenH : GlobalConfig.RequestedScreenHeight;
 
         #if REFIT_DEBUG > 0
         ALT_LOG(1, LOG_LINE_NORMAL,
@@ -355,7 +363,9 @@ VOID SetupScreen (VOID) {
     // Set user requested resolution
     if (UserDefinedRez) {
         // Set text mode
-        TextOption = egSetTextMode (GlobalConfig.RequestedTextMode);
+        TextOption = egSetTextMode (
+            GlobalConfig.RequestedTextMode
+        );
         if (TextOption) {
             egGetScreenSize (&NewWidth, &NewHeight);
             if ((NewWidth > ScreenW) || (NewHeight > ScreenH)) {
@@ -401,9 +411,9 @@ VOID SetupScreen (VOID) {
     if (!AllowGraphicsMode) {
         #if REFIT_DEBUG > 0
         if (GlobalConfig.TextOnly) {
-            MsgStr = (GlobalConfig.DirectBoot)
-                ? L"'DirectBoot' is Active"
-                : L"Running in Text Only Mode";
+            MsgStr = (
+                GlobalConfig.DirectBoot
+            ) ? L"'DirectBoot' is Active" : L"Running in Text Only Mode";
             ALT_LOG(1, LOG_THREE_STAR_MID, L"%s", MsgStr);
             LOG_MSG("Skip Title Banner Display ... %s", MsgStr);
         }
@@ -416,11 +426,12 @@ VOID SetupScreen (VOID) {
         #endif
 
         GlobalConfig.TextOnly = TRUE;
-        AllowGraphicsMode = FALSE;
         SwitchToText (FALSE);
     }
     else {
-        TextOption = (egIsGraphicsModeEnabled()) ? FALSE : TRUE;
+        TextOption = (
+            egIsGraphicsModeEnabled()
+        ) ? FALSE : TRUE;
         if (TextOption || !BannerLoaded) {
             #if REFIT_DEBUG > 0
             MsgStr = (TextOption)
@@ -544,7 +555,9 @@ VOID SetupScreen (VOID) {
 
                 #if REFIT_DEBUG > 0
                 TmpStr = L"Title Banner Displayed";
-                MsgStr = (TextOption) ? L"Graphics Mode Deployed" : TmpStr;
+                MsgStr = (
+                    TextOption
+                ) ? L"Graphics Mode Deployed" : TmpStr;
                 ALT_LOG(1, LOG_THREE_STAR_MID, L"%s", MsgStr);
                 LOG_MSG("INFO: %s", MsgStr);
 
@@ -905,7 +918,7 @@ VOID DrawScreenHeader (
             gST->ConOut->SetCursorPosition, gST->ConOut,
             0, i
         );
-        if (BlankLine) {
+        if (BlankLine != NULL) {
             Print (BlankLine);
         }
     }
@@ -1268,6 +1281,7 @@ VOID RefitDeadLoop (VOID) {
 
     UINTN   index;
 
+
     while (1) {
         #if REFIT_DEBUG > 0
         MY_MUTELOGGER_SET;
@@ -1500,6 +1514,7 @@ VOID BltClearScreen (
     #if REFIT_DEBUG > 0
     CHAR16          *MsgStr;
     CHAR16          *StrSpacer;
+    CHAR16          *LineSpace;
 
     static BOOLEAN   LoggedBanner = FALSE;
     #endif
@@ -1524,6 +1539,10 @@ VOID BltClearScreen (
         LOG_MSG("Refresh Screen:");
         BRK_MAX("\n");
     }
+
+    LineSpace = (
+        GlobalConfig.LogLevel <= LOGLEVELMAX
+    ) ? OffsetNext : L"";
     #endif
 
     BREAD_CRUMB(L"%a:  2", __func__);
@@ -1535,13 +1554,9 @@ VOID BltClearScreen (
         )
     );
     if (!BannerPass) {
-        BREAD_CRUMB(L"%a:  2a 1 - (Set Screen to Menu Background Colour)", __func__);
+        BREAD_CRUMB(L"%a:  2a 1", __func__);
         #if REFIT_DEBUG > 0
-        if (!IsBoot) {
-            LOG_MSG("%s  - Clear Screen",
-                (GlobalConfig.LogLevel <= LOGLEVELMAX) ? OffsetNext : L""
-            );
-        }
+        if (!IsBoot) LogClearScreen (LineSpace);
         #endif
 
         // Not showing banner
@@ -1554,15 +1569,17 @@ VOID BltClearScreen (
     else {
         BREAD_CRUMB(L"%a:  2b 1", __func__);
         // Load banner on first call
-        if (!Banner) {
+        if (Banner == NULL) {
             #if REFIT_DEBUG > 0
-            LOG_MSG("%s  - Fetch Banner",
-                (GlobalConfig.LogLevel <= LOGLEVELMAX) ? OffsetNext : L""
-            );
+            LOG_MSG("%s  - Fetch Banner", LineSpace);
             #endif
 
             if (GlobalConfig.BannerFileName) {
-                Banner = egLoadImage (SelfDir, GlobalConfig.BannerFileName, FALSE);
+                Banner = egLoadImage (
+                    SelfDir,
+                    GlobalConfig.BannerFileName,
+                    FALSE
+                );
             }
 
             if (Banner != NULL) {
@@ -1573,7 +1590,10 @@ VOID BltClearScreen (
                 DefaultBanner = FALSE;
 
                 #if REFIT_DEBUG > 0
-                MsgStr = StrDuplicate (L"Custom Title Banner");
+                MsgStr = PoolPrint (
+                    L"Custom Title Banner:- '%s'",
+                    GlobalConfig.BannerFileName
+                );
                 LOG_MSG("%s    * %s", OffsetNext, MsgStr);
                 if (!LoggedBanner) {
                     ALT_LOG(1, LOG_LINE_NORMAL, L"Using %s", MsgStr);
@@ -1639,24 +1659,39 @@ VOID BltClearScreen (
                 else if (GlobalConfig.ScaleUI == 99) BannerType = 0;
                 else if (GlobalConfig.ScaleUI == -1) BannerType = 2;
                 else if (
-                    (GlobalConfig.ScaleUI == 1) ||
-                    (ScreenShortest >= HIDPI_SHORT && ScreenLongest >= HIDPI_LONG)
+                    GlobalConfig.ScaleUI == 1 ||
+                    (
+                        ScreenShortest >= HIDPI_SHORT &&
+                        ScreenLongest  >= HIDPI_LONG
+                    )
                 ) {
                     BannerType = 1;
                 }
-                else if (ScreenShortest < LOREZ_LIMIT || ScreenLongest < LOREZ_LIMIT) {
+                else if (
+                    ScreenShortest < LOREZ_LIMIT ||
+                    ScreenLongest  < LOREZ_LIMIT
+                ) {
                     BannerType = 2;
                 }
 
                 // Get default banner
                 if (BannerType == 2) {
-                    Banner = egPrepareEmbeddedImage (&egemb_refindplus_banner_lorez, TRUE, &BannerFont);
+                    Banner = egPrepareEmbeddedImage (
+                        &egemb_refindplus_banner_lorez,
+                        TRUE, &BannerFont
+                    );
                 }
                 else if (BannerType == 1) {
-                    Banner = egPrepareEmbeddedImage (&egemb_refindplus_banner_hidpi, TRUE, &BannerFont);
+                    Banner = egPrepareEmbeddedImage (
+                        &egemb_refindplus_banner_hidpi,
+                        TRUE, &BannerFont
+                    );
                 }
                 else {
-                    Banner = egPrepareEmbeddedImage (&egemb_refindplus_banner,       TRUE, &BannerFont);
+                    Banner = egPrepareEmbeddedImage (
+                        &egemb_refindplus_banner,
+                        TRUE, &BannerFont
+                    );
                 }
             } // if/else Banner
 
@@ -1675,22 +1710,24 @@ VOID BltClearScreen (
                     Banner = CompImage;
                 }
             }
-        } // if !Banner
+        } // if Banner == NULL
 
         if (Banner != NULL) {
             #if REFIT_DEBUG > 0
-            LOG_MSG("%s  - Scale Banner",
-                (GlobalConfig.LogLevel <= LOGLEVELMAX)
-                    ? OffsetNext : L""
-            );
+            LOG_MSG("%s  - Scale Banner", LineSpace);
             BRK_MAX("\n");
             #endif
 
             if (GlobalConfig.BannerScale == BANNER_FILLSCREEN) {
-                NewBanner = (Banner->Width != ScreenW || Banner->Height != ScreenH)
-                    ? egScaleImage (Banner, ScreenW, ScreenH) : NULL;
+                NewBanner = (
+                    Banner->Width  != ScreenW ||
+                    Banner->Height != ScreenH
+                ) ? egScaleImage (Banner, ScreenW, ScreenH) : NULL;
             }
-            else if (Banner->Width > ScreenW || Banner->Height > ScreenH) {
+            else if (
+                Banner->Width  > ScreenW ||
+                Banner->Height > ScreenH
+            ) {
                 NewBanner = egCropImage (
                     Banner, 0, 0,
                     (Banner->Width  > ScreenW) ? ScreenW : Banner->Width,
@@ -1711,13 +1748,10 @@ VOID BltClearScreen (
         BREAD_CRUMB(L"%a:  2b 2", __func__);
         // Clear and draw banner
         #if REFIT_DEBUG > 0
-        LOG_MSG("%s  - Clear Screen",
-            (GlobalConfig.LogLevel <= LOGLEVELMAX)
-                ? OffsetNext
-                : L""
-        );
+        LogClearScreen (LineSpace);
         BRK_MAX("\n");
         #endif
+
         if (GlobalConfig.ScreensaverTime != -1) {
             BREAD_CRUMB(L"%a:  2b 2a 1 - (Set Screen to Menu Background Colour)", __func__);
             egClearScreen (&MenuBackgroundPixel);
@@ -1730,14 +1764,12 @@ VOID BltClearScreen (
         BREAD_CRUMB(L"%a:  2b 3", __func__);
         if (Banner != NULL) {
             #if REFIT_DEBUG > 0
-            LOG_MSG("%s  - Offer Banner",
-                (GlobalConfig.LogLevel <= LOGLEVELMAX)
-                    ? OffsetNext
-                    : L""
-            );
+            LOG_MSG("%s  - Offer Banner", LineSpace);
             #endif
 
-            BannerPosX = (Banner->Width < ScreenW) ? ((ScreenW - Banner->Width) / 2) : 0;
+            BannerPosX = (
+                Banner->Width < ScreenW
+            ) ? ((ScreenW - Banner->Width) / 2) : 0;
             BannerPosY = (INTN) (ComputeRow0PosY(FALSE) / 2) - (INTN) Banner->Height;
             if (BannerPosY < 0) {
                 BannerPosY = 0;

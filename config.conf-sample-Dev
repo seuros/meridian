@@ -199,52 +199,6 @@
 #
 #disable_apfs_sync
 
-# RefindPlus defaults to cleaning the screen by clearing displayed "boot logo"
-# images before loading external targets. When this setting is active, images
-# used in exit screens will be left alone on exit and the screen not cleaned.
-#
-# NOTES:
-# 1. See 'disable_bootlogo_image' and 'disable_bootlogo_scale'
-#
-# Boot logo images are cleared, after being shown, when commented out
-#
-#disable_bootlogo_clear
-
-# RefindPlus defaults to displaying a "boot logo" icon before loading instances
-# of Windows or Linux to mimic a BGRT. This feature can be leveraged to define
-# custom exit splash screens by taking advantage of the following behaviour:
-#   - 'boot_outlogo.[xyz]' file will be used if present
-#   - 'boot_[distro].[xyz]' will be used if present otherwise
-#   - 'os_[distro].[xyz]' will be used if present otherwise
-#   - 'os_[type].[xyz]' will be used if present otherwise
-#   - Nothing will be displayed as boot logo otherwise
-#
-# The options below are available:
-#   WIN   - Disable Bootlogo Display for Windows Loaders
-#   LIN   - Disable Bootlogo Display for Linux Stub Loaders
-#   ALL   - Disable Bootlogo Display for Every Type of Loader
-#   OFF   - Disable Bootlogo Display for None of The Loaders (Default)
-#
-# NOTES:
-# 1. The 'ALL' option takes precedence over others apart from 'OFF'
-# 2. The 'OFF' option takes precedence over every other setting
-# 3. See 'disable_bootlogo_clear' and 'disable_bootlogo_scale'
-#
-# Boot logo images are shown, if applicable, when commented out
-#
-#disable_bootlogo_image WIN
-
-# RefindPlus defaults to scaling images used as "boot logo" in exit screens.
-# When this setting is active, the images, see 'disable_bootlogo_image', will
-# be displayed as "boot logo" image at their original sizes (without scaling).
-#
-# NOTES:
-# 1. See 'disable_bootlogo_image' and 'disable_bootlogo_clear'
-#
-# Boot logo images are scaled, if shown, when commented out
-#
-#disable_bootlogo_scale
-
 # Disable Apple Mobile File Integrity (AMFI) checks on booting MacOS. Whenever
 # this token is active, RefindPlus will add a "amfi_get_out_of_my_way=1" boot
 # argument which, along with System Integrity Protection (SIP), restricts
@@ -270,6 +224,52 @@
 # Inactive when commented out (Does not stop MacOS compatibility checks)
 #
 #disable_check_compat
+
+# RefindPlus defaults to cleaning the screen by clearing displayed "Exit Logo"
+# images before loading external targets. When this setting is active, images
+# used in exit screens will be left alone on exit and the screen not cleaned.
+#
+# NOTES:
+# 1. See 'disable_exitlogo_image' and 'disable_exitlogo_scale'
+#
+# Exit logo images are cleared, after being shown, when commented out
+#
+#disable_exitlogo_clear
+
+# RefindPlus defaults to displaying "Exit Logo" images before loading instances
+# of Windows or Linux to mimic a BGRT. This feature can be leveraged to define
+# custom exit splash screens by taking advantage of the following behaviour:
+#   - 'boot_outlogo.[xyz]' file will be used if present
+#   - 'boot_[distro].[xyz]' will be used if present otherwise
+#   - 'os_[distro].[xyz]' will be used if present otherwise
+#   - 'os_[type].[xyz]' will be used if present otherwise
+#   - Nothing will be displayed as exit logo otherwise
+#
+# The options below are available:
+#   WIN   - Disable for Windows Loaders
+#   LIN   - Disable for Linux Stub Loaders
+#   ALL   - Disable for Every Type of Loader
+#   OFF   - Disable for None of The Loaders (Default)
+#
+# NOTES:
+# 1. The 'ALL' option takes precedence over others apart from 'OFF'
+# 2. The 'OFF' option takes precedence over every other setting
+# 3. See 'disable_exitlogo_clear' and 'disable_exitlogo_scale'
+#
+# Exit logo images are shown, if applicable, when commented out
+#
+#disable_exitlogo_image WIN
+
+# RefindPlus defaults to scaling images used as "Exit Logo" in exit screens.
+# When this setting is active, the images, see 'disable_exitlogo_image', will
+# be displayed as "Exit Logo" image at their original sizes (without scaling).
+#
+# NOTES:
+# 1. See 'disable_exitlogo_image' and 'disable_exitlogo_clear'
+#
+# Exit logo images are scaled, if shown, when commented out
+#
+#disable_exitlogo_scale
 
 # RefindPlus previously assumed all Macs were capable of legacy BIOS boot.
 # While this was accurate for some time, some later Macs are UEFI Class 3

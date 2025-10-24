@@ -314,28 +314,32 @@ EG_IMAGE * egScaleImage (
                 (a.b) * (FP_MULTIPLIER - x_diff)  * (FP_MULTIPLIER - y_diff) +
                 (b.b) * (x_diff) * (FP_MULTIPLIER - y_diff)  +
                 (c.b) * (y_diff) * (FP_MULTIPLIER - x_diff)  +
-                (d.b) * (x_diff  * y_diff)) / (FP_MULTIPLIER * FP_MULTIPLIER);
+                (d.b) * (x_diff  * y_diff)
+            ) / (FP_MULTIPLIER * FP_MULTIPLIER);
 
             // Green Element
             NewImage->PixelData[Offset].g = (
                 (a.g) * (FP_MULTIPLIER - x_diff)  * (FP_MULTIPLIER - y_diff) +
                 (b.g) * (x_diff) * (FP_MULTIPLIER - y_diff)  +
                 (c.g) * (y_diff) * (FP_MULTIPLIER - x_diff)  +
-                (d.g) * (x_diff  * y_diff)) / (FP_MULTIPLIER * FP_MULTIPLIER);
+                (d.g) * (x_diff  * y_diff)
+            ) / (FP_MULTIPLIER * FP_MULTIPLIER);
 
             // Red Element
             NewImage->PixelData[Offset].r = (
                 (a.r) * (FP_MULTIPLIER - x_diff)  * (FP_MULTIPLIER - y_diff) +
                 (b.r) * (x_diff) * (FP_MULTIPLIER - y_diff)  +
                 (c.r) * (y_diff) * (FP_MULTIPLIER - x_diff)  +
-                (d.r) * (x_diff  * y_diff)) / (FP_MULTIPLIER * FP_MULTIPLIER);
+                (d.r) * (x_diff  * y_diff)
+            ) / (FP_MULTIPLIER * FP_MULTIPLIER);
 
             // Alpha Element
             NewImage->PixelData[Offset++].a = (
                 (a.a) * (FP_MULTIPLIER - x_diff)  * (FP_MULTIPLIER - y_diff) +
                 (b.a) * (x_diff) * (FP_MULTIPLIER - y_diff)  +
                 (c.a) * (y_diff) * (FP_MULTIPLIER - x_diff)  +
-                (d.a) * (x_diff  * y_diff)) / (FP_MULTIPLIER * FP_MULTIPLIER);
+                (d.a) * (x_diff  * y_diff)
+            ) / (FP_MULTIPLIER * FP_MULTIPLIER);
         } // for (j...)
     } // for (i...)
 
@@ -737,7 +741,8 @@ EG_IMAGE * egLoadIconAnyType (
 
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_LINE_NORMAL,
-        L"Load Icon from '%s' Folder with Base Name:- '%s'",
+        L"Load %s from '%s' Folder with Base Name:- '%s'",
+        (BootLogoFlag) ? L"ExitLogo" : L"Icon",
         (StrLen (SubdirName) != 0) ? SubdirName : L"\\",
         BaseName
     );

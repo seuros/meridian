@@ -283,9 +283,14 @@ EFI_STATUS BdsLibConnectMostlyAllEfi (VOID) {
     DetectedDevices = FALSE;
 
     #if REFIT_DEBUG > 0
-    MsgStr = (ReLoaded)
-        ? StrDuplicate (L"R E C O N N E C T   D E V I C E   H A N D L E S")
-        : StrDuplicate (L"C O N N E C T   D E V I C E   H A N D L E S");
+    MsgStr = (
+        ReLoaded
+    ) ? StrDuplicate (
+        L"R E C O N N E C T   D E V I C E   H A N D L E S"
+    ) : StrDuplicate (
+        L"C O N N E C T   D E V I C E   H A N D L E S"
+    );
+    ALT_LOG(1, LOG_BLANK_LINE_TWO, L"X");
     ALT_LOG(1, LOG_LINE_SEPARATOR, L"%s", MsgStr);
     LOG_MSG("%s", MsgStr);
     LOG_MSG("\n");

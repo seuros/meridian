@@ -155,7 +155,7 @@ $ git remote add upstream https://github.com/RefindPlusRepo/RefindPlus.git
 
 Your local RefindPlus repository will be under `Documents/RefindPlus/Working`.
 
-### Prepare UDK2018 Environment
+### Prepare RefindPlusUDK Environment
 
 #### Fork the RefindPlusUDK Repository
 

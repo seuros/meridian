@@ -18,9 +18,9 @@ A Boot Manager for Mac and PC
 
 ## Overview
 
-RefindPlus builds on _`rEFInd`_ to extend its functionality with enhancements and fixes that include several Apple Mac and UEFI-PC related items that may be of interest to anyone requiring a capable boot manager.
+RefindPlus is a fork of _`rEFInd`_ that provides extended functionality via enhancements and fixes that include several Apple Mac and UEFI-PC related items that may be of interest to anyone requiring a boot manager for Mac and PC.
 
-RefindPlus is particularly useful for those with additional configuration needs or that require advanced or otherwise non-typical options for running operating systems and uEFI utilities on Mac and PC.
+RefindPlus is particularly useful for those with additional configuration needs or that require advanced or otherwise non-typical (hence typically unavailable) options for running operating systems and uEFI utilities on Mac and PC.
 
 Some features:
 - Maintains feature and configuration parity with `Upstream v0.14.2` base.
@@ -54,7 +54,9 @@ Some features:
 
 ## Installation
 
-An easy way is to name the RefindPlus efi file as a UEFI Fallback Loader, `BOOT{ARCH}.efi`, and then place this in the `EFI System Partition (ESP)` of a disk on your computer. [MyBootMgr](https://www.dakanji.com/creations/index.html) is recommended to automate installing RefindPlus when running Mac OS on Intel-based Macs. Alternatively, as the RefindPlus efi file can function as a drop-in replacement for the upstream efi file, the [rEFInd package](https://www.rodsbooks.com/refind/installing.html) can be installed first and its efi file replaced with the RefindPlus efi file (Rename RefindPlus file to match). This allows installing RefindPlus on other compatible operating systems supported upstream. See `UEFI Secure Boot` under the [Divergence Section](https://github.com/RefindPlusRepo/RefindPlus#divergence) for how to enable this if required.
+A straightforward way is to make the RefindPlus efi file a `UEFI Fallback File` by naming it accordingly, `BOOTx64.efi`, and placing this in the `UEFI Fallback Path` of a disk, `/EFI/BOOT`.
+
+[MyBootMgr](https://www.dakanji.com/creations/index.html) is recommended to automate installing RefindPlus when running Mac OS on Intel-based Macs. Alternatively, as the RefindPlus efi file can function as a drop-in replacement for the upstream efi file, the [rEFInd package](https://www.rodsbooks.com/refind/installing.html) can be installed first and its efi file replaced with the RefindPlus efi file (rename RefindPlus file to match). This allows installing RefindPlus on other compatible operating systems supported upstream. See `UEFI Secure Boot` under the [Divergence Section](https://github.com/RefindPlusRepo/RefindPlus#divergence) for how to enable this if required.
 
 > [!NOTE]
 >
@@ -97,12 +99,12 @@ decline_help_size     |Disables feature that sets additional UI scaling for very
 decline_help_text     |Disables feature that sets screen text to complementary colours
 decouple_key_f10      |Unmaps the `F10` key from native screenshots (the `\` key remains mapped)
 disable_apfs_load     |Disables inbuilt provision of APFS filesystem capability
-disable_apfs_sync     |Disables feature allowing direct APFS/FileVault boot (Without "PreBoot")
-disable_bootlogo_clear|Disables clearing displayed boot logo images on exit screens
-disable_bootlogo_image|Disables display of boot logo images on exit screens
-disable_bootlogo_scale|Disables scaling displayed boot logo images on exit screens
+disable_apfs_sync     |Disables feature allowing direct APFS/FileVault boot (without "PreBoot")
 disable_check_amfi    |Disables AMFI Checks on Mac OS
 disable_check_compat  |Disables Mac version compatibility checks
+disable_exitlogo_clear|Disables clearing displayed exit logo images on exit screens
+disable_exitlogo_image|Disables display of exit logo images on exit screens
+disable_exitlogo_scale|Disables scaling displayed exit logo images on exit screens
 disable_pass_gop_thru |Disables feature that provides GOP instance on UGA for some loading screens
 disable_legacy_sync   |Disables detailed indentification of Mac legacy BIOS boot capability
 disable_nvram_paniclog|Disables logging Mac OS kernel panics to nvRAM
@@ -202,7 +204,7 @@ Significant visible implementation differences vis-a-vis the upstream base are:
   - > Activate the RefindPlus-specific `disable_apfs_load` setting to switch this feature off.
 - **APFS PreBoot Volumes:** RefindPlus always synchronises APFS System and PreBoot partitions transparently such that the Preboot partitions of APFS volumes are always used to boot APFS formatted Mac OS. Hence, a single option for booting Mac OS on APFS volumes is presented in RefindPlus to provide maximum APFS compatibility. This is done using an inbuilt `SyncAPFS` feature.
   - > Activate the RefindPlus-specific `disable_apfs_sync` setting to switch this feature off.
-- **Mac nvRAM Protection:** RefindPlus always prevents UEFI Windows Secure Boot from saving certificates to Mac nvRAM as this can result in damage and, ultimately, an inability to boot anything on some Macs (Typically Pre 2013 Vintage). Blocking these certificates does not impact the operation of UEFI Windows on such Macs. This filtering only happens when Mac firmware is detected and is not applied to other types of firmware. This is done using an inbuilt `ProtectNVRAM` feature.
+- **Mac nvRAM Protection:** RefindPlus always prevents UEFI Windows Secure Boot from saving certificates to Mac nvRAM as this can result in damage and, ultimately, an inability to boot anything on some Macs (typically Pre 2013 Vintage). Blocking these certificates does not impact the operation of UEFI Windows on such Macs. This filtering only happens when Mac firmware is detected and is not applied to other types of firmware. This is done using an inbuilt `ProtectNVRAM` feature.
   - > Activate the RefindPlus-specific `disable_nvram_protect` setting to switch this feature off.
 - **Mac Legacy BIOS Boot:** RefindPlus originally assumed all Macs were capable of legacy BIOS boot based on code that went in upstream back in 2012 when this was a reasonable default. However, some later Intel Macs do not support legacy BIOS boot and RefindPlus now attempts to categorise Macs to enable/disable legacy boot accordingly.
   - > Activate the RefindPlus-specific `disable_legacy_sync` setting to keep the old assumption.

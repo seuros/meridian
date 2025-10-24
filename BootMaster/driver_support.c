@@ -768,11 +768,11 @@ BOOLEAN LoadDrivers (VOID) {
     EFI_HANDLE  *DriversListProg; // Do *NOT* Free
     EFI_HANDLE  *DriversListUser; // Do *NOT* Free
 
-#ifdef __MAKEWITH_TIANO
-// DA-TAG: Limit to TianoCore
+    #ifdef __MAKEWITH_TIANO
+    // DA-TAG: Limit to TianoCore
     UINTN        HandleSize;
     UINTN        DriversIndex;
-#endif
+    #endif
 
 
     #if REFIT_DEBUG > 0
@@ -781,9 +781,7 @@ BOOLEAN LoadDrivers (VOID) {
     ALT_LOG(1, LOG_THREE_STAR_SEP, L"Load Provided Drivers in Program Default Folder");
     LOG_MSG("\n\n");
     LOG_MSG("L O A D   P R O V I D E D   D R I V E R S   :::::   P R O G R A M   D E F A U L T   F O L D E R");
-#if REFIT_DEBUG > 1
-    LOG_MSG("\n");
-#endif
+    BRK_MAX("\n");
     #endif
 
     if (SelfDirPath == NULL) {

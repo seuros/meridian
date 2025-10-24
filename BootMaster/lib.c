@@ -2233,6 +2233,13 @@ BOOLEAN VolumeScanAllowed (
         return FALSE;
     }
 
+    if (!GlobalConfig.ScanAllESP &&
+        GuidsAreEqual (&(Volume->PartTypeGuid), &GuidESP) &&
+        !GuidsAreEqual (&(Volume->PartGuid), &SelfVolume->PartGuid)
+    ) {
+        return FALSE;
+    }
+
     if (!SkipRootDir && Volume->RootDir == NULL) {
         return FALSE;
     }

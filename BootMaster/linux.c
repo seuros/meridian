@@ -81,6 +81,7 @@ CHAR16 * FindInitrd (
     UINTN                SharedChars;
     UINTN                MaxSharedChars;
     CHAR16              *Path;
+    CHAR16              *OurPath;
     CHAR16              *FileName;
     CHAR16              *InitrdName;
     CHAR16              *KernelPostNum;
@@ -96,10 +97,18 @@ CHAR16 * FindInitrd (
     REFIT_DIR_ITER       DirIter;
 
 
+    OurPath = (
+        LoaderPath[0] == L'\\'
+    ) ? StrDuplicate (
+        LoaderPath
+    ) : PoolPrint (
+        L"\\%s", LoaderPath
+    );
+
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_LINE_NORMAL,
-        L"Locate/Match Linux Initrd File:- '%s'",
-        LoaderPath
+        L"Locate/Match Linux Initrd File For Loader:- '%s'",
+        OurPath
     );
     #endif
 
@@ -107,13 +116,17 @@ CHAR16 * FindInitrd (
     LOG_INCREMENT();
     BREAD_CRUMB(L"%a:  1 - START", __func__);
     BREAD_CRUMB(L"%a:  2", __func__);
-    FileName = Basename (LoaderPath);
+    FileName = Basename (
+        OurPath
+    );
 
     BREAD_CRUMB(L"%a:  3", __func__);
     KernelVersion = FindNumbers (FileName);
 
     BREAD_CRUMB(L"%a:  4", __func__);
-    Path = FindPath (LoaderPath);
+    Path = FindPath (
+        OurPath
+    );
 
     // Add trailing backslash to root directory (necessary on some systems).
     // NB: Limit to the root directory as on some systems, trailing backslashes
@@ -229,7 +242,9 @@ CHAR16 * FindInitrd (
                 BREAD_CRUMB(L"%a:  9a 1b 2a 1 - WHILE LOOP:- START", __func__);
 
                 BREAD_CRUMB(L"%a:  9a 1b 2a 2", __func__);
-                KernelPostNum = MyStrStr (LoaderPath, KernelVersion);
+                KernelPostNum = MyStrStr (
+                    OurPath, KernelVersion
+                );
 
                 BREAD_CRUMB(L"%a:  9a 1b 2a 3", __func__);
                 InitrdPostNum = MyStrStr (CurrentInitrdName->Value, KernelVersion);
@@ -272,13 +287,14 @@ CHAR16 * FindInitrd (
 
     BREAD_CRUMB(L"%a:  11", __func__);
     MY_FREE_POOL(Path);
+    MY_FREE_POOL(OurPath);
     MY_FREE_POOL(FileName);
     MY_FREE_POOL(KernelVersion);
 
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_THREE_STAR_MID,
         L"Identified Linux Initrd File:- '%s'",
-        (InitrdName != NULL) ? InitrdName : L"NULL"
+        (InitrdName != NULL) ? InitrdName : L"NONE"
     );
     #endif
 
@@ -596,6 +612,7 @@ VOID GuessLinuxDistribution (
 
     // DA-TAG: Strip out misc unwanted
     BREAD_CRUMB(L"%a:  5", __func__);
+    DeleteItemFromCsvList (L"os",    OSIconName);
     DeleteItemFromCsvList (L"gnu",   OSIconName);
     DeleteItemFromCsvList (L"linux", OSIconName);
 
@@ -733,16 +750,6 @@ VOID AddKernelToSubmenu (
     SubScreen = TargetLoader->me.SubScreen;
 
     BREAD_CRUMB(L"%a:  4", __func__);
-    InitrdName = FindInitrd (FileName, Volume);
-
-    BREAD_CRUMB(L"%a:  5", __func__);
-    KernelVersion = FindNumbers (FileName);
-
-    BREAD_CRUMB(L"%a:  6", __func__);
-    ActualLoader = StrDuplicate (FileName);
-    CleanUpPathNameSlashes (ActualLoader);
-
-    BREAD_CRUMB(L"%a:  7", __func__);
     #if REFIT_DEBUG > 0
     MY_MUTELOGGER_SET;
     #endif
@@ -750,6 +757,16 @@ VOID AddKernelToSubmenu (
     #if REFIT_DEBUG > 0
     MY_MUTELOGGER_OFF;
     #endif
+
+    BREAD_CRUMB(L"%a:  5", __func__);
+    InitrdName = FindInitrd (FileName, Volume);
+
+    BREAD_CRUMB(L"%a:  6", __func__);
+    KernelVersion = FindNumbers (FileName);
+
+    BREAD_CRUMB(L"%a:  7", __func__);
+    ActualLoader = StrDuplicate (FileName);
+    CleanUpPathNameSlashes (ActualLoader);
 
     BREAD_CRUMB(L"%a:  8", __func__);
     Path = VolName = BootTypeTag = NULL;
@@ -816,26 +833,20 @@ VOID AddKernelToSubmenu (
         );
 
         BREAD_CRUMB(L"%a:  8a 10", __func__);
-        MY_FREE_POOL(SubEntry->LoaderPath);
-
-        BREAD_CRUMB(L"%a:  8a 11", __func__);
-        SubEntry->LoaderPath = StrDuplicate (ActualLoader);
-
-        BREAD_CRUMB(L"%a:  8a 12", __func__);
         SubEntry->Volume = Volume;
+        MY_FREE_POOL(SubEntry->LoaderPath);
+        SubEntry->LoaderPath = ActualLoader;
         SubEntry->UseGraphicsMode = GlobalConfig.GraphicsFor & GRAPHICS_FOR_LINUX;
         AddMenuEntry (SubScreen, (REFIT_MENU_ENTRY *) SubEntry);
 
-        BREAD_CRUMB(L"%a:  8a 13", __func__);
+        BREAD_CRUMB(L"%a:  8a 11", __func__);
         FreeTokenLine (&TokenList, &TokenCount);
-
-        BREAD_CRUMB(L"%a:  8a 14", __func__);
         MY_FREE_POOL(BootTypeTag);
         MY_FREE_POOL(KernFile);
         MY_FREE_POOL(VolName);
         MY_FREE_POOL(Path);
 
-        BREAD_CRUMB(L"%a:  8a 15 - WHILE LOOP:- END", __func__);
+        BREAD_CRUMB(L"%a:  8a 12 - WHILE LOOP:- END", __func__);
         LOG_SEP(L"X");
     } // while {Infinite}
 

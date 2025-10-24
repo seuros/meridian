@@ -2994,7 +2994,7 @@ CHAR16 * egScreenDescription (VOID) {
 
     if (!egHasGraphics) {
         GraphicsInfo = PoolPrint (
-            L"Text-Only Console: %d x %d",
+            L"Text-Only Console @ %d x %d",
             ConWidth, ConHeight
         );
     }
@@ -3334,7 +3334,7 @@ VOID egDrawImageArea (
             Image->Width * 4
         );
     }
-    else if (UGADraw != NULL) {
+    else {
         REFIT_CALL_10_WRAPPER(
             UGADraw->Blt, UGADraw,
             (EFI_UGA_PIXEL *) Image->PixelData,
@@ -3349,68 +3349,107 @@ VOID egDrawImageArea (
 
 static
 VOID egDisplayMessageEx (
-    CHAR16    *Text,
-    EG_PIXEL  *MessageBG,
-    UINTN      PositionCode,
-    BOOLEAN    ResetPosition
+    CHAR16          *Text,
+    EG_PIXEL        *MessageBG,
+    UINTN            PositionCode,
+    BOOLEAN          ResetPosition,
+    BOOLEAN          BackgroundArea
 ) {
-    UINTN LumIndex;
-    UINTN BoxWidth;
-    UINTN BoxHeight;
-    static UINTN Position = 1;
-    EG_IMAGE *Box;
+    UINTN            LumIndex;
+    UINTN            BoxWidth;
+    UINTN            BoxHeight;
+    EG_IMAGE        *Box;
+
+    static UINTN     PosX      = 0;
+    static UINTN     PosY      = 1;
+    static EG_IMAGE *OldBox = NULL;
+
 
     if (Text == NULL || MessageBG == NULL) {
         // Early Return
         return;
     }
 
-    egMeasureText (Text, &BoxWidth, &BoxHeight);
+    egMeasureText (
+        Text, &BoxWidth, &BoxHeight
+    );
+
     BoxWidth  += 14;
     BoxHeight *=  2;
+
     if (BoxWidth > egScreenWidth) {
         BoxWidth = egScreenWidth;
     }
+
     Box = egCreateFilledImage (
         BoxWidth, BoxHeight,
         FALSE, MessageBG
     );
 
-    if (!ResetPosition) {
-        // Get Luminance Index
-        LumIndex = GetLumIndex (
-            (UINTN) MessageBG->r,
-            (UINTN) MessageBG->g,
-            (UINTN) MessageBG->b
-        );
+    // Get Luminance Index
+    LumIndex = GetLumIndex (
+        (UINTN) MessageBG->r,
+        (UINTN) MessageBG->g,
+        (UINTN) MessageBG->b
+    );
 
-        egRenderText (
-            Text, Box, 7,
-            BoxHeight / 4,
-            (UINT8) LumIndex
-        );
-    }
+    egRenderText (
+        Text, Box, 7,
+        BoxHeight / 4,
+        (UINT8) LumIndex
+    );
 
     switch (PositionCode) {
-        case TOP:     Position  = 1;                                  break;
-        case CENTER:  Position  = ((egScreenHeight - BoxHeight) / 2); break;
-        case BOTTOM:  Position  = (egScreenHeight - (BoxHeight * 2)); break;
-        default:      Position += (BoxHeight + (BoxHeight / 10));     break; // NEXTLINE
+        case TOP:    PosY  = 1;                                  break;
+        case CENTER: PosY  = ((egScreenHeight - BoxHeight) / 2); break;
+        case BOTTOM: PosY  = (egScreenHeight - (BoxHeight * 2)); break;
+        default:     PosY += (BoxHeight + (BoxHeight / 10));     break; // NEXTLINE
     } // switch
 
     if (ResetPosition) {
-        if (PositionCode != TOP    &&
-            PositionCode != CENTER &&
-            PositionCode != BOTTOM
-        ) {
-            Position -= (BoxHeight + (BoxHeight / 10));
+        if (BackgroundArea) {
+            PosX = 0;
+        }
+
+        if (PositionCode == NEXTLINE) {
+            PosY -= (BoxHeight + (BoxHeight / 10));
+        }
+    }
+    else {
+        // Store Original Background
+        MY_FREE_IMAGE(OldBox);
+        if (BackgroundArea) {
+            PosX = (
+                egScreenWidth - BoxWidth
+            ) / 2;
+
+            OldBox = egCopyScreenArea (
+                PosX, PosY,
+                BoxWidth, BoxHeight
+            );
         }
     }
 
-    egDrawImage (Box, (egScreenWidth - BoxWidth) / 2, Position);
+    // Display or Clear Message
+    egDrawImage (
+        Box, PosX, PosY
+    );
+    MY_FREE_IMAGE(Box);
 
-    if ((PositionCode == CENTER) || (Position >= egScreenHeight - (BoxHeight * 5))) {
-        Position = 1;
+    if (ResetPosition &&
+        OldBox != NULL
+    ) {
+        // Restore Original Background
+        egDrawImage (
+            OldBox, PosX, PosY
+        );
+        MY_FREE_IMAGE(OldBox);
+    }
+
+    if (PositionCode == CENTER ||
+        PosY >= egScreenHeight - (BoxHeight * 5)
+    ) {
+        PosY = 1;
     }
 } // VOID egDisplayMessageEx()
 
@@ -3424,35 +3463,50 @@ VOID egDisplayMessage (
     UINTN      PauseLength,
     CHAR16    *PauseType     OPTIONAL
 ) {
-    if (Text == NULL || MessageBG == NULL) {
+    #if REFIT_DEBUG > 0
+    BOOLEAN    CheckMute = FALSE;
+    #endif
+
+    BOOLEAN    StashBG;
+
+
+    if (Text      == NULL ||
+        MessageBG == NULL
+    ) {
         // Early Return
         return;
     }
 
-    #if REFIT_DEBUG > 0
-    BOOLEAN CheckMute = FALSE;
-    MY_MUTELOGGER_SET;
-    #endif
+    StashBG = (
+        PauseType != NULL && PauseLength > 0
+    );
+
     // Display the message
     egDisplayMessageEx (
         Text, MessageBG,
-        PositionCode, FALSE
+        PositionCode, FALSE, StashBG
     );
 
-    if (PauseType && PauseLength > 0) {
+    if (StashBG) {
+        #if REFIT_DEBUG > 0
+        MY_MUTELOGGER_SET;
+        #endif
         if (MyStriCmp (PauseType, L"HaltSeconds")) {
             HaltSeconds (PauseLength);
         }
         else {
             PauseSeconds (PauseLength);
         }
+        #if REFIT_DEBUG > 0
+        MY_MUTELOGGER_OFF;
+        #endif
 
         // Erase the message
-        egDisplayMessageEx (Text, &MenuBackgroundPixel, PositionCode, TRUE);
+        egDisplayMessageEx (
+            Text, &MenuBackgroundPixel,
+            PositionCode, TRUE, FALSE
+        );
     }
-    #if REFIT_DEBUG > 0
-    MY_MUTELOGGER_OFF;
-    #endif
 } // VOID egDisplayMessage()
 
 // Copy the current contents of the display into an EG_IMAGE.
@@ -3473,12 +3527,15 @@ EG_IMAGE * egCopyScreenArea (
 ) {
     EG_IMAGE *Image;
 
+
    if (!egHasGraphics) {
        return NULL;
    }
 
    // Allocate a buffer for the screen area
-   Image = egCreateImage (Width, Height, FALSE);
+   Image = egCreateImage (
+       Width, Height, FALSE
+   );
    if (Image == NULL) {
       return NULL;
    }
@@ -3494,7 +3551,7 @@ EG_IMAGE * egCopyScreenArea (
            Image->Width, Image->Height, 0
        );
    }
-   else if (UGADraw != NULL) {
+   else {
        REFIT_CALL_10_WRAPPER(
            UGADraw->Blt, UGADraw,
            (EFI_UGA_PIXEL *) Image->PixelData,
@@ -3503,9 +3560,6 @@ EG_IMAGE * egCopyScreenArea (
            0, 0,
            Image->Width, Image->Height, 0
        );
-   }
-   else {
-       MY_FREE_IMAGE(Image);
    }
 
    return Image;

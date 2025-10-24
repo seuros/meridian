@@ -237,11 +237,8 @@ CHAR16 * GetShowName (
 
 
     if (0);
-    else if (MyStriCmp (LinuxName, L"LinuxMint" )) ShowName = L"Mint";
-    else if (MyStriCmp (LinuxName, L"Zorin"     )) ShowName = L"ZorinOS";
-    else if (MyStriCmp (LinuxName, L"Arch"      )) ShowName = L"ArchLinux";
-    else if (MyStriCmp (LinuxName, L"Elementary")) ShowName = L"ElementaryOS";
-    else                                           ShowName = LinuxName;
+    else if (MyStriCmp (LinuxName, L"LinuxMint")) ShowName = L"Mint";
+    else                                          ShowName = LinuxName;
 
     return ShowName;
 } // CHAR16 * GetShowName()
@@ -553,7 +550,7 @@ REFIT_MENU_SCREEN * InitializeSubScreen (
                     MY_FREE_POOL(LinuxName);
                     MY_FREE_POOL(SearchName);
                 } // while
-            }
+            } // if CheckFlag
 
             if (!Found) {
                 if (0);
@@ -712,14 +709,14 @@ VOID GenerateSubScreen (
             if (!(GlobalConfig.HideUIFlags & HIDEUI_FLAG_SINGLEUSER)) {
                 SubEntry = CopyLoaderEntry (Entry);
                 if (SubEntry != NULL) {
-                    SubEntry->me.Title        = StrDuplicate (L"Load Instance: Mac OS in Single User Mode (Laconic)");
+                    SubEntry->me.Title        = StrDuplicate (L"Load Instance: Mac OS in SingleUser Mode (Laconic)");
                     SubEntry->LoadOptions     = StrDuplicate (L"-s");
                     SubEntry->UseGraphicsMode = FALSE;
                     AddMenuEntry (SubScreen, (REFIT_MENU_ENTRY *) SubEntry);
                 }
                 SubEntry = CopyLoaderEntry (Entry);
                 if (SubEntry != NULL) {
-                    SubEntry->me.Title        = StrDuplicate (L"Load Instance: Mac OS in Single User Mode (Verbose)");
+                    SubEntry->me.Title        = StrDuplicate (L"Load Instance: Mac OS in SingleUser Mode (Verbose)");
                     SubEntry->LoadOptions     = StrDuplicate (L"-v -s");
                     SubEntry->UseGraphicsMode = FALSE;
                     AddMenuEntry (SubScreen, (REFIT_MENU_ENTRY *) SubEntry);
@@ -1906,7 +1903,7 @@ VOID SetLoaderDefaults (
         #if REFIT_DEBUG > 0
         ALT_LOG(1, LOG_LINE_NORMAL,
             L"Locate Icon Based on Hint String:- '%s'",
-            OSIconName
+            (OSIconName != NULL) ? OSIconName : L"NULL"
         );
         #endif
 
@@ -2239,11 +2236,12 @@ LOADER_ENTRY * AddLoaderEntry (
                                         ShowName
                                     );
                     } // if FindSubStr
+
                     MY_FREE_POOL(SearchName);
                 } // if !IsStub
 
                 KernFile = NULL;
-                TmpName = L"FIND BUGS!!"; // Find bug if this shows up
+                TmpName = L" *!@!* FIND BUG *!@!*"; // Find bug if this appears
 
                 if (!Found) {
                     if (LoaderPath != NULL) {
@@ -2553,12 +2551,13 @@ LOADER_LIST * AddLoaderListEntry (
         return NewEntry;
     }
 
-    // Append rescue kernels to end of list
+    // Handle "rescue" kernels
     LinuxRescue = IsStriStr (
         NewEntry->FileName, L"vmlinuz-0-rescue"
     ) ? TRUE : FALSE;
 
     if (LinuxRescue) {
+        // Append to end of list
         CurrentEntry = LoaderList;
         while (CurrentEntry->NextEntry != NULL) {
             CurrentEntry = CurrentEntry->NextEntry;
@@ -2569,7 +2568,7 @@ LOADER_LIST * AddLoaderListEntry (
         return LoaderList;
     }
 
-    // Non-rescue kernel processing
+    // Handle "non-rescue" kernels
     PrevEntry = NULL;
     LatestEntry = CurrentEntry = LoaderList;
 
@@ -3257,7 +3256,6 @@ BOOLEAN ScanLoaderDir (
                     !(IsLinux && GlobalConfig.FoldLinuxKernels),
                     TRUE
                 );
-                DisplayLoader = FALSE;
 
                 //BREAD_CRUMB(L"%a:  5a 1a 2b 2", __func__);
                 if (IsLinux && FirstKernel == NULL) {
@@ -3413,7 +3411,6 @@ VOID ScanNetboot (VOID) {
                     NetVolume, TRUE, FALSE
                 );
                 MY_FREE_POOL(Temp);
-                DisplayLoader = FALSE;
 
                 FreeVolume (&NetVolume);
             }
@@ -3492,7 +3489,6 @@ BOOLEAN ScanMacOsLoader (
                 FullFileName, NameOS,
                 Volume, TRUE, FALSE
             );
-            DisplayLoader = FALSE;
         }
 
         if (DuplicatesFallback (Volume, FullFileName)) {
@@ -3536,6 +3532,16 @@ VOID ScanEfiFiles (
     //LOG_INCREMENT();
     //BREAD_CRUMB(L"%a:  1 - START", __func__);
 
+    // DA-TAG: Do not free 'VolName' until after 'while (ScanFallbackLoader)'
+    VolName = (
+        Volume->VolName != NULL
+    ) ? Volume->VolName : L"** No Name **";
+
+    if (MyStriCmp (VolName, L"Whole Disk Volume")) {
+        // Early Return
+        return;
+    }
+
     i = 0;
     FoundVentoy = FALSE;
     while (GlobalConfig.HandleVentoy && !FoundVentoy) {
@@ -3544,8 +3550,8 @@ VOID ScanEfiFiles (
         );
         if (VentoyName == NULL) break;
 
-        if (MyStrBegins (VentoyName, Volume->VolName) ||
-            MyStrBegins (VentoyName, Volume->FsName)  ||
+        if (MyStrBegins (VentoyName, VolName)        ||
+            MyStrBegins (VentoyName, Volume->FsName) ||
             MyStrBegins (VentoyName, Volume->PartName)
         ) {
             FoundVentoy = TRUE;
@@ -3577,7 +3583,7 @@ VOID ScanEfiFiles (
     if (Volume->FSType == FS_TYPE_NTFS) {
         //BREAD_CRUMB(L"%a:  2a 1", __func__);
         if (AppleFirmware &&
-            MyStrStr (Volume->VolName, L"BOOTCAMP")
+            MyStrStr (VolName, L"BOOTCAMP")
         ) {
             //BREAD_CRUMB(L"%a:  2a 1a 1 - END:- VOID ... Exit on Windows BootCamp Volume", __func__);
             //LOG_DECREMENT();
@@ -3650,7 +3656,7 @@ VOID ScanEfiFiles (
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_LINE_THIN_SEP,
         L"Handle uEFI Loaders on Volume:- '%s'",
-        (Volume->VolName != NULL) ? Volume->VolName : L"** No Name **"
+        VolName
     );
     #endif
 
@@ -3760,7 +3766,6 @@ VOID ScanEfiFiles (
                 FileName, L"Instance: Windows XP (XoM)",
                 Volume, TRUE, FALSE
             );
-            DisplayLoader = FALSE;
 
             //BREAD_CRUMB(L"%a:  6a 7a 2", __func__);
             if (DuplicatesFallback (Volume, FileName)) {
@@ -3799,7 +3804,6 @@ VOID ScanEfiFiles (
                 FileName, L"Instance: Windows (UEFI) | BRBackup",
                 Volume, TRUE, FALSE
             );
-            DisplayLoader = FALSE;
 
             //BREAD_CRUMB(L"%a:  7a 2a 2", __func__);
             if (DuplicatesFallback (Volume, FileName)) {
@@ -3826,7 +3830,6 @@ VOID ScanEfiFiles (
                 FileName, TmpMsg,
                 Volume, TRUE, FALSE
             );
-            DisplayLoader = FALSE;
 
             if (DuplicatesFallback (Volume, FileName)) {
                 ScanFallbackLoader = FALSE;
@@ -3911,7 +3914,7 @@ VOID ScanEfiFiles (
         //BREAD_CRUMB(L"%a:  12a 1", __func__);
         Temp = PoolPrint (
             L"While Scanning the EFI System Partition on '%s'",
-            Volume->VolName
+            VolName
         );
         //BREAD_CRUMB(L"%a:  12a 2", __func__);
         CheckError (Status, Temp);
@@ -4006,7 +4009,6 @@ VentoyJump:
             Volume, TRUE, FALSE
         );
         MY_FREE_POOL(Temp);
-        DisplayLoader = FALSE;
         //BREAD_CRUMB(L"%a:  15a 2", __func__);
     }
 
@@ -4022,7 +4024,9 @@ VOID ScanInternal (VOID) {
 
 
     #if REFIT_DEBUG > 0
-    ALT_LOG(1, LOG_THREE_STAR_SEP, L"Internal Disk Volumes with Mode:- 'UEFI'");
+    ALT_LOG(1, LOG_THREE_STAR_SEP,
+        L"Scan for Internal Disk Volumes with Mode:- 'UEFI'"
+    );
     #endif
 
     LOG_SEP(L"X");
@@ -4042,8 +4046,6 @@ VOID ScanInternal (VOID) {
     }
     #endif
 
-    DisplayLoader = FALSE;
-
     BREAD_CRUMB(L"%a:  Z - END:- VOID", __func__);
     LOG_DECREMENT();
     LOG_SEP(L"X");
@@ -4056,7 +4058,9 @@ VOID ScanExternal (VOID) {
 
 
     #if REFIT_DEBUG > 0
-    ALT_LOG(1, LOG_THREE_STAR_SEP, L"External Disk Volumes with Mode:- 'UEFI'");
+    ALT_LOG(1, LOG_THREE_STAR_SEP,
+        L"Scan for External Disk Volumes with Mode:- 'UEFI'"
+    );
     #endif
 
     LOG_SEP(L"X");
@@ -4076,8 +4080,6 @@ VOID ScanExternal (VOID) {
     }
     #endif
 
-    DisplayLoader = FALSE;
-
     BREAD_CRUMB(L"%a:  Z - END:- VOID", __func__);
     LOG_DECREMENT();
     LOG_SEP(L"X");
@@ -4090,7 +4092,9 @@ VOID ScanOptical (VOID) {
 
 
     #if REFIT_DEBUG > 0
-    ALT_LOG(1, LOG_THREE_STAR_SEP, L"Optical Discs with Mode:- 'UEFI'");
+    ALT_LOG(1, LOG_THREE_STAR_SEP,
+        L"Scan for Optical Discs with Mode:- 'UEFI'"
+    );
     #endif
 
     LOG_SEP(L"X");
@@ -4109,8 +4113,6 @@ VOID ScanOptical (VOID) {
         ALT_LOG(1, LOG_STAR_HEAD_SEP, L"None Found");
     }
     #endif
-
-    DisplayLoader = FALSE;
 
     BREAD_CRUMB(L"%a:  Z - END:- VOID", __func__);
     LOG_DECREMENT();
@@ -4283,7 +4285,8 @@ BOOLEAN FindToolEx (
         MenuEntry->UseGraphicsMode = GlobalConfig.GraphicsFor & GRAPHICS_FOR_TOOLS;
     }
 
-    // DA-TAG: 'me.Row' is used as an Instance ID for Entries
+    // DA-TAG: 'me.Row' is used as an Instance ID for Entries.
+    //         That is, a proxy and not the actual screen row.
     switch (TypeTag) {
         case TAG_SHELL:
             MenuEntry->me.Row = ShellEntryItemsCount;
@@ -4357,8 +4360,8 @@ BOOLEAN FindToolEx (
     return TRUE;
 } // static BOOLEAN FindToolEx()
 
-// Locate a single tool from the specified Locations using one of the
-// specified Names and add it to the menu.
+// Locate a single tool within the specified 'Locations'
+// with one of the specified 'Names' and add to the menu.
 BOOLEAN FindTool (
     CHAR16  *Locations,
     CHAR16  *Names,
@@ -4380,6 +4383,10 @@ BOOLEAN FindTool (
     BOOLEAN  BreakLoop;
     BOOLEAN  MemTestRun;
 
+
+    if (Names == NULL) {
+        return FALSE;
+    }
 
     VolName   =  NULL;
     DirName   =  NULL;
@@ -4520,14 +4527,14 @@ BOOLEAN FindTool (
     return FoundTool;
 } // BOOLEAN FindTool()
 
-// Scan options stored in UEFI firmware's boot list. Adds discovered and allowed
-// items to the specified Row.
-// If MatchThis != NULL, only adds items with labels containing any element of
-// the MatchThis comma-delimited string; otherwise, searches for anything that
-// does not match GlobalConfig.DontScanFirmware or the contents of the
-// HiddenFirmware UEFI variable.
-// If Icon != NULL, uses the specified icon; otherwise tries to find one to
-// match the label.
+// Scan options stored in UEFI firmware's boot list.
+// Adds discovered and allowed items to the specified Row.
+// If MatchThis != NULL, only adds items with labels containing
+//   any element of the MatchThis comma-delimited string; otherwise,
+//   searches for items that do not match GlobalConfig.DontScanFirmware
+//   or the contents of the HiddenFirmware UEFI variable.
+// If Icon != NULL, uses the specified icon; otherwise
+//   tries to find one to match the label.
 VOID ScanFirmwareDefined (
     IN UINTN     Row,
     IN CHAR16   *MatchThis  OPTIONAL,
@@ -4984,11 +4991,16 @@ VOID ScanForBootloaders (VOID) {
         switch (GlobalConfig.ScanFor[i]) {
             case 'm': case 'M':
                 #if REFIT_DEBUG > 0
-                if (LogNewLine) LOG_MSG("\n");
+                if (LogNewLine) {
+                    LOG_MSG("\n");
+                    ALT_LOG(1, LOG_BLANK_LINE_TWO, L"X");
+                }
                 LogNewLine = TRUE;
 
                 LOG_MSG("Scan Manual:");
-                ALT_LOG(1, LOG_THREE_STAR_SEP, L"Manually Defined Stanzas");
+                ALT_LOG(1, LOG_THREE_STAR_SEP,
+                    L"Scan for User Defined Stanzas"
+                );
                 #endif
 
                 ScanUserConfigured (GlobalConfig.ConfigFilename);
@@ -4996,7 +5008,10 @@ VOID ScanForBootloaders (VOID) {
 
             case 'i': case 'I':
                 #if REFIT_DEBUG > 0
-                if (LogNewLine) LOG_MSG("\n");
+                if (LogNewLine) {
+                    LOG_MSG("\n");
+                    ALT_LOG(1, LOG_BLANK_LINE_TWO, L"X");
+                }
                 LogNewLine = TRUE;
 
                 LOG_MSG("Scan Internal:");
@@ -5007,7 +5022,10 @@ VOID ScanForBootloaders (VOID) {
 
             case 'h': case 'H':
                 #if REFIT_DEBUG > 0
-                if (LogNewLine) LOG_MSG("\n");
+                if (LogNewLine) {
+                    LOG_MSG("\n");
+                    ALT_LOG(1, LOG_BLANK_LINE_TWO, L"X");
+                }
                 LogNewLine = TRUE;
 
                 LOG_MSG("Scan Internal (Legacy):");
@@ -5018,7 +5036,10 @@ VOID ScanForBootloaders (VOID) {
 
             case 'e': case 'E':
                 #if REFIT_DEBUG > 0
-                if (LogNewLine) LOG_MSG("\n");
+                if (LogNewLine) {
+                    LOG_MSG("\n");
+                    ALT_LOG(1, LOG_BLANK_LINE_TWO, L"X");
+                }
                 LogNewLine = TRUE;
 
                 LOG_MSG("Scan External:");
@@ -5028,8 +5049,11 @@ VOID ScanForBootloaders (VOID) {
                 break;
 
             case 'b': case 'B':
-            #if REFIT_DEBUG > 0
-                if (LogNewLine) LOG_MSG("\n");
+                #if REFIT_DEBUG > 0
+                if (LogNewLine) {
+                    LOG_MSG("\n");
+                    ALT_LOG(1, LOG_BLANK_LINE_TWO, L"X");
+                }
                 LogNewLine = TRUE;
 
                 LOG_MSG("Scan External (Legacy):");
@@ -5040,7 +5064,10 @@ VOID ScanForBootloaders (VOID) {
 
             case 'o': case 'O':
                 #if REFIT_DEBUG > 0
-                if (LogNewLine) LOG_MSG("\n");
+                if (LogNewLine) {
+                    LOG_MSG("\n");
+                    ALT_LOG(1, LOG_BLANK_LINE_TWO, L"X");
+                }
                 LogNewLine = TRUE;
 
                 LOG_MSG("Scan Optical:");
@@ -5050,8 +5077,11 @@ VOID ScanForBootloaders (VOID) {
                 break;
 
             case 'c': case 'C':
-            #if REFIT_DEBUG > 0
-                if (LogNewLine) LOG_MSG("\n");
+                #if REFIT_DEBUG > 0
+                if (LogNewLine) {
+                    LOG_MSG("\n");
+                    ALT_LOG(1, LOG_BLANK_LINE_TWO, L"X");
+                }
                 LogNewLine = TRUE;
 
                 LOG_MSG("Scan Optical (Legacy):");
@@ -5062,7 +5092,10 @@ VOID ScanForBootloaders (VOID) {
 
             case 'n': case 'N':
                 #if REFIT_DEBUG > 0
-                if (LogNewLine) LOG_MSG("\n");
+                if (LogNewLine) {
+                    LOG_MSG("\n");
+                    ALT_LOG(1, LOG_BLANK_LINE_TWO, L"X");
+                }
                 LogNewLine = TRUE;
 
                 LOG_MSG("Scan Net Boot:");
@@ -5073,7 +5106,10 @@ VOID ScanForBootloaders (VOID) {
 
             case 'f': case 'F':
                 #if REFIT_DEBUG > 0
-                if (LogNewLine) LOG_MSG("\n");
+                if (LogNewLine) {
+                    LOG_MSG("\n");
+                    ALT_LOG(1, LOG_BLANK_LINE_TWO, L"X");
+                }
                 LogNewLine = TRUE;
 
                 LOG_MSG("Scan Firmware:");
@@ -5470,7 +5506,7 @@ VOID ScanForTools (VOID) {
                 MenuEntryPreCleanNvram = AllocateZeroPool (
                     sizeof (REFIT_MENU_ENTRY)
                 );
-                if (MenuEntryPreCleanNvram) {
+                if (MenuEntryPreCleanNvram != NULL) {
                     #if REFIT_DEBUG > 0
                     FoundTool = TRUE;
                     #endif
@@ -5513,7 +5549,7 @@ VOID ScanForTools (VOID) {
                 MenuEntryShutdown = AllocateZeroPool (
                     sizeof (REFIT_MENU_ENTRY)
                 );
-                if (MenuEntryShutdown) {
+                if (MenuEntryShutdown != NULL) {
                     #if REFIT_DEBUG > 0
                     FoundTool = TRUE;
                     #endif
@@ -5554,7 +5590,7 @@ VOID ScanForTools (VOID) {
                 MenuEntryReset = AllocateZeroPool (
                     sizeof (REFIT_MENU_ENTRY)
                 );
-                if (MenuEntryReset) {
+                if (MenuEntryReset != NULL) {
                     #if REFIT_DEBUG > 0
                     FoundTool = TRUE;
                     #endif
@@ -5595,7 +5631,7 @@ VOID ScanForTools (VOID) {
                 MenuEntryAbout = AllocateZeroPool (
                     sizeof (REFIT_MENU_ENTRY)
                 );
-                if (MenuEntryAbout) {
+                if (MenuEntryAbout != NULL) {
                     #if REFIT_DEBUG > 0
                     FoundTool = TRUE;
                     #endif
@@ -5638,7 +5674,7 @@ VOID ScanForTools (VOID) {
                 MenuEntryExit = AllocateZeroPool (
                     sizeof (REFIT_MENU_ENTRY)
                 );
-                if (MenuEntryExit) {
+                if (MenuEntryExit != NULL) {
                     #if REFIT_DEBUG > 0
                     FoundTool = TRUE;
                     #endif

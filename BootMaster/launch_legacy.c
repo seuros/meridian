@@ -1170,7 +1170,11 @@ VOID ScanLegacyUEFI (
             // Look for such and pass on, if present, with the technically
             //   incorrect but internally useful "BBS_TYPE_USB" flag.
             if (DiskType != BBS_HARDDISK) {
-                AddLegacyEntryUEFI (BdsOption, DiskType);
+                DisplayLoader = TRUE;
+                AddLegacyEntryUEFI (
+                    BdsOption,
+                    DiskType
+                );
             }
             else if (
                 AssumeUSB &&
@@ -1179,7 +1183,11 @@ VOID ScanLegacyUEFI (
                     (BBS_MEDIA_PRESENT | BBS_MEDIA_MAYBE_PRESENT)
                 )
             ) {
-                AddLegacyEntryUEFI (BdsOption, BBS_USB);
+                DisplayLoader = TRUE;
+                AddLegacyEntryUEFI (
+                    BdsOption,
+                    BBS_USB
+                );
             }
             else {
                 if (!AssumeUSB &&
@@ -1188,7 +1196,11 @@ VOID ScanLegacyUEFI (
                         (BBS_MEDIA_PRESENT | BBS_MEDIA_MAYBE_PRESENT)
                     )
                 ) {
-                    AddLegacyEntryUEFI (BdsOption, DiskType);
+                    DisplayLoader = TRUE;
+                    AddLegacyEntryUEFI (
+                        BdsOption,
+                        DiskType
+                    );
                 }
             }
         } // if BbsDevicePath->DeviceType
@@ -1402,6 +1414,7 @@ VOID ScanLegacyEx (
     REFIT_VOLUME *Volume;
 
 
+    DisplayLoader = FALSE;
     FirstLegacyScan = TRUE;
     if (GlobalConfig.LegacyType == LEGACY_TYPE_UEFI ||
         GlobalConfig.LegacyType == LEGACY_TYPE_MAC2
@@ -1410,7 +1423,6 @@ VOID ScanLegacyEx (
     }
     else {
         if (GlobalConfig.LegacyType == LEGACY_TYPE_MAC1) {
-            DisplayLoader = FALSE;
             for (VolumeIndex = 0; VolumeIndex < VolumesCount; VolumeIndex++) {
                 Volume = Volumes[VolumeIndex];
                 if ((
@@ -1436,8 +1448,6 @@ VOID ScanLegacyEx (
         ALT_LOG(1, LOG_STAR_HEAD_SEP, L"None Found");
     }
     #endif
-
-    DisplayLoader = TRUE;
 } // static VOID ScanLegacyEx()
 
 // Scan attached optical discs for legacy boot code
@@ -1445,7 +1455,7 @@ VOID ScanLegacyEx (
 VOID ScanLegacyDisc (VOID) {
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_THREE_STAR_SEP,
-        L"Optical Disk Volumes with Mode:- 'Legacy BIOS'"
+        L"Scan for Optical Discs with Mode:- 'Legacy BIOS'"
     );
     #endif
 
@@ -1465,7 +1475,7 @@ VOID ScanLegacyDisc (VOID) {
 VOID ScanLegacyInternal (VOID) {
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_THREE_STAR_SEP,
-        L"Internal Disk Volumes with Mode:- 'Legacy BIOS'"
+        L"Scan for Internal Disk Volumes with Mode:- 'Legacy BIOS'"
     );
     #endif
 
@@ -1488,7 +1498,7 @@ VOID ScanLegacyInternal (VOID) {
 VOID ScanLegacyExternal (VOID) {
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_THREE_STAR_SEP,
-        L"External Disk Volumes with Mode:- 'Legacy BIOS'"
+        L"Scan for External Disk Volumes with Mode:- 'Legacy BIOS'"
     );
     #endif
 

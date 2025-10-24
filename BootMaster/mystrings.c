@@ -250,6 +250,9 @@ CHAR16 * CapitalisedCase (
                 MyStriCmp (
                     WordBuffer,
                     L"standard"
+                ) || MyStriCmp (
+                    WordBuffer,
+                    L"normal"
                 )
             ) {
                 // Replace "standard" with "Default"

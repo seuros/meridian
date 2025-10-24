@@ -1951,11 +1951,11 @@ REFIT_MENU_SCREEN * InitToolMenu (
 
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_LINE_THIN_SEP, L"Prepare Menu Screen");
-    ALT_LOG(1, LOG_LINE_NORMAL, L"Screen Title:- 'Run %s Info'", ToolPurpose);
+    ALT_LOG(1, LOG_LINE_NORMAL, L"Screen Title:- 'Prep %s Menu'", ToolPurpose);
     #endif
 
     Menu->TitleImage = BuiltinIcon  (BuiltinIconID          );
-    Menu->Title      = StrDuplicate (Title                  );
+    Menu->Title      = PoolPrint    (L"%s Menu", Title      );
     Menu->Hint1      = StrDuplicate (SELECT_OPTION_HINT     );
     Menu->Hint2      = StrDuplicate (RETURN_MAIN_SCREEN_HINT);
 
@@ -2761,9 +2761,9 @@ VOID AboutRefindPlus (VOID) {
         AboutMenu,
         PoolPrint (
 #if defined(__MAKEWITH_TIANO)
-            L"Built with TianoCore EDK II via %s %s",
+            L"Built with TianoCore EDK II via %s%s",
 #else
-            L"Built with GNU-EFI via %s %s",
+            L"Built with GNU-EFI via %s%s",
 #endif
             OurToolTag, OurTypeTag
         ),
@@ -3715,9 +3715,14 @@ VOID ResetCall (
     );
 
     #if REFIT_DEBUG > 0
-    MsgStr = (IsRestart)
-        ? StrDuplicate (L"R U N   S Y S T E M   R E S T A R T")
-        : StrDuplicate (L"R U N   S Y S T E M   S H U T D O W N");
+    MsgStr = (
+        IsRestart
+    ) ? StrDuplicate (
+        L"R U N   S Y S T E M   R E S T A R T"
+    ) : StrDuplicate (
+        L"R U N   S Y S T E M   S H U T D O W N"
+    );
+    ALT_LOG(1, LOG_BLANK_LINE_TWO, L"X");
     ALT_LOG(1, LOG_LINE_SEPARATOR, L"%s", MsgStr);
     LOG_MSG("%s", MsgStr);
     LOG_MSG("\n");
@@ -3916,20 +3921,20 @@ EFI_STATUS EFIAPI efi_main (
 #endif
 
     /* Toolchain */
-    OurTypeTag = L"(Local)";
+    OurTypeTag = L" (Local)";
     #if defined(__clang__)
         #if defined(__APPLE__)
             #if defined(__GNUC__)
-                OurToolTag = L"MacOS/XCODE5";
+                OurToolTag = L"macOS/XCODE5";
             #else
-                OurToolTag = L"MacOS/CLANG";
+                OurToolTag = L"macOS/CLANG";
             #endif
         #else
             OurToolTag = L"Other/CLANG";
         #endif
     #elif defined(__GNUC__)
         #if defined(__APPLE__)
-            OurToolTag = L"MacOS/GCC5";
+            OurToolTag = L"macOS/GCC5";
         #else
             OurToolTag = L"Other/GCC5";
         #endif
@@ -3938,7 +3943,7 @@ EFI_STATUS EFIAPI efi_main (
     #endif
 
 #if REFIT_DEBUG > 0
-    LOG_MSG("Toolchain:- '%s' %s", OurToolTag, OurTypeTag);
+    LOG_MSG("Toolchain:- '%s'%s", OurToolTag, OurTypeTag);
     LOG_MSG("\n");
 
     /* TimeStamp */
@@ -4117,6 +4122,14 @@ EFI_STATUS EFIAPI efi_main (
     LOG_MSG("%s      SyncTrust:- '%03d'",    TAG_ITEM_A(GlobalConfig.SyncTrust    ));
     LOG_MSG("%s      SyncAPFS:- '%s'",       TAG_ITEM_C(GlobalConfig.SyncAPFS     ));
     LOG_MSG("%s      HelpIcon:- '%s'",       TAG_ITEM_C(GlobalConfig.HelpIcon     ));
+    LOG_MSG("%s      MacLegacy:- ",          OffsetNext                            );
+    if (!AppleFirmware) {
+        LOG_MSG("'Disabled'"                                                       );
+    }
+    else {
+        LOG_MSG("'%s'", (GlobalConfig.LegacySync) ? L"Active" : L"Inactive"        );
+    }
+
     LOG_MSG("%s      CheckDXE:- '%s'",       TAG_ITEM_C(GlobalConfig.RescanDXE    ));
     LOG_MSG("%s      TextOnly:- ",           OffsetNext                            );
     if (ForceTextOnly) {
@@ -4128,14 +4141,6 @@ EFI_STATUS EFIAPI efi_main (
 
     LOG_MSG("%s      DirectGOP:- '%s'",      TAG_ITEM_C(GlobalConfig.UseDirectGop ));
     LOG_MSG("%s      ScanAllESP:- '%s'",     TAG_ITEM_C(GlobalConfig.ScanAllESP   ));
-    LOG_MSG("%s      LegacySync:- ",         OffsetNext                            );
-    if (!AppleFirmware) {
-        LOG_MSG("'Disabled'"                                                       );
-    }
-    else {
-        LOG_MSG("'%s'", (GlobalConfig.LegacySync) ? L"Active" : L"Inactive"        );
-    }
-
     LOG_MSG("%s      DirectBoot:- '%s'",     TAG_ITEM_C(GlobalConfig.DirectBoot   ));
     LOG_MSG("%s      ProtectNvram:- ",       OffsetNext                            );
     if (!AppleFirmware || RunningOC) {
@@ -4150,8 +4155,8 @@ EFI_STATUS EFIAPI efi_main (
         LOG_MSG("'%s'", (GlobalConfig.NvramProtect) ? L"Active" : L"Inactive"      );
     }
 
-    LOG_MSG("%s      BootLogoClear:- '%s'",   TAG_ITEM_C(GlobalConfig.BootLogoClear));
-    LOG_MSG("%s      BootLogoScale:- '%s'",   TAG_ITEM_C(GlobalConfig.BootLogoScale));
+    LOG_MSG("%s      ExitLogoClear:- '%s'",  TAG_ITEM_C(GlobalConfig.BootLogoClear));
+    LOG_MSG("%s      ExitLogoScale:- '%s'",  TAG_ITEM_C(GlobalConfig.BootLogoScale));
     LOG_MSG("%s      RansomDrives:- ",       OffsetNext                            );
     if (AppleFirmware) {
         LOG_MSG("'Disabled'"                                                       );

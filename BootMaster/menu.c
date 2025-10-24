@@ -702,7 +702,7 @@ CHAR16 * GetScanCodeText (
         case SCAN_F2:        Retval = L"DETAILS_F2"  ; break;
         case SCAN_F10:       Retval = L"SCRNSHOT_F10"; break;
         case 0x0016:         Retval = L"EJECT_F12"   ; break;
-        default:             Retval = L"UNKNOWN_KEY" ; break;
+        default:             Retval = L"UNMAPPED_KEY"; break;
     } // switch
 
     return Retval;
@@ -2596,15 +2596,16 @@ UINTN DrawMenuScreen (
 
             #if REFIT_DEBUG > 0
             KeyTxt = GetScanCodeText (key.ScanCode);
-            if (MyStriCmp (KeyTxt, L"KEY_UNKNOWN")) {
+            if (MyStriCmp (KeyTxt, L"UNMAPPED_KEY")) {
                 switch (key.UnicodeChar) {
-                    case CHAR_LINEFEED:        KeyTxt = L"INFER_ENTER    Key: LineFeed"      ; break;
-                    case CHAR_CARRIAGE_RETURN: KeyTxt = L"INFER_ENTER    Key: CarriageReturn"; break;
-                    case CHAR_BACKSPACE:       KeyTxt = L"INFER_ESCAPE   Key: BackSpace"     ; break;
-                    case ' ':                  KeyTxt = L"INFER_ESCAPE   Key: SpaceBar"      ; break;
-                    case CHAR_TAB:             KeyTxt = L"INFER_DETAILS  Key: Tab"           ; break;
-                    case '+':                  KeyTxt = L"INFER_DETAILS  Key: '+' (Plus)"    ; break;
-                    case '-':                  KeyTxt = L"INFER_REMOVE   Key: '-' (Minus)"   ; break;
+                    case CHAR_LINEFEED:        KeyTxt = L"INFER_ENTER       Key: LineFeed"        ; break;
+                    case CHAR_CARRIAGE_RETURN: KeyTxt = L"INFER_ENTER       Key: CarriageReturn"  ; break;
+                    case CHAR_BACKSPACE:       KeyTxt = L"INFER_ESCAPE      Key: BackSpace"       ; break;
+                    case ' ':                  KeyTxt = L"INFER_ESCAPE      Key: SpaceBar"        ; break;
+                    case CHAR_TAB:             KeyTxt = L"INFER_DETAILS     Key: Tab"             ; break;
+                    case '+':                  KeyTxt = L"INFER_DETAILS     Key: '+' (Plus)"      ; break;
+                    case '-':                  KeyTxt = L"INFER_REMOVE      Key: '-' (Minus)"     ; break;
+                    case '\\':                 KeyTxt = L"SCREENSHOT        Key: '\\' (BackSlash)"; break;
                 } // switch
             }
             ALT_LOG(1, LOG_LINE_NORMAL,
@@ -2619,7 +2620,7 @@ UINTN DrawMenuScreen (
                 }
                 else {
                     if (MenuExit == MENU_EXIT_ZERO) {
-                        // Unblock Rescan on Key Press or Key Scan
+                        // Unblock Rescan on Key Press/Scan
                         BlockRescan = (
                             UserKeyPress || UserKeyScan
                         ) ? FALSE : TRUE;

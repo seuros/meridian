@@ -32,19 +32,26 @@
     - German, Spanish, French, Portuguese, Italian, Finnish, Dutch, Croatian
   * English is still given preference for technical reasons
   * TODO: Process that does not rely on this tag is best.
-- Improves `BootLogo` Handling
-  * Auto scaling of BootLogo image can now be skipped
-    - Via a new `disable_bootlogo_scale` configuration token
-  * Final clearing of BootLogo image can now be skipped
-    - Via a new `disable_bootlogo_clear` configuration token
+- Amends Feature: `BootLogo` to `ExitLogo`
+  * Renamed to distinguish from inherited `BootLogo` feature
+    - That applied to Legacy BIOS Boot items
+    - `BootLogo` and `ExitLogo` may be fully merged later 
+  * Auto scaling of ExitLogo image can now be skipped
+    - Via a new `disable_exitlogo_scale` configuration token
+  * Final clearing of ExitLogo image can now be skipped
+    - Via a new `disable_exitlogo_clear` configuration token
   * Adjusted image loading priority as follows:
     - `boot_outlogo.[xyz]` file will be used if present
     - `boot_[distro].[xyz]` will be used if present otherwise
     - `os_[distro].[xyz]` will be used if present otherwise
     - `os_[type].[xyz]` will be used if present otherwise
-    - Nothing will be displayed as boot logo otherwise
+    - Nothing will be displayed as exit logo otherwise
   * Renames Configuration Token
-    - `disable_bootlogo` to `disable_bootlogo_image`
+    - `disable_bootlogo` to `disable_exitlogo_image`
+  * NOTE: The following development stage settings are deprecated
+    - `disable_bootlogo_clear` for `disable_exitlogo_clear`
+    - `disable_bootlogo_image` for `disable_exitlogo_image`
+    - `disable_bootlogo_scale` for `disable_exitlogo_scale`
 - Amends Linux Options Definition File, `xyz_linux.conf`, Handling
   * Now prioritises `refindplus_linux` and `refindplus-linux` conf files
   * Upstream variants are now only sought if these are not found

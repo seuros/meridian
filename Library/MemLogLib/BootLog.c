@@ -1,7 +1,7 @@
 /*
  *  BootLog.c
  *
- *  Created by Slice  2011-08.19
+ *  Created by Slice  2011-08-19
  *  Edited by apianti 2012-09-08
  */
  /**
@@ -211,7 +211,9 @@ EFI_FILE_PROTOCOL * GetDebugLogFile (VOID) {
     );
     if (mRootDir != NULL) {
         LogProtocol = OpenLogFile();
-        Status = HandleDir (LogProtocol);
+        Status = HandleDir (
+            LogProtocol
+        );
     }
     else {
         Status = EFI_NOT_READY;
@@ -244,10 +246,14 @@ EFI_FILE_PROTOCOL * GetDebugLogFile (VOID) {
     if (EFI_ERROR(Status)) {
         // Try first ESP found
         mRootDir = NULL;
-        Status = egFindESP (&mRootDir);
+        Status = egFindESP (
+            &mRootDir
+        );
         if (!EFI_ERROR(Status)) {
             LogProtocol = OpenLogFile();
-            Status = HandleDir (LogProtocol);
+            Status = HandleDir (
+                LogProtocol
+            );
         }
 
         if (EFI_ERROR(Status)) {
@@ -326,7 +332,9 @@ VOID SaveMessageToDebugLogFile (
     }
 
     // Get File Info for LogFile
-    Info = EfiLibFileInfo (LogFile);
+    Info = EfiLibFileInfo (
+        LogFile
+    );
     if (Info) {
         // DA-TAG: Investigate This
         //         'Softly' disable combining buffer
@@ -343,10 +351,17 @@ VOID SaveMessageToDebugLogFile (
             : AsciiStrLen (LastMessage);
 
         // Advance to EOF (Append Output)
-        LogFile->SetPosition (LogFile, Info->FileSize);
+        LogFile->SetPosition (
+            LogFile,
+            Info->FileSize
+        );
 
         // Write message out
-        LogFile->Write (LogFile, &TextLen, Text);
+        LogFile->Write (
+            LogFile,
+            &TextLen,
+            Text
+        );
 
         // Update 'FirstTimeSave'
         FirstTimeSave = FALSE;
@@ -381,8 +396,15 @@ VOID WayPointer (
 
     // Call DeepLogger
     gLogTemp = StrDuplicate (Msg);
-    LogLineType = (TmpLogLevelStore == 0) ? LOG_LINE_EXIT : LOG_LINE_BASE;
-    DeepLoggger (1, LogLineType, &gLogTemp);
+    LogLineType = (
+        TmpLogLevelStore == 0
+    ) ? LOG_LINE_EXIT : LOG_LINE_BASE;
+
+    DeepLoggger (
+        1,
+        LogLineType,
+        &gLogTemp
+    );
     if (TmpLogLevelStore != 0) {
         ALT_LOG(1, LOG_BLANK_LINE_SEP, L"X");
     }
@@ -443,9 +465,13 @@ VOID DeepLoggger (
     // Truncate message at LOGLEVELMAX and lower (if required)
     if (GlobalConfig.LogLevel <= LOGLEVELMAX) {
         Limit   = 426;
-        LongStr = TruncateString (*Msg, Limit);
+        LongStr = TruncateString (
+            *Msg, Limit
+        );
 
-        StoreMsg = StrDuplicate (*Msg);
+        StoreMsg = StrDuplicate (
+            *Msg
+        );
         MY_FREE_POOL(*Msg);
         *Msg = (LongStr)
             ? PoolPrint (L"%s ... Snipped!!", StoreMsg)
@@ -459,6 +485,7 @@ VOID DeepLoggger (
     switch (type) {
         case LOG_BLOCK_SEP:
         case LOG_BLANK_LINE_SEP: Tmp = StrDuplicate (L"\n");                                                      break;
+        case LOG_BLANK_LINE_TWO: Tmp = StrDuplicate (L"\n\n");                                                    break;
         case LOG_STAR_SEPARATOR: Tmp = PoolPrint (L"\n\n* ** ** *** *** ***[ %s ]*** *** *** ** ** *\n\n", *Msg); break;
         case LOG_LINE_SEPARATOR: Tmp = PoolPrint (L"\n===================[ %s ]===================\n\n",   *Msg); break;
         case LOG_THREE_STAR_SEP: Tmp = PoolPrint (L"\n*** *** --- --- ---[ %s ]--- --- --- *** ***\n",     *Msg); break;
@@ -486,8 +513,13 @@ VOID DeepLoggger (
         UseMsgLog = TRUE;
 
         // Write the Message String to File
-        UnicodeStrToAsciiStr (Tmp, FormatMsg);
-        DebugLog ((const CHAR8 *) FormatMsg);
+        UnicodeStrToAsciiStr (
+            Tmp,
+            FormatMsg
+        );
+        DebugLog (
+            (const CHAR8 *) FormatMsg
+        );
         MY_FREE_POOL(FormatMsg);
 
         // Disable Native Logging
@@ -533,7 +565,10 @@ VOID EFIAPI DebugLog (
     // Print message to log buffer
     VA_LIST Marker;
     VA_START(Marker, FormatString);
-    MemLogVA (TimeStamp, REFIT_DEBUG, FormatString, Marker);
+    MemLogVA (
+        TimeStamp, REFIT_DEBUG,
+        FormatString, Marker
+    );
     VA_END(Marker);
 
     TimeStamp = TRUE;
@@ -544,6 +579,7 @@ VOID LogPadding (
 ) {
     CHAR16 *TmpPad;
     UINTN   PadPos;
+
 
     // Abort if Kernel has started
     if (gKernelStarted) {
@@ -556,7 +592,9 @@ VOID LogPadding (
     }
 
     if (PadStr == NULL) {
-        PadStr = StrDuplicate (L"[ ");
+        PadStr = StrDuplicate (
+            L"[ "
+        );
 
         // Early Return
         return;
@@ -567,25 +605,33 @@ VOID LogPadding (
     MY_FREE_POOL(PadStr);
 
     if (Increment == TRUE) {
-        if (NativeLogger) {
-            PadStr = StrDuplicate (TmpPad);
-        }
-        else {
-            PadStr = PoolPrint (L"%s. ", TmpPad);
-        }
+        PadStr = (
+            NativeLogger
+        ) ? StrDuplicate (
+            TmpPad
+        ) : PoolPrint (
+            L"%s. ",
+            TmpPad
+        );
     }
     else {
         if (NativeLogger) {
-            PadStr = StrDuplicate (TmpPad);
+            PadStr = StrDuplicate (
+                TmpPad
+            );
         }
         else {
-            PadPos = PadPos - 2;
+            PadPos -= 2;
             if (PadPos < 3) {
-                PadStr = StrDuplicate (L"[ ");
+                PadStr = StrDuplicate (
+                    L"[ "
+                );
             }
             else {
                 TmpPad[PadPos] = L'\0';
-                PadStr = StrDuplicate (TmpPad);
+                PadStr = StrDuplicate (
+                    TmpPad
+                );
             }
         }
     }
@@ -604,7 +650,9 @@ VOID EFIAPI MemLogCallback (
 ) {
     #if REFIT_DEBUG > 0
     if (DebugMode >= 1) {
-        SaveMessageToDebugLogFile (LastMessage);
+        SaveMessageToDebugLogFile (
+            LastMessage
+        );
     }
     #endif
 
@@ -612,5 +660,7 @@ VOID EFIAPI MemLogCallback (
 } // static VOID EFIAPI MemLogCallback()
 
 VOID InitBooterLog (VOID) {
-    SetMemLogCallback (MemLogCallback);
+    SetMemLogCallback (
+        MemLogCallback
+    );
 } // VOID InitBooterLog()

@@ -162,12 +162,20 @@ jobs:
           sudo installer -pkg "${PYTHON_PKG}" -target /
 
       - name: Misc Prep
-        continue-on-error: true
         shell: bash
         run: |
           # Tag Build
           ADD_TAG="${HOME}/Documents/RefindPlus/Working/BootMaster/main.c"
-          [[ -f "${ADD_TAG}" ]] && /usr/bin/perl -i -p -e 's~\(Local\)~(Outer)~' "${ADD_TAG}"
+
+          if [[ ! -f "${ADD_TAG}" ]]; then
+            echo "ERROR: Main Program File Not Found: '${ADD_TAG}'"
+            echo "       Exiting Now"
+            exit 1
+          fi
+
+          /usr/bin/perl -i -p -e 's~\(Local\)~(Outer)~' "${ADD_TAG}" || {
+            echo "[WARN] Tag Replacement Failed: '${ADD_TAG}'"
+          }
 
       - name: Main Script
         env:
