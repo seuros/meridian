@@ -199,27 +199,6 @@
 #
 #disable_apfs_sync
 
-# RefindPlus defaults to displaying a "boot logo" icon before loading instances
-# of Windows or Linux to mimic a BGRT. This feature can be leveraged to define
-# custom exit splash screens by taking advantage of the following behaviour:
-#   - 'boot_outlogo' file will be used if present
-#   - 'boot_{distro}' will be used if present otherwise
-#   - 'os_{distro}' will be used if present otherwise
-#
-# The options below are available:
-#   Win   - Disable Bootlogo for Windows Loaders
-#   Lin   - Disable Bootlogo for Linux Stub Loaders
-#   All   - Disable Bootlogo for Every Type of Loader
-#   Off   - Disable Bootlogo for None of These Loaders (Default)
-#
-# NOTES:
-# 1. The 'All' option takes precedence over others apart from 'Off'
-# 2. The 'Off' option takes precedence over every other setting
-#
-# Inactive when commented out or set to 'Off' (Does not disable boot logos)
-#
-#disable_bootlogo Win
-
 # Disable Apple Mobile File Integrity (AMFI) checks on booting MacOS. Whenever
 # this token is active, RefindPlus will add a "amfi_get_out_of_my_way=1" boot
 # argument which, along with System Integrity Protection (SIP), restricts
@@ -245,6 +224,52 @@
 # Inactive when commented out (Does not stop MacOS compatibility checks)
 #
 #disable_check_compat
+
+# RefindPlus defaults to cleaning the screen by clearing displayed "Exit Logo"
+# images before loading external targets. When this setting is active, images
+# used in exit screens will be left alone on exit and the screen not cleaned.
+#
+# NOTES:
+# 1. See 'disable_exitlogo_image' and 'disable_exitlogo_scale'
+#
+# Exit logo images are cleared, after being shown, when commented out
+#
+#disable_exitlogo_clear
+
+# RefindPlus defaults to displaying "Exit Logo" images before loading instances
+# of Windows or Linux to mimic a BGRT. This feature can be leveraged to define
+# custom exit splash screens by taking advantage of the following behaviour:
+#   - 'boot_outlogo.[xyz]' file will be used if present
+#   - 'boot_[distro].[xyz]' will be used if present otherwise
+#   - 'os_[distro].[xyz]' will be used if present otherwise
+#   - 'os_[type].[xyz]' will be used if present otherwise
+#   - Nothing will be displayed as exit logo otherwise
+#
+# The options below are available:
+#   WIN   - Disable for Windows Loaders
+#   LIN   - Disable for Linux Stub Loaders
+#   ALL   - Disable for Every Type of Loader
+#   OFF   - Disable for None of The Loaders (Default)
+#
+# NOTES:
+# 1. The 'ALL' option takes precedence over others apart from 'OFF'
+# 2. The 'OFF' option takes precedence over every other setting
+# 3. See 'disable_exitlogo_clear' and 'disable_exitlogo_scale'
+#
+# Exit logo images are shown, if applicable, when commented out
+#
+#disable_exitlogo_image WIN
+
+# RefindPlus defaults to scaling images used as "Exit Logo" in exit screens.
+# When this setting is active, the images, see 'disable_exitlogo_image', will
+# be displayed as "Exit Logo" image at their original sizes (without scaling).
+#
+# NOTES:
+# 1. See 'disable_exitlogo_image' and 'disable_exitlogo_clear'
+#
+# Exit logo images are scaled, if shown, when commented out
+#
+#disable_exitlogo_scale
 
 # RefindPlus previously assumed all Macs were capable of legacy BIOS boot.
 # While this was accurate for some time, some later Macs are UEFI Class 3
@@ -327,7 +352,7 @@
 #
 #disable_set_applefb
 
-# Some computers, such as some classic MacPros, may have multiple GOP instances:
+# Some computers, such as classic MacPros, may have multiple GOP instances:
 #   - One installed on the Console Out handle
 #   - Others installed on GPU handles.
 # GOP on the Console Out Handle is what everything uses and is provided by
@@ -748,6 +773,25 @@
 #
 #enable_touch
 
+# When this option is activated, RefindPlus will process symlinked loaders.
+# Symlinks are ignored by default as they may result in undesirable outcomes.
+# This token may however be useful on Linux setups that use symlinked loaders.
+# The token can be set with optional additional parameters to target its action.
+#
+# Example Settings:
+#    follow_symlinks                   - Symlinks Followed: Always
+#    follow_symlinks ON                - Symlinks Followed: Always
+#    follow_symlinks OFF               - Symlinks Followed: Never
+#    follow_symlinks OFF "Vol_1,Vol_2" - Symlinks Followed: If Not on List
+#    follow_symlinks ON "Vol_9,Vol_10" - Symlinks Followed: Only if Listed
+#
+# Refer to 'dont_scan_volumes' entry
+# for options on identifying volumes.
+#
+# Inactive when commented out (Symlinks never followed)
+#
+#follow_symlinks ON "Volume_A,Volume_B,Volume_C"
+
 # Hide user interface elements for personal preference or for security:
 #  banner      - RefindPlus title banner (built-in or loaded via "banner")
 #  label       - Boot option text label in the menu
@@ -869,12 +913,11 @@
 #  fwupdate         - A tag to update the firmware; launches the fwupx64.efi (or similar) program
 #  netboot          - Launch the ipxe.efi tool for network (PXE) booting
 #
-# The default options are: shell,memtest,gdisk,apple_recovery,windows_recovery,mok_tool,about,hidden_tags,shutdown,reboot,firmware,fwupdate
+# Activates default options when commented out
+# Default options are: about,hidden_tags,csr_rotate,bootorder,shutdown
+# NB: Setting "showtools" alone, without any options, disables all tools
 #
-# The default options are scanned for when commented out
-# NB: Setting "showtools" alone, without any options, disables scanning for tools
-#
-#showtools shell,bootorder,gdisk,memtest,mok_tool,apple_recovery,windows_recovery,about,hidden_tags,reboot,exit
+#showtools about,csr_rotate,shell,clean_nvram,hidden_tags,bootorder,reboot,shutdown
 
 # Stub support for gzipped loaders. Linux kernels are self-decompressing on x86
 # and on x86_64 platforms while on ARM64, Linux kernel files, including the EFI
@@ -897,7 +940,7 @@
 # main menu screen displayed as normal. If a shortcut key cannot be
 # matched to a valid shortcut, the main menu is displayed instead.
 #
-# Inactive when commented out (timeout is disabled)
+# Inactive when commented out or set to "0" (timeout is disabled)
 #
 #timeout 20
 
@@ -918,6 +961,7 @@
 #   grub        - The GRUB Boot Loader
 #   elilo       - The ELILO Boot Loader
 #   clover      - The Clover Boot Loader
+#   systemd     - The SystemD Boot Loader
 #   opencore    - The OpenCore Boot Loader
 #   tools       - 2nd Row Items:- All Tools
 #   everything  - For All Loaders and Tools
@@ -1159,14 +1203,6 @@
 #
 #fold_linux_kernels 0
 
-# When this option is activated, RefindPlus will process symlinked loaders.
-# Symlinks are ignored by default as they may result in undesirable outcomes.
-# This token may however be useful on Linux setups that use symlinked loaders.
-#
-# Inactive when commented out (Does not process symlinked loaders)
-#
-#follow_symlinks
-
 # Set the font to be used for all textual displays in graphics mode.
 # For the best results, fonts used should be in PNG format with alpha
 # channel transparency. It must contain ASCII characters 32-126 (space
@@ -1212,8 +1248,7 @@
 #
 #max_tags 0
 
-# Size of the mouse pointer,
-# in pixels, per side.
+# Size of mouse pointer, in pixels, per side.
 #
 # Uses a mouse size of 16 when commented out
 #
@@ -1408,7 +1443,7 @@
 #  ostype      - OS type code to determine boot options available via
 #                  the 'Insert' key. Accepted options (case sensitive):
 #                  "MacOS", "Linux", "Windows", "XOM", "Grub", "Elilo",
-#                  "RefitVariant", "OpenCore", and "Clover".
+#                  "RefitVariant", "SystemD", "OpenCore", and "Clover".
 #  graphics    - Set to "on" to enable graphics-mode boot (mainly useful
 #                  for MacOS) or "off" for text-mode boot. The default
 #                  setting is auto-detected from the loader filename.
@@ -1487,7 +1522,7 @@ menuentry "Arch Linux" {
 }
 
 # A sample entry for loading Ubuntu using the standard name for
-# its GRUB 2 bootloader. Note use of Linux-style forward slashes
+# its GRUB 2 bootloader. Note Linux-style forward slashes
 #
 menuentry Ubuntu {
     disabled

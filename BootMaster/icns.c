@@ -56,7 +56,7 @@
 
 
 BOOLEAN          UsingAltImg = FALSE;
-extern BOOLEAN   BootLogoFlag;
+extern BOOLEAN   ExitLogoFlag;
 
 //
 // well-known icons
@@ -226,7 +226,7 @@ INTN UpdateBaseIcon (
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_LINE_NORMAL,
         L"Find %s Img: '%s.xyz'",
-        (BootLogoFlag) ? L"ExitLogo" : L"Icon",
+        (ExitLogoFlag) ? L"ExitLogo" : L"Icon",
         BaseName
     );
     #endif

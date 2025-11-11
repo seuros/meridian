@@ -1,4 +1,4 @@
-0.14.2.AD (PRE-RELEASE):
+0.14.2.AD (11 NOV 2025):
 -----------------------
 - Adds Full `Linux EFI Bootable Kernel` Support
   * Now fully supports booting `Linux Unified Kernel` images
@@ -10,6 +10,8 @@
 - Fixes Issues with Using the `banner_scale` Setting. Thanks @Mardekaar
 - Fixes `Auto Defined BadRAM` Handling
   * This element of the `TagBadRAM` feature was previously a `NOOP`
+- Improves Image Scaling Handling. Thanks @emperor06
+  * Now uses floating-point arithmetic on 64-bit architectures
 - Improves `FollowSymlinks` Handling
   * Can now be targeted at specific volumes
     - Removes impacts on other installed instances
@@ -35,7 +37,7 @@
 - Amends Feature: `BootLogo` to `ExitLogo`
   * Renamed to distinguish from inherited `BootLogo` feature
     - That applied to Legacy BIOS Boot items
-    - `BootLogo` and `ExitLogo` may be fully merged later 
+    - `BootLogo` and `ExitLogo` may be fully merged later
   * Auto scaling of ExitLogo image can now be skipped
     - Via a new `disable_exitlogo_scale` configuration token
   * Final clearing of ExitLogo image can now be skipped

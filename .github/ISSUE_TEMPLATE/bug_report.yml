@@ -52,7 +52,7 @@ body:
       description: Which version of RefindPlus is affected?
       type: choice
       options:
-        - 'Official v0.14.2.AC Release'
+        - 'Official v0.14.2.AD Release'
         - 'Official Older Released Version'
         - 'Official Pre-Release Code Build'
         - 'Unofficially Modified Code Build'

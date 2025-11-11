@@ -3358,6 +3358,7 @@ VOID egDisplayMessageEx (
     UINTN            LumIndex;
     UINTN            BoxWidth;
     UINTN            BoxHeight;
+    UINTN            HeightFix;
     EG_IMAGE        *Box;
 
     static UINTN     PosX      = 0;
@@ -3375,44 +3376,49 @@ VOID egDisplayMessageEx (
     );
 
     BoxWidth  += 14;
-    BoxHeight *=  2;
-
     if (BoxWidth > egScreenWidth) {
         BoxWidth = egScreenWidth;
     }
+
+    BoxHeight *=  2;
+    if (BoxHeight > egScreenHeight) {
+        BoxHeight = egScreenHeight;
+    }
+    HeightFix = (
+        BoxHeight + (BoxHeight / 10)
+    );
 
     Box = egCreateFilledImage (
         BoxWidth, BoxHeight,
         FALSE, MessageBG
     );
 
-    // Get Luminance Index
-    LumIndex = GetLumIndex (
-        (UINTN) MessageBG->r,
-        (UINTN) MessageBG->g,
-        (UINTN) MessageBG->b
-    );
+    if (!ResetPosition) {
+        // Get Luminance Index
+        LumIndex = GetLumIndex (
+            (UINTN) MessageBG->r,
+            (UINTN) MessageBG->g,
+            (UINTN) MessageBG->b
+        );
 
-    egRenderText (
-        Text, Box, 7,
-        BoxHeight / 4,
-        (UINT8) LumIndex
-    );
+        egRenderText (
+            Text, Box, 7,
+            BoxHeight / 4,
+            (UINT8) LumIndex
+        );
+    }
 
     switch (PositionCode) {
         case TOP:    PosY  = 1;                                  break;
         case CENTER: PosY  = ((egScreenHeight - BoxHeight) / 2); break;
         case BOTTOM: PosY  = (egScreenHeight - (BoxHeight * 2)); break;
-        default:     PosY += (BoxHeight + (BoxHeight / 10));     break; // NEXTLINE
+        default:     PosY += HeightFix;                          break; // NEXTLINE
     } // switch
 
     if (ResetPosition) {
-        if (BackgroundArea) {
-            PosX = 0;
-        }
-
+        if (BackgroundArea) PosX = 0;
         if (PositionCode == NEXTLINE) {
-            PosY -= (BoxHeight + (BoxHeight / 10));
+            PosY -= HeightFix;
         }
     }
     else {

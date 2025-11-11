@@ -95,7 +95,6 @@ typedef struct {
 CHAR16 * egScreenDescription (VOID);
 
 
-//VOID egFreeImage (IN EG_IMAGE *Image);
 VOID egSetGraphicsModeEnabled (IN BOOLEAN Enable);
 // NOTE: Even when egHasGraphicsMode() returns FALSE, you should
 //  call egSetGraphicsModeEnabled(FALSE) to ensure the system

@@ -230,7 +230,6 @@ UINTN                  EfiMajorVersion      =                     0;
 UINT32                 AccessFlagsBoot      =     ACCESS_FLAGS_BOOT;
 UINT32                 AccessFlagsFull      =     ACCESS_FLAGS_FULL;
 CHAR16                *ArchType             =                  NULL;
-CHAR16                *ArchBits             =                  NULL;
 CHAR16                *OurToolTag           =                  NULL;
 CHAR16                *OurTypeTag           =                  NULL;
 CHAR16                *VendorInfo           =                  NULL;
@@ -3886,39 +3885,20 @@ EFI_STATUS EFIAPI efi_main (
     #endif
 
     /* Architecture */
-#if defined(EFIX64)
+    #if defined(EFIX64)
     ArchType = L"x86_64";
-    ArchBits = L"64 bit";
-#elif defined(EFI32)
+    #elif defined(EFI32)
     ArchType = L"x86_32";
-    ArchBits = L"32 bit";
-#elif defined(EFIAARCH64)
+    #elif defined(EFIAARCH64)
     ArchType = L"ARM_64";
-    ArchBits = L"64 bit";
-#else
+    #else
     ArchType = LABEL_UNKNOWN;
-#endif
+    #endif
 
-#if REFIT_DEBUG > 0
-    if (ArchBits == NULL) {
-        LOG_MSG("Arch/Type:- '%s'", ArchType);
-    }
-    else {
-        LOG_MSG("Arch/Type:- '%s' (%s)", ArchType, ArchBits);
-    }
+    #if REFIT_DEBUG > 0
+    LOG_MSG("Arch/Type:- '%s'", ArchType);
     LOG_MSG("\n");
-
-    /* Build Engine */
-    LOG_MSG("Made With:- ");
-#   if defined(__MAKEWITH_TIANO)
-    LOG_MSG("'TianoCore EDK II'");
-#   elif defined(__MAKEWITH_GNUEFI)
-    LOG_MSG("'GNU-EFI'");
-#   else
-    LOG_MSG("Unknown DevKit");
-#   endif
-    LOG_MSG("\n");
-#endif
+    #endif
 
     /* Toolchain */
     OurTypeTag = L" (Local)";
@@ -3942,18 +3922,29 @@ EFI_STATUS EFIAPI efi_main (
         OurToolTag = L"Other/Unknown";
     #endif
 
-#if REFIT_DEBUG > 0
+    #if REFIT_DEBUG > 0
     LOG_MSG("Toolchain:- '%s'%s", OurToolTag, OurTypeTag);
+    LOG_MSG("\n");
+
+    /* Build Engine */
+    LOG_MSG("Made With:- ");
+    #if defined(__MAKEWITH_TIANO)
+    LOG_MSG("'TianoCore EDK II'");
+    #elif defined(__MAKEWITH_GNUEFI)
+    LOG_MSG("'GNU-EFI'");
+    #else
+    LOG_MSG("Unknown DevKit");
+    #endif
     LOG_MSG("\n");
 
     /* TimeStamp */
     LOG_MSG(
-        "Timestamp:- '%d-%02d-%02d %02d:%02d:%02d' (Base)",
+        "Timestamp:- '%d-%02d-%02d %02d:%02d:%02d'",
         NowYear, NowMonth,
         NowDay, NowHour,
         NowMinute, NowSecond
     );
-#endif
+    #endif
 
     /* Run Secure Boot Update and Proceed Accordingly */
     MokProtocol = SecureBootSetup();
@@ -3980,16 +3971,16 @@ EFI_STATUS EFIAPI efi_main (
     #if REFIT_DEBUG > 0
     /* Log System Details */
     LogBasicInfo (MokProtocol);
-    #endif
 
     // First scan volumes by calling ScanVolumes() to find "SelfVolume",
     //    SelfVolume is required by LoadDrivers() and ReadConfig();
     // A second call is needed later to enumerate volumes as well as
     //    to register new filesystem(s) accessed by drivers.
-    #if REFIT_DEBUG > 0
     MY_MUTELOGGER_SET;
     #endif
+
     ScanVolumes();
+
     #if REFIT_DEBUG > 0
     MY_MUTELOGGER_OFF;
     if (!SelfVolSet) {
@@ -4067,28 +4058,40 @@ EFI_STATUS EFIAPI efi_main (
     #ifdef __MAKEWITH_TIANO
     Status = CheckStatusOC();
     if (Status == EFI_ALREADY_STARTED) {
+        #if REFIT_DEBUG > 0
+        LOG_MSG("** WARN: RefindPlus Chainload via OpenCore Detected\n");
+        LOG_MSG("      1. Some Features *MAY NOT* Function As Expected\n");
+        LOG_MSG("      2. ");
+        #endif
+
         // Disable 'NvramProtect' and 'NvramProtectEx' if chainloaded via OpenCore
         if (GlobalConfig.NvramProtect ||
             GlobalConfig.NvramProtectEx
         ) {
-            WarnOC                      =  TRUE;
             GlobalConfig.NvramProtect   = FALSE;
             GlobalConfig.NvramProtectEx = FALSE;
 
             #if REFIT_DEBUG > 0
-            LOG_MSG("** WARN: RefindPlus Chainload via OpenCore Detected\n");
-            LOG_MSG("      1. Some Features *MAY NOT* Function as Expected\n");
-            if (!AppleFirmware) {
-                LOG_MSG("      2. ");
-            }
-            else {
-                LOG_MSG("      2. The 'NvramProtect' Feature Has Been Disabled\n");
+            // DA-TAG: WarnOC for convenience here
+            //         Proper 'TRUE' tag set later
+            WarnOC = (
+                GlobalConfig.EnableTouch ||
+                GlobalConfig.EnableMouse
+            );
+
+            if (AppleFirmware && WarnOC) {
+                LOG_MSG("The 'NvramProtect' Feature Has Been Disabled\n");
                 LOG_MSG("      3. ");
             }
-            LOG_MSG("RefindPlus Pointer Device Settings are Ignored");
-            LOG_MSG("\n\n");
             #endif
         }
+
+        #if REFIT_DEBUG > 0
+        LOG_MSG("RefindPlus Pointer Device Settings Are Ignored");
+        LOG_MSG("\n\n");
+        #endif
+
+        WarnOC = TRUE;
     }
 
     /* Unlock partitions if required */

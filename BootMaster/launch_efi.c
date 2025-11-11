@@ -100,7 +100,7 @@
 
 CHAR16         *BootSelection = NULL;
 CHAR16         *ValidText     = L"Invalid Loader";
-BOOLEAN         BootLogoFlag  = FALSE;
+BOOLEAN         ExitLogoFlag  = FALSE;
 extern BOOLEAN  IsBoot;
 extern BOOLEAN  ShimFound;
 extern BOOLEAN  SecureFlag;
@@ -893,8 +893,8 @@ EFI_STATUS StartEFIImage (
                     !(GlobalConfig.DisableBootLogo & DISABLE_BOOTLOGO_WIN)
                 );
 
-                BootLogoFlag = (ShowLogoLin || ShowLogoWin);
-                if (BootLogoFlag) {
+                ExitLogoFlag = (ShowLogoLin || ShowLogoWin);
+                if (ExitLogoFlag) {
                     if (ScreenW > 1024 && ScreenH > 1024) {
                         // Stash current size
                         OrigIconBig = GlobalConfig.IconSizes[ICON_SIZE_BIG];
@@ -964,8 +964,8 @@ EFI_STATUS StartEFIImage (
                         GlobalConfig.IconSizes[ICON_SIZE_BIG] = OrigIconBig;
                     }
 
-                    BootLogoFlag = FALSE;
-                } // if BootLogoFlag
+                    ExitLogoFlag = FALSE;
+                } // if ExitLogoFlag
 
                 if (GlobalConfig.WriteSystemdVars && OSType == 'L') {
                     // Inform SystemD of RefindPlus ESP
@@ -1132,6 +1132,9 @@ EFI_STATUS StartEFIImage (
 
     // DA-TAG: bailout:
     MY_FREE_POOL(FullLoadOptions);
+
+    // Free BootLogoImage on bailout
+    MY_FREE_IMAGE(BootLogoImage);
 
     if (!IsDriver) {
         FinishExternalScreen();
