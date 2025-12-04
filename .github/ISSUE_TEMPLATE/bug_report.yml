@@ -39,18 +39,17 @@ body:
       label: Issue Screened
       description: |
           Confirm the items above have been read and applied as required.
-      type: choice
       options:
         - 'SUGGESTED TESTS IGNORED despite applicable item'
         - 'SUGGESTED TESTS EXECUTED or no applicable item'
     validations:
       required: true
+
   - type: dropdown
     id: version
     attributes:
       label: RefindPlus Version
       description: Which version of RefindPlus is affected?
-      type: choice
       options:
         - 'Official v0.14.2.AD Release'
         - 'Official Older Released Version'
@@ -58,6 +57,7 @@ body:
         - 'Unofficially Modified Code Build'
     validations:
       required: true
+
   - type: dropdown
     id: hardware
     attributes:
@@ -70,6 +70,7 @@ body:
         - 'Other Device'
     validations:
       required: true
+
   - type: textarea
     id: problem-description
     attributes:
@@ -80,6 +81,7 @@ body:
         Additionally, outline how to reproduce the problem.
     validations:
       required: true
+
   - type: dropdown
     id: problem-point
     attributes:
@@ -95,6 +97,7 @@ body:
         - 'Another Point / Not Applicable'
     validations:
       required: true
+
   - type: dropdown
     id: os-type
     attributes:
@@ -114,6 +117,7 @@ body:
         - 'All Items'
     validations:
       required: true
+
   - type: textarea
     id: log-file
     attributes:
@@ -127,6 +131,7 @@ body:
         Reports without log files will be automatically closed in most cases.
     validations:
       required: true
+
   - type: dropdown
     id: vet-debug
     attributes:
@@ -134,10 +139,10 @@ body:
       description: |
           Debug logs are almost always required and produced by running the 'DBG' efi.\
           Confirm log files are provided or that you are certain this is not required.
-      type: choice
       options:
         - 'DEBUG LOGS NOT PROVIDED - disregarding guidance given'
         - 'DEBUG LOGS ARE PROVIDED or omission clearly justified'
+
   - type: textarea
     id: extra-info
     attributes:
