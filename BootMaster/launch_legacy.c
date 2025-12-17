@@ -70,76 +70,20 @@ extern REFIT_MENU_SCREEN *MainMenu;
 #define DevicePathProtocol gEfiDevicePathProtocolGuid
 #endif
 
-#define MAX_DISCOVERED_PATHS (16)
+// Previously 'MAX_DISCOVERED_PATHS'
+#define MAX_UNIQUE_PATHS (16)
 
-// Early 2006 Core Duo / Core Solo models
-static UINT8 LegacyLoaderDevicePathData01[] = {
-    0x01, 0x03, 0x18, 0x00, 0x0B, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0xE0, 0xFF, 0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xF9, 0xFF, 0x00, 0x00, 0x00, 0x00,
-    0x04, 0x06, 0x14, 0x00, 0xEB, 0x85, 0x05, 0x2B,
-    0xB8, 0xD8, 0xA9, 0x49, 0x8B, 0x8C, 0xE2, 0x1B,
-    0x01, 0xAE, 0xF2, 0xB7, 0x7F, 0xFF, 0x04, 0x00,
-};
-
-// Mid 2006 Mac Pro (probably other Core 2 models)
-static UINT8 LegacyLoaderDevicePathData02[] = {
-    0x01, 0x03, 0x18, 0x00, 0x0B, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0xE0, 0xFF, 0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xF7, 0xFF, 0x00, 0x00, 0x00, 0x00,
-    0x04, 0x06, 0x14, 0x00, 0xEB, 0x85, 0x05, 0x2B,
-    0xB8, 0xD8, 0xA9, 0x49, 0x8B, 0x8C, 0xE2, 0x1B,
-    0x01, 0xAE, 0xF2, 0xB7, 0x7F, 0xFF, 0x04, 0x00,
-};
-
-// Mid 2007 MBP ("Santa Rosa" based models)
-static UINT8 LegacyLoaderDevicePathData03[] = {
-    0x01, 0x03, 0x18, 0x00, 0x0B, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0xE0, 0xFF, 0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xF8, 0xFF, 0x00, 0x00, 0x00, 0x00,
-    0x04, 0x06, 0x14, 0x00, 0xEB, 0x85, 0x05, 0x2B,
-    0xB8, 0xD8, 0xA9, 0x49, 0x8B, 0x8C, 0xE2, 0x1B,
-    0x01, 0xAE, 0xF2, 0xB7, 0x7F, 0xFF, 0x04, 0x00,
-};
-
-// Early 2008 MBA
-static UINT8 LegacyLoaderDevicePathData04[] = {
-    0x01, 0x03, 0x18, 0x00, 0x0B, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0xC0, 0xFF, 0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xFF, 0xF8, 0xFF, 0x00, 0x00, 0x00, 0x00,
-    0x04, 0x06, 0x14, 0x00, 0xEB, 0x85, 0x05, 0x2B,
-    0xB8, 0xD8, 0xA9, 0x49, 0x8B, 0x8C, 0xE2, 0x1B,
-    0x01, 0xAE, 0xF2, 0xB7, 0x7F, 0xFF, 0x04, 0x00,
-};
-
-// Late 2008 MB/MBP (NVidia chipset)
-static UINT8 LegacyLoaderDevicePathData05[] = {
-    0x01, 0x03, 0x18, 0x00, 0x0B, 0x00, 0x00, 0x00,
-    0x00, 0x40, 0xCB, 0xFF, 0x00, 0x00, 0x00, 0x00,
-    0xFF, 0xBF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00,
-    0x04, 0x06, 0x14, 0x00, 0xEB, 0x85, 0x05, 0x2B,
-    0xB8, 0xD8, 0xA9, 0x49, 0x8B, 0x8C, 0xE2, 0x1B,
-    0x01, 0xAE, 0xF2, 0xB7, 0x7F, 0xFF, 0x04, 0x00,
-};
-
-static EFI_DEVICE_PATH_PROTOCOL *LegacyLoaderList[] = {
-    (EFI_DEVICE_PATH_PROTOCOL *) LegacyLoaderDevicePathData01,
-    (EFI_DEVICE_PATH_PROTOCOL *) LegacyLoaderDevicePathData02,
-    (EFI_DEVICE_PATH_PROTOCOL *) LegacyLoaderDevicePathData03,
-    (EFI_DEVICE_PATH_PROTOCOL *) LegacyLoaderDevicePathData04,
-    (EFI_DEVICE_PATH_PROTOCOL *) LegacyLoaderDevicePathData05,
-    NULL
-};
-
+// Previously 'LegacyLoaderMediaPathData'
 static
-UINT8 LegacyLoaderMediaPathData[] = {
+UINT8 AppleBootCampAppMedia[] = {
     0x04, 0x06, 0x14, 0x00, 0xEB, 0x85, 0x05, 0x2B,
     0xB8, 0xD8, 0xA9, 0x49, 0x8B, 0x8C, 0xE2, 0x1B,
     0x01, 0xAE, 0xF2, 0xB7, 0x7F, 0xFF, 0x04, 0x00,
 };
 
+// Previously 'LegacyLoaderMediaPath'
 static
-EFI_DEVICE_PATH_PROTOCOL *LegacyLoaderMediaPath = (EFI_DEVICE_PATH_PROTOCOL *) LegacyLoaderMediaPathData;
+EFI_DEVICE_PATH_PROTOCOL *AppleBootCampFile = (EFI_DEVICE_PATH_PROTOCOL *) AppleBootCampAppMedia;
 
 static
 EFI_GUID AppleVariableVendorID = {
@@ -318,8 +262,9 @@ EFI_STATUS ActivateMbrPartition (
     return EFI_SUCCESS;
 } // static EFI_STATUS ActivateMbrPartition()
 
+// Previously 'WriteBootDiskHint'
 static
-EFI_STATUS WriteBootDiskHint (
+EFI_STATUS SetLegacyBootHintMac (
     IN EFI_DEVICE_PATH_PROTOCOL *WholeDiskDevicePath
 ){
    EFI_STATUS Status;
@@ -330,20 +275,20 @@ EFI_STATUS WriteBootDiskHint (
    );
 
    return Status;
-} // EFI_STATUS WriteBootDiskHint
+} // EFI_STATUS SetLegacyBootHintMac
 
+// Previously 'ExtractLegacyLoaderPaths'
 static
-VOID ExtractLegacyLoaderPaths (
+EFI_STATUS FindBootCampFirmwareApp (
     EFI_DEVICE_PATH_PROTOCOL **PathList,
-    UINTN                      MaxPaths,
-    EFI_DEVICE_PATH_PROTOCOL **HardcodedPathList
+    UINTN                      MaxPaths
 ) {
     EFI_STATUS                 Status;
+    EFI_STATUS                 StatusRet;
     UINTN                      PathIndex;
     UINTN                      PathCount;
     UINTN                      HandleCount;
     UINTN                      HandleIndex;
-    UINTN                      HardcodedIndex;
     BOOLEAN                    Seen;
     EFI_HANDLE                *Handles;
     EFI_HANDLE                 Handle;
@@ -361,21 +306,16 @@ VOID ExtractLegacyLoaderPaths (
         &HandleCount, &Handles
     );
     if (EFI_ERROR(Status)) {
-        CheckError (Status, L"While Listing LoadedImage Handles");
-
-        if (HardcodedPathList != NULL) {
-            for (HardcodedIndex = 0;
-                HardcodedPathList[HardcodedIndex] && PathCount < MaxPaths;
-                HardcodedIndex++
-            ) {
-                PathList[PathCount++] = HardcodedPathList[HardcodedIndex];
-            }
-        }
+        CheckError (
+            Status,
+            L"While Listing LoadedImage Handles in 'FindBootCampFirmwareApp'"
+        );
         PathList[PathCount] = NULL;
 
-        return;
+        return EFI_LOAD_ERROR;
     }
 
+    StatusRet = EFI_NOT_FOUND;
     for (
         HandleIndex = 0;
         HandleIndex < HandleCount && PathCount < MaxPaths;
@@ -433,26 +373,26 @@ VOID ExtractLegacyLoaderPaths (
         if (Seen) continue;
 
         PathList[PathCount++] = AppendDevicePath (
-            DevicePath, LegacyLoaderMediaPath
+            DevicePath, AppleBootCampFile
         );
+
+        StatusRet = EFI_SUCCESS;
     } // for HandleIndex
     MY_FREE_POOL(Handles);
 
-    if (HardcodedPathList != NULL) {
-        for (HardcodedIndex = 0; HardcodedPathList[HardcodedIndex] && PathCount < MaxPaths; HardcodedIndex++) {
-            PathList[PathCount++] = HardcodedPathList[HardcodedIndex];
-        }
-    }
-
     PathList[PathCount] = NULL;
-} // static VOID ExtractLegacyLoaderPaths()
 
-// Launch a BIOS boot loader (Mac mode)
+    return StatusRet;
+} // static EFI_STATUS FindBootCampFirmwareApp()
+
+// Start device on Mac via AppleLegacyLoader AKA BootCamp
+// Previously 'StartLegacyImageList'
 static
-EFI_STATUS StartLegacyImageList (
+EFI_STATUS LoadLegacyImageMac (
     IN     EFI_DEVICE_PATH_PROTOCOL **DevicePaths,
     IN     CHAR16                    *LoadOptions,
-    IN OUT UINTN                     *ErrorInStep
+    IN OUT UINTN                     *ErrorInStep,
+    EG_IMAGE                         *BootLogoImage  // Purely to be freed
 ) {
     EFI_STATUS                        Status;
     EFI_HANDLE                        ChildImageHandle;
@@ -480,10 +420,10 @@ EFI_STATUS StartLegacyImageList (
     } // for
 
     if (EFI_ERROR(Status)) {
-        CheckError (Status, L"While Loading Legacy Bootcode");
+        CheckError (Status, L"While Loading Legacy Bootcode on Mac");
         *ErrorInStep = 1;
 
-        return Status;
+        goto bailout_direct;
     }
 
     ChildLoadedImage = NULL;
@@ -494,7 +434,7 @@ EFI_STATUS StartLegacyImageList (
     if (EFI_ERROR(Status)) {
         CheckError (
             Status,
-            L"While Fetching 'Child' LoadedImageProtocol Handle"
+            L"While Fetching 'AppleLegacyLoader' Handle"
         );
         *ErrorInStep = 2;
 
@@ -515,12 +455,17 @@ EFI_STATUS StartLegacyImageList (
     #if REFIT_DEBUG > 0
     OUT_TAG();
     #endif
+
+    if (GlobalConfig.BootLogoClear) {
+        MY_FREE_IMAGE(BootLogoImage);
+    }
+
     Status = REFIT_CALL_3_WRAPPER(
         gBS->StartImage, ChildImageHandle,
         NULL, NULL
     );
     if (EFI_ERROR(Status)) {
-        CheckError (Status, L"Unexpected Return from Loader");
+        CheckError (Status, L"Unexpected Return from AppleLegacyLoader");
         *ErrorInStep = 3;
     }
 
@@ -539,8 +484,12 @@ bailout_unload:
         ChildImageHandle
     );
 
+bailout_direct:
+    // Free BootLogoImage on bailout
+    MY_FREE_IMAGE(BootLogoImage);
+
     return Status;
-} // static EFI_STATUS StartLegacyImageList()
+} // static EFI_STATUS LoadLegacyImageMac()
 
 static
 EG_IMAGE * LegacyHelper (
@@ -629,7 +578,8 @@ EG_IMAGE * LegacyHelper (
     return BootLogoImage; // Must be freed by Caller
 } // static EG_IMAGE * LegacyHelper()
 
-VOID StartLegacy (
+// Previously 'StartLegacy'
+VOID LegacyBootMac (
     IN LEGACY_ENTRY *Entry,
     IN CHAR16       *SelectionName
 ) {
@@ -637,7 +587,7 @@ VOID StartLegacy (
     UINTN                     ErrorInStep;
     CHAR16                   *MsgStrA;
     EG_IMAGE                 *BootLogoImage;
-    EFI_DEVICE_PATH_PROTOCOL *DiscoveredPathList[MAX_DISCOVERED_PATHS];
+    EFI_DEVICE_PATH_PROTOCOL *BootCampAppList[MAX_UNIQUE_PATHS];
 
 
     LOG_SEP(L"X");
@@ -663,39 +613,40 @@ VOID StartLegacy (
         Entry->Volume->DiskKind != DISK_KIND_OPTICAL
     ) {
         BREAD_CRUMB(L"%a:  4a 1", __func__);
-        WriteBootDiskHint (Entry->Volume->WholeDiskDevicePath);
+        SetLegacyBootHintMac (Entry->Volume->WholeDiskDevicePath);
         BREAD_CRUMB(L"%a:  4a 2", __func__);
     }
 
     BREAD_CRUMB(L"%a:  5", __func__);
-    ExtractLegacyLoaderPaths (
-        DiscoveredPathList,
-        MAX_DISCOVERED_PATHS,
-        LegacyLoaderList
+    Status = FindBootCampFirmwareApp (
+        BootCampAppList, MAX_UNIQUE_PATHS
     );
 
     BREAD_CRUMB(L"%a:  6", __func__);
     ErrorInStep = 0;
-    MY_FREE_IMAGE(BootLogoImage);
-    Status = StartLegacyImageList (
-        DiscoveredPathList,
-        Entry->LoadOptions,
-        &ErrorInStep
-    );
+    if (!EFI_ERROR(Status)) {
+        Status = LoadLegacyImageMac (
+            BootCampAppList, Entry->LoadOptions,
+            &ErrorInStep, BootLogoImage
+        );
+    }
 
     BREAD_CRUMB(L"%a:  7", __func__);
-    if (Status == EFI_NOT_FOUND) {
+    if (EFI_ERROR(Status)) {
         BREAD_CRUMB(L"%a:  7a 1", __func__);
-        if (ErrorInStep == 1) {
+        if (ErrorInStep < 2) {
             BREAD_CRUMB(L"%a:  7a 1a 1", __func__);
             SwitchToText (FALSE);
 
             BREAD_CRUMB(L"%a:  7a 1a 2", __func__);
-            MsgStrA = L"Ensure Latest Firmware Updates Are Installed";
+            MsgStrA = (ErrorInStep == 0)
+                ? L"Ensure Legacy BIOS Boot Support is Available"
+                : L"Ensure Latest Firmware Updates Are Installed";
             REFIT_CALL_2_WRAPPER(
                 gST->ConOut->SetAttribute,
                 gST->ConOut, ATTR_ERROR
             );
+
             PrintUglyText (MsgStrA, NEXTLINE);
             REFIT_CALL_2_WRAPPER(
                 gST->ConOut->SetAttribute,
@@ -713,43 +664,54 @@ VOID StartLegacy (
             BREAD_CRUMB(L"%a:  7a 1a 5", __func__);
             SwitchToGraphics();
         }
-        else if (ErrorInStep == 3) {
+        else {
             BREAD_CRUMB(L"%a:  7a 1b 1", __func__);
-            SwitchToText (FALSE);
+            if (ErrorInStep == 3) {
+                BREAD_CRUMB(L"%a:  7a 1b 1a 1", __func__);
+                SwitchToText (FALSE);
 
-            BREAD_CRUMB(L"%a:  7a 1b 2", __func__);
-            MsgStrA = L"Firmware Refused to Boot from Selected Volume";
-            REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_ERROR);
-            PrintUglyText (MsgStrA, NEXTLINE);
-            REFIT_CALL_2_WRAPPER(gST->ConOut->SetAttribute, gST->ConOut, ATTR_BASIC);
-
-            #if REFIT_DEBUG > 0
-            LOG_MSG("** WARN: %s", MsgStrA);
-            #endif
-
-            if (AppleFirmware) {
-                #if REFIT_DEBUG > 0
-                LOG_MSG("\n");
-                #endif
-                BREAD_CRUMB(L"%a:  7a 1b 2a 1", __func__);
-                MsgStrA = L"Legacy Boot from External Drive *IS NOT* Well Supported by Apple Firmware";
+                BREAD_CRUMB(L"%a:  7a 1b 1a 2", __func__);
+                MsgStrA = L"Firmware Refused to Boot from Selected Volume";
+                REFIT_CALL_2_WRAPPER(
+                    gST->ConOut->SetAttribute,
+                    gST->ConOut, ATTR_ERROR
+                );
                 PrintUglyText (MsgStrA, NEXTLINE);
+                REFIT_CALL_2_WRAPPER(
+                    gST->ConOut->SetAttribute,
+                    gST->ConOut, ATTR_BASIC
+                );
+
                 #if REFIT_DEBUG > 0
-                LOG_MSG("         %s", MsgStrA);
+                LOG_MSG("** WARN: %s", MsgStrA);
                 #endif
-            }
 
-            #if REFIT_DEBUG > 0
-            LOG_MSG("\n\n");
-            #endif
+                if (AppleFirmware) {
+                    #if REFIT_DEBUG > 0
+                    LOG_MSG("\n");
+                    #endif
+                    BREAD_CRUMB(L"%a:  7a 1b 1a 2a 1", __func__);
+                    MsgStrA = L"Legacy Boot from External Drive *IS NOT* Well Supported by Apple Firmware";
+                    PrintUglyText (MsgStrA, NEXTLINE);
+                    #if REFIT_DEBUG > 0
+                    LOG_MSG("         %s", MsgStrA);
+                    #endif
+                }
 
-            BREAD_CRUMB(L"%a:  7a 1b 3", __func__);
-            PauseForKey();
+                #if REFIT_DEBUG > 0
+                LOG_MSG("\n\n");
+                #endif
 
-            BREAD_CRUMB(L"%a:  7a 1b 4", __func__);
-            SwitchToGraphics();
-        } // if/else ErrorInStep
-    } // if Status == EFI_NOT_FOUND
+                BREAD_CRUMB(L"%a:  7a 1b 1a 3", __func__);
+                PauseForKey();
+
+                BREAD_CRUMB(L"%a:  7a 1b 1a 4", __func__);
+                SwitchToGraphics();
+            } // if ErrorInStep == 3
+            BREAD_CRUMB(L"%a:  7a 1b 2", __func__);
+        } // if/else ErrorInStep < 2
+        BREAD_CRUMB(L"%a:  7a 2", __func__);
+    } // if EFI_ERROR(Status)
 
     BREAD_CRUMB(L"%a:  8", __func__);
     FinishExternalScreen();
@@ -757,10 +719,11 @@ VOID StartLegacy (
     BREAD_CRUMB(L"%a:  9 - END:- VOID", __func__);
     LOG_DECREMENT();
     LOG_SEP(L"X");
-} // VOID StartLegacy()
+} // VOID LegacyBootMac()
 
-// Start a device on a non-Mac using the EFI_LEGACY_BIOS_PROTOCOL
-VOID StartLegacyUEFI (
+// Start device on non-Mac via EFI_LEGACY_BIOS_PROTOCOL.
+// Previously 'StartLegacyUEFI'
+VOID LegacyBootUEFI (
     LEGACY_ENTRY *Entry,
     CHAR16       *SelectionName
 ) {
@@ -773,8 +736,7 @@ VOID StartLegacyUEFI (
 
     UninitRefitLib();
     BdsLibConnectDevicePath (Entry->BdsOption->DevicePath);
-    MY_FREE_IMAGE(BootLogoImage);
-    BdsLibDoLegacyBoot (Entry->BdsOption);
+    BdsLibDoLegacyBoot (Entry->BdsOption, BootLogoImage);
 
     // There was a failure if we get here.
     #if REFIT_DEBUG > 0
@@ -792,7 +754,7 @@ VOID StartLegacyUEFI (
     PauseForKey();
 
     FinishExternalScreen();
-} // static VOID StartLegacyUEFI()
+} // static VOID LegacyBootUEFI()
 
 static
 VOID AddLegacyEntry (
@@ -1083,7 +1045,7 @@ VOID ScanLegacyUEFI (
     LIST_ENTRY                 TempList;
     BDS_COMMON_OPTION         *BdsOption;
     BBS_BBS_DEVICE_PATH       *BbsDevicePath;
-    EFI_LEGACY_BIOS_PROTOCOL  *LegacyBios;
+    EFI_LEGACY_BIOS_PROTOCOL  *LegacyBIOS;
 
 
     LOG_SEP(L"X");
@@ -1106,7 +1068,7 @@ VOID ScanLegacyUEFI (
     //   we do not support this type of legacy boot on this machine.
     Status = REFIT_CALL_3_WRAPPER(
         gBS->LocateProtocol, &gEfiLegacyBootProtocolGuid,
-        NULL, (VOID **) &LegacyBios
+        NULL, (VOID **) &LegacyBIOS
     );
     if (EFI_ERROR(Status)) {
         BREAD_CRUMB(L"%a:  Z - END:- VOID (LocateProtocol Error)", __func__);
@@ -1519,18 +1481,29 @@ VOID ScanLegacyExternal (VOID) {
 // Determine what/if legacy BIOS boot support is available
 VOID FindLegacyBootType (VOID) {
     EFI_STATUS                 Status;
-    BOOLEAN                    SyncTag;
-    UINTN                      ExSize;
-    VOID                      *ExBuf;
-    EFI_LEGACY_BIOS_PROTOCOL  *LegacyBios;
+    EFI_LEGACY_BIOS_PROTOCOL  *LegacyBIOS;
+    EFI_DEVICE_PATH_PROTOCOL  *BootCampAppList[MAX_UNIQUE_PATHS];
 
 
+    if (AppleFirmware && !GlobalConfig.LegacySync) {
+        // 'LegacySync' Inactive on Mac - Enable BIOS Boot Option
+        GlobalConfig.LegacyType = LEGACY_TYPE_MAC1;
+
+        return;
+    }
+
+
+    //
+    // 'LegacySync' Active or Not a Mac
+    //
+
+    /* Locate UEFI Compatability Support Module (CSM) */
     Status = REFIT_CALL_3_WRAPPER(
         gBS->LocateProtocol, &gEfiLegacyBootProtocolGuid,
-        NULL, (VOID **) &LegacyBios
+        NULL, (VOID **) &LegacyBIOS
     );
     if (!EFI_ERROR(Status)) {
-        // Assume UEFI Class 2 Unit - Enable
+        // UEFI Class 2 Mac/PC - Enable BIOS Boot Option
         GlobalConfig.LegacyType = (
             AppleFirmware
         ) ? LEGACY_TYPE_MAC2 : LEGACY_TYPE_UEFI;
@@ -1538,36 +1511,41 @@ VOID FindLegacyBootType (VOID) {
         return;
     }
 
-    SyncTag = GlobalConfig.LegacySync;
-    if (AppleFirmware) {
-        ExSize = 0;
-        ExBuf  = NULL;
-        Status = GetHardwareNvramVariable (
-            L"BootCampHD",
-            &AppleVariableVendorID,
-            &ExBuf, &ExSize
-        );
-        if (Status != EFI_NOT_FOUND) {
-            SyncTag = FALSE;
-        }
+
+    //
+    // UEFI CSM Not Available
+    //
+
+    if (!AppleFirmware) {
+        // UEFI Class 3 PC - Use Default 'Disabled' Setting
+        return;
     }
 
-    if (!AppleFirmware ||
-        (
-            SyncTag                        &&
-            (gST->Hdr.Revision >> 16U) > 1 &&
-            (gBS->Hdr.Revision >> 16U) > 1 &&
-            (gRT->Hdr.Revision >> 16U) > 1
-        )
+
+    //
+    // Running on Mac with 'LegacySync' Active
+    //
+
+    if ((gST->Hdr.Revision >> 16U) == 1 ||
+        (gBS->Hdr.Revision >> 16U) == 1 ||
+        (gRT->Hdr.Revision >> 16U) == 1
     ) {
-        // Assume UEFI Class 3 Unit - Disable
-        GlobalConfig.LegacyType = (
-            AppleFirmware
-        ) ? LEGACY_TYPE_MAC3 : LEGACY_TYPE_NONE;
+        // EFI 1.x or Unknown Mac - Enable BIOS Boot Option
+        GlobalConfig.LegacyType = LEGACY_TYPE_MAC1;
     }
     else {
-        // 'LegacySync' is Off or Other uEFI Mac - Enable
-        GlobalConfig.LegacyType = LEGACY_TYPE_MAC1;
+        /* Locate 'AppleLegacyLoader' Firmware App */
+        Status = FindBootCampFirmwareApp (
+            BootCampAppList, MAX_UNIQUE_PATHS
+        );
+        if (!EFI_ERROR(Status)) {
+            // 'Apple Style' UEFI Class 2 Mac - Enable BIOS Boot Option
+            GlobalConfig.LegacyType = LEGACY_TYPE_MAC1;
+        }
+        else {
+            // UEFI Class 3 Mac - Disable BIOS Boot Option
+            GlobalConfig.LegacyType = LEGACY_TYPE_MAC3;
+        }
     }
 } // VOID FindLegacyBootType()
 

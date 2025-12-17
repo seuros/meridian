@@ -35,10 +35,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   @retval EFI_STATUS             Return the status of LegacyBios->LegacyBoot ().
 
 **/
-EFI_STATUS
-BdsLibDoLegacyBoot (
-  IN  BDS_COMMON_OPTION           *Option
-  );
+EFI_STATUS BdsLibDoLegacyBoot (
+    IN BDS_COMMON_OPTION      *Option,
+    IN EG_IMAGE               *BootLogoImage  OPTIONAL // Purely to be freed
+);
 
 EFI_STATUS BdsConnectDevicePath  (  IN EFI_DEVICE_PATH_PROTOCOL   *DevicePath,
                                     OUT EFI_HANDLE                *Handle,

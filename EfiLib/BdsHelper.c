@@ -116,7 +116,8 @@ VOID UpdateBbsTable (
 
 **/
 EFI_STATUS BdsLibDoLegacyBoot (
-    IN  BDS_COMMON_OPTION     *Option
+    IN BDS_COMMON_OPTION      *Option,
+    IN EG_IMAGE               *BootLogoImage  OPTIONAL // Purely to be freed
 ) {
     EFI_STATUS                 Status;
     EFI_LEGACY_BIOS_PROTOCOL  *LegacyBIOS;
@@ -130,6 +131,9 @@ EFI_STATUS BdsLibDoLegacyBoot (
         gBS->LocateProtocol, &gEfiLegacyBootProtocolGuid,
         NULL, (VOID **) &LegacyBIOS
     );
+    if (GlobalConfig.BootLogoClear) {
+        MY_FREE_IMAGE(BootLogoImage);
+    }
     if (EFI_ERROR(Status)) {
         return EFI_UNSUPPORTED;
     }

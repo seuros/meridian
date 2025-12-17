@@ -5477,11 +5477,11 @@ EFI_STATUS EFIAPI efi_main (
 
                 if (ChosenOption->Tag == TAG_LEGACY) {
                     // No end dash line ... Added in 'StartLegacyImageList'
-                    StartLegacy (OurLegacyEntry, SelectionName);
+                    LegacyBootMac (OurLegacyEntry, SelectionName);
                 }
                 else {
                     // No end dash line ... Added in 'BdsLibDoLegacyBoot'
-                    StartLegacyUEFI (OurLegacyEntry, SelectionName);
+                    LegacyBootUEFI (OurLegacyEntry, SelectionName);
                 }
 
                 #if REFIT_DEBUG > 0
