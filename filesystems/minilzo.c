@@ -30,12 +30,12 @@
  *   the full LZO package can be found at
  *   http://www.oberhumer.com/opensource/lzo/
  */
- /*
-  * Modified for RefindPlus
-  * Copyright (c) 2025 Dayo Akanji (sf.net/u/dakanji/profile)
-  *
-  * Modifications distributed under the preceding terms.
-  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2025-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #define __LZO_IN_MINILZO 1
 
@@ -342,7 +342,7 @@
 #define LZO_CPP_ECONCAT6(a,b,c,d,e,f)   LZO_CPP_CONCAT6(a,b,c,d,e,f)
 #define LZO_CPP_ECONCAT7(a,b,c,d,e,f,g) LZO_CPP_CONCAT7(a,b,c,d,e,f,g)
 #endif
-#define __LZO_MASK_GEN(o,b)     (((((o) << ((b)-((b)!=0))) - (o)) << 1) + (o)*((b)!=0))
+#define __LZO_MASK_GEN(o,b)     (((((o) << ((b)-((b) != 0))) - (o)) << 1) + (o)*((b) != 0))
 #if 1 && defined(__cplusplus)
 #  if !defined(__STDC_CONSTANT_MACROS)
 #    define __STDC_CONSTANT_MACROS 1

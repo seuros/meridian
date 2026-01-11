@@ -33,9 +33,16 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+##
+# Modified for RefindPlus
+# Copyright (c) 2026 Dayo Akanji (sf.net/u/dakanji/profile)
 #
+# Modifications distributed under the MIT License.
+##
+
+##
 # mk_fsw_strfunc.py
-#
+##
 
 # definitions
 
@@ -84,7 +91,7 @@ for combo in combos:
     type2 = types[enc2]
     getnext1 = getnext[enc1].replace('VARC', 'c1').replace('VARP', 'p1').replace("\n", "\n        ")
     getnext2 = getnext[enc2].replace('VARC', 'c2').replace('VARP', 'p2').replace("\n", "\n        ")
-    
+
     output += """
 static int fsw_streq_%(enc1)s_%(enc2)s(void *s1data, void *s2data, int len)
 {
@@ -92,7 +99,7 @@ static int fsw_streq_%(enc1)s_%(enc2)s(void *s1data, void *s2data, int len)
     %(type1)s *p1 = (%(type1)s *)s1data;
     %(type2)s *p2 = (%(type2)s *)s2data;
     fsw_u32 c1, c2;
-    
+
     for (i = 0; i < len; i++) {
         %(getnext1)s
         %(getnext2)s
@@ -118,14 +125,14 @@ static fsw_status_t fsw_strcoerce_%(enc1)s_%(enc2)s(void *srcdata, int srclen, s
     %(type1)s       *sp;
     %(type2)s       *dp;
     fsw_u32         c;
-    
+
     dest->type = FSW_STRING_TYPE_%(enc2)s;
     dest->len  = srclen;
     dest->size = srclen * sizeof (%(type2)s);
-    status = fsw_alloc(dest->size, &dest->data);
+    status = FSW_DO_ALLOC(dest->size, &dest->data);
     if (status)
         return status;
-    
+
     sp = (%(type1)s *)srcdata;
     dp = (%(type2)s *)dest->data;
     for (i = 0; i < srclen; i++) {
@@ -149,12 +156,12 @@ static fsw_status_t fsw_strcoerce_%(enc1)s_%(enc2)s(void *srcdata, int srclen, s
     %(type1)s       *sp;
     %(type2)s       *dp;
     fsw_u32         c;
-    
+
     sp = (%(type1)s *)srcdata;
     destsize = 0;
     for (i = 0; i < srclen; i++) {
         %(getnext1)s
-        
+
         if (c < 0x000080)
             destsize++;
         else if (c < 0x000800)
@@ -164,19 +171,19 @@ static fsw_status_t fsw_strcoerce_%(enc1)s_%(enc2)s(void *srcdata, int srclen, s
         else
             destsize += 4;
     }
-    
+
     dest->type = FSW_STRING_TYPE_%(enc2)s;
     dest->len  = srclen;
     dest->size = destsize;
-    status = fsw_alloc(dest->size, &dest->data);
+    status = FSW_DO_ALLOC(dest->size, &dest->data);
     if (status)
         return status;
-    
+
     sp = (%(type1)s *)srcdata;
     dp = (%(type2)s *)dest->data;
     for (i = 0; i < srclen; i++) {
         %(getnext1)s
-        
+
         if (c < 0x000080) {
             *dp++ = c;
         } else if (c < 0x000800) {

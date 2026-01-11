@@ -13,12 +13,12 @@
  * either version 2 of the GNU General Public License ("GPL") or BSD license
  * ("BSD").
  */
- /*
-  * Modified for RefindPlus
-  * Copyright (c) 2024 Dayo Akanji (sf.net/u/dakanji/profile)
-  *
-  * Modifications distributed under the preceding terms.
-  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2024 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #ifndef ZSTD_H
 #define ZSTD_H

@@ -34,12 +34,18 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the MIT License.
+**/
 
 #include "fsw_efi.h"
 
 
 //
-// time conversion
+// Time conversion
 //
 // Adopted from public domain code in FreeBSD libc.
 //
@@ -68,8 +74,10 @@ static const int year_lengths[2] = {
     DAYSPERNYEAR, DAYSPERLYEAR
 };
 
-VOID fsw_efi_decode_time(OUT EFI_TIME *EfiTime, IN UINT32 UnixTime)
-{
+VOID fsw_efi_decode_time (
+    OUT EFI_TIME *EfiTime,
+    IN  UINT32    UnixTime
+) {
     long        days, rem;
     int         y, newy, yleap;
     const int   *ip;
@@ -77,7 +85,7 @@ VOID fsw_efi_decode_time(OUT EFI_TIME *EfiTime, IN UINT32 UnixTime)
     ZeroMem(EfiTime, sizeof (EFI_TIME));
 
     days = UnixTime / SECSPERDAY;
-    rem = UnixTime % SECSPERDAY;
+    rem  = UnixTime % SECSPERDAY;
 
     EfiTime->Hour = (UINT8) (rem / SECSPERHOUR);
     rem = rem % SECSPERHOUR;
@@ -87,18 +95,25 @@ VOID fsw_efi_decode_time(OUT EFI_TIME *EfiTime, IN UINT32 UnixTime)
     y = EPOCH_YEAR;
     while (days < 0 || days >= (long) year_lengths[yleap = isleap(y)]) {
         newy = y + days / DAYSPERNYEAR;
-        if (days < 0)
-            --newy;
+        if (days < 0) --newy;
+
         days -= (newy - y) * DAYSPERNYEAR +
             LEAPS_THRU_END_OF(newy - 1) -
             LEAPS_THRU_END_OF(y - 1);
+
         y = newy;
     }
     EfiTime->Year = (UINT16)y;
     ip = mon_lengths[yleap];
-    for (EfiTime->Month = 0; days >= (long) ip[EfiTime->Month]; ++(EfiTime->Month))
+    for (
+        EfiTime->Month = 0;
+        days >= (long) ip[EfiTime->Month];
+        ++(EfiTime->Month)
+    ) {
         days = days - (long) ip[EfiTime->Month];
-    EfiTime->Month++;  // adjust range to EFI conventions
+    }
+
+    EfiTime->Month++;  // Adjust range to EFI conventions
     EfiTime->Day = (UINT8) (days + 1);
 }
 
@@ -106,21 +121,30 @@ VOID fsw_efi_decode_time(OUT EFI_TIME *EfiTime, IN UINT32 UnixTime)
 // String functions, used for file and volume info
 //
 
-UINTN fsw_efi_strsize(struct fsw_string *s)
-{
-    if (s->type == FSW_STRING_TYPE_EMPTY)
+UINTN fsw_efi_strsize (
+    struct fsw_string *s
+) {
+    if (s->type == FSW_STRING_TYPE_EMPTY) {
         return sizeof (CHAR16);
+    }
+
     return (s->len + 1) * sizeof (CHAR16);
 }
 
-VOID fsw_efi_strcpy(CHAR16 *Dest, struct fsw_string *src)
-{
-    if ((src->type == FSW_STRING_TYPE_EMPTY) | (src->size == 0)) {
+VOID fsw_efi_strcpy (
+    CHAR16            *Dest,
+    struct fsw_string *src
+) {
+    if (src->size == 0 ||
+        src->type == FSW_STRING_TYPE_EMPTY
+    ) {
         Dest[0] = 0;
-    } else if (src->type == FSW_STRING_TYPE_UTF16) {
+    }
+    else if (src->type == FSW_STRING_TYPE_UTF16) {
         CopyMem(Dest, src->data, src->size);
         Dest[src->len] = 0;
-    } else {
+    }
+    else {
         // TODO: coerce, recurse
         Dest[0] = 0;
     }

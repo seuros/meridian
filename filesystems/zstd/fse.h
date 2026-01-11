@@ -37,12 +37,12 @@
  * You can contact the author at :
  * - Source repository : https://github.com/Cyan4973/FiniteStateEntropy
  */
- /*
-  * Modified for RefindPlus ... See RefindPlus Additions
-  * Copyright (c) 2025 Dayo Akanji (sf.net/u/dakanji/profile)
-  *
-  * Modifications distributed under the preceding terms.
-  */
+/**
+** Modified for RefindPlus ... See RefindPlus Additions
+** Copyright (c) 2025 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #ifndef FSE_H
 #define FSE_H

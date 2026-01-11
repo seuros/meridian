@@ -34,6 +34,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the MIT License.
+**/
 
 #ifndef _FSW_EFI_BASE_H_
 #define _FSW_EFI_BASE_H_
@@ -64,19 +70,19 @@ typedef UINT64  fsw_u64;
 
 // allocation functions
 
-#define fsw_alloc(size, ptrptr) (((*(ptrptr) = AllocatePool(size)) == NULL) ? FSW_OUT_OF_MEMORY : FSW_SUCCESS)
-#define fsw_free(ptr) FreePool(ptr)
+#define FSW_DO_ALLOC(size, ptrptr) (((*(ptrptr) = AllocatePool (size)) == NULL) ? FSW_OUT_OF_MEMORY : FSW_SUCCESS)
+#define FSW_DO_FREE(ptr) FreePool(ptr)
 
 // memory functions
 
-#define fsw_memzero(dest,size) ZeroMem(dest,size)
-#define fsw_memcpy(dest,src,size) CopyMem(dest,src,size)
-#define fsw_memeq(p1,p2,size) (CompareMem(p1,p2,size) == 0)
+#define FSW_DO_MEMZERO(dest,size) ZeroMem(dest,size)
+#define FSW_DO_MEMCPY(dest,src,size) CopyMem(dest,src,size)
+#define FSW_DO_MEMEQ(p1,p2,size) (CompareMem(p1,p2,size) == 0)
 
 // message printing
 
-#define FSW_MSGSTR(s) L##s
-#define FSW_MSGFUNC Print
+#define FSW_MSG_STR(s) L##s
+#define FSW_MSG_FUNC Print
 
 // 64-bit hooks
 

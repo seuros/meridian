@@ -21,12 +21,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2024 - 2025 Dayo Akanji (sf.net/u/dakanji/profile)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2024 - 2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #ifndef _FSW_REISERFS_DISK_H_
 #define _FSW_REISERFS_DISK_H_
@@ -203,13 +203,13 @@ struct reiserfs_super_block {
 #define REISERFS_OLD_DISK_OFFSET_IN_BYTES (8 * 1024)
 
 // reiserfs internal error code (used by search_by_key adn fix_nodes))
-#define CARRY_ON      0
-#define REPEAT_SEARCH -1
-#define IO_ERROR      -2
-#define NO_DISK_SPACE -3
-#define NO_BALANCING_NEEDED  (-4)
+#define CARRY_ON                          (0)
+#define REPEAT_SEARCH                    (-1)
+#define IO_ERROR                         (-2)
+#define NO_DISK_SPACE                    (-3)
+#define NO_BALANCING_NEEDED              (-4)
 #define NO_MORE_UNUSED_CONTIGUOUS_BLOCKS (-5)
-#define QUOTA_EXCEEDED -6
+#define QUOTA_EXCEEDED                   (-6)
 
 typedef __u32 b_blocknr_t;
 typedef __le32 unp_t;
@@ -236,8 +236,8 @@ struct unfm_nodeinfo {
     ((REISERFS_I(inode)->i_flags & i_item_key_version_mask) ? KEY_FORMAT_3_6 : KEY_FORMAT_3_5)
 
 #define set_inode_item_key_version( inode, version )                           \
-         ({ if((version)==KEY_FORMAT_3_6)                                      \
-                REISERFS_I(inode)->i_flags |= i_item_key_version_mask;      \
+         ({ if ((version)==KEY_FORMAT_3_6)                                     \
+                REISERFS_I(inode)->i_flags |= i_item_key_version_mask;         \
             else                                                               \
                 REISERFS_I(inode)->i_flags &= ~i_item_key_version_mask; })
 
@@ -245,8 +245,8 @@ struct unfm_nodeinfo {
     ((REISERFS_I(inode)->i_flags & i_stat_data_version_mask) ? STAT_DATA_V2 : STAT_DATA_V1)
 
 #define set_inode_sd_version(inode, version)                                   \
-         ({ if((version)==STAT_DATA_V2)                                        \
-                REISERFS_I(inode)->i_flags |= i_stat_data_version_mask;     \
+         ({ if ((version)==STAT_DATA_V2)                                       \
+                REISERFS_I(inode)->i_flags |= i_stat_data_version_mask;        \
             else                                                               \
                 REISERFS_I(inode)->i_flags &= ~i_stat_data_version_mask; })
 
@@ -259,12 +259,12 @@ struct unfm_nodeinfo {
 //
 // there are 5 item types currently
 //
-#define TYPE_STAT_DATA 0
-#define TYPE_INDIRECT 1
-#define TYPE_DIRECT 2
-#define TYPE_DIRENTRY 3
-#define TYPE_MAXTYPE 3
-#define TYPE_ANY 15		// FIXME: comment is required
+#define TYPE_STAT_DATA  0
+#define TYPE_INDIRECT   1
+#define TYPE_DIRECT     2
+#define TYPE_DIRENTRY   3
+#define TYPE_MAXTYPE    3
+#define TYPE_ANY       15 // FIXME: comment is required
 
 /***************************************************************************/
 /*                       KEY & ITEM HEAD                                   */
@@ -317,35 +317,39 @@ struct cpu_key {
 #define REISERFS_SHORT_KEY_LEN    2
 
 /* The result of the key compare */
-#define FIRST_GREATER 1
-#define SECOND_GREATER -1
-#define KEYS_IDENTICAL 0
-#define KEY_FOUND 1
-#define KEY_NOT_FOUND 0
+#define FIRST_GREATER             1
+#define KEYS_IDENTICAL            0
+#define SECOND_GREATER           -1
+
+#define KEY_FOUND                 1
+#define KEY_NOT_FOUND             0
 
 #define KEY_SIZE (sizeof (struct reiserfs_key))
 #define SHORT_KEY_SIZE (sizeof (__u32) + sizeof (__u32))
 
 /* return values for search_by_key and clones */
-#define ITEM_FOUND 1
-#define ITEM_NOT_FOUND 0
-#define ENTRY_FOUND 1
-#define ENTRY_NOT_FOUND 0
-#define DIRECTORY_NOT_FOUND -1
-#define REGULAR_FILE_FOUND -2
-#define DIRECTORY_FOUND -3
-#define BYTE_FOUND 1
-#define BYTE_NOT_FOUND 0
-#define FILE_NOT_FOUND -1
+#define ITEM_FOUND                1
+#define ITEM_NOT_FOUND            0
 
-#define POSITION_FOUND 1
-#define POSITION_NOT_FOUND 0
+#define ENTRY_FOUND               1
+#define ENTRY_NOT_FOUND           0
+
+#define DIRECTORY_NOT_FOUND      -1
+#define REGULAR_FILE_FOUND       -2
+#define DIRECTORY_FOUND          -3
+
+#define BYTE_FOUND                1
+#define BYTE_NOT_FOUND            0
+#define FILE_NOT_FOUND           -1
+
+#define POSITION_FOUND            1
+#define POSITION_NOT_FOUND        0
 
 // return values for reiserfs_find_entry and search_by_entry_key
-#define NAME_FOUND 1
-#define NAME_NOT_FOUND 0
-#define GOTO_PREVIOUS_ITEM 2
-#define NAME_FOUND_INVISIBLE 3
+#define NAME_NOT_FOUND            0
+#define NAME_FOUND                1
+#define GOTO_PREVIOUS_ITEM        2
+#define NAME_FOUND_INVISIBLE      3
 
 /*  Everything in the filesystem is stored as a set of items.  The
     item head contains the key of the item, its free space (for

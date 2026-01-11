@@ -1,5 +1,27 @@
 0.14.2.AE (PRE-RELEASE):
 -----------------------
+- Fixes `BtrFS` Driver
+  * Cursor was not being properly iterated
+  * Refactoring of `fsw_strfunc.h` meant the driver was a `NOOP`
+    - This bug was introduced in v0.14.0.AC (Commit 9ac45b9)
+- Fixes Failure of FS Drivers to Handle `Sparse Holes`
+  * Resulted in a failure to boot Linux Kernel v6.17.4/Newer
+    - https://sf.net/p/refind/discussion/general/thread/172b9cbf09
+    - https://github.com/torvalds/linux/commit/3e86e4d74c0490e5fc5a7f8de8f29e7579c9ffe5
+  * This bug was inherited from legacy upstream code
+    - Fixed for `BtrFS`, `Ext4`, and `Ext2` drivers
+- Improves `Filesystem Driver` Setup
+  * Resurrects/Restores original debug print macros
+  * The various build types are now different in terms of debug output
+    - Avoid `DBG` and `NPT` drivers unless specifically debugging these
+  * Refactored Misc Driver Files
+    - BtrFS
+      * Added separate header file for declarations
+      * Moved misc ad-hoc mid-file declarations
+    - General
+      * Rationalised several `macro` names
+        - Now `ALL CAPS` for consistency
+      * Rationalised use of `static` functions
 - Improves `AppleLegacyLoader` Handling
   * Used for Legacy BIOS Boot on some older Macs (AKA BootCamp)
   * The hardcoded links grandfathered in from rEFIt have been removed

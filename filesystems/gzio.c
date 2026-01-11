@@ -1,6 +1,5 @@
 /*
- * this file take from grub 2.0
- * for btrfs UEFI driver
+ * From Grub2 for the BtrFS Driver
  */
 
 /* gzio.c - decompression support for gzip */
@@ -38,6 +37,12 @@
    prefer that if you modify it and redistribute it that you include
    comments to that effect with your name and the date.  Thank you.
  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #if 0
 #include <grub/err.h>
@@ -268,8 +273,8 @@ static int dbits = 6;           /* bits in base distance lookup table */
    literal/length codes have a significantly lower probability of
    showing up at all.)  However, by making the first table have a
    lookup of seven bits, the EOB code will be found in that first
-   lookup, and so will not require that too many bits be pulled from
-   the stream.
+   lookup, and so will not require that too many bits be pulled
+   from the stream.
  */
 
 static ush mask_bits[] =
@@ -288,7 +293,7 @@ static ush mask_bits[] =
 #   endif
 #endif
 
-#define NEEDBITS(n) do {while(k<(n)){b|=((ulg)get_byte(gzio))<<k;k+=8;}} while (0)
+#define NEEDBITS(n) do {while (k<(n)){b|=((ulg)get_byte(gzio))<<k;k+=8;}} while (0)
 #define DUMPBITS(n) do {b>>=(n);k-=(n);} while (0)
 
 static int
@@ -308,7 +313,7 @@ gzio_seek (grub_gzio_t gzio, grub_off_t off)
         gzio->mem_input_off = off;
 }
 
-/* more function prototypes */
+/* More function prototypes */
 static int huft_build (unsigned *, unsigned, unsigned, ush *, ush *,
                        struct huft **, int *);
 static int huft_free (struct huft *);
@@ -351,7 +356,7 @@ huft_build (unsigned *b,        /* code lengths in bits (all assumed <= BMAX) */
   unsigned z;                   /* number of entries in current table */
 
   /* Generate counts for each bit length */
-  fsw_memzero ((char *) c, sizeof (c));
+  FSW_DO_MEMZERO((char *) c, sizeof (c));
   p = b;
   i = n;
   do
@@ -635,7 +640,7 @@ inflate_codes_in_window (grub_gzio_t gzio)
 
               if (w - d >= e)
                 {
-                  fsw_memcpy (gzio->slide + w, gzio->slide + d, e);
+                  FSW_DO_MEMCPY(gzio->slide + w, gzio->slide + d, e);
                   w += e;
                   d += e;
                 }
@@ -1076,7 +1081,7 @@ grub_gzio_read_real (grub_gzio_t gzio, grub_off_t offset,
       if (size > len)
         size = len;
 
-      fsw_memcpy (buf, srcaddr, size);
+      FSW_DO_MEMCPY(buf, srcaddr, size);
 
       buf += size;
       len -= size;
@@ -1100,7 +1105,7 @@ grub_zlib_decompress (char *inbuf, grub_size_t insize, grub_off_t off,
   gzio = AllocatePool (sizeof (*gzio));
   if (! gzio)
     return -1;
-  fsw_memzero(gzio, sizeof (*gzio));
+  FSW_DO_MEMZERO(gzio, sizeof (*gzio));
   gzio->mem_input = (uint8_t *) inbuf;
   gzio->mem_input_size = insize;
   gzio->mem_input_off = 0;

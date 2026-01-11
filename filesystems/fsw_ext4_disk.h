@@ -22,12 +22,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
- /*
-  * Modified for RefindPlus
-  * Copyright (c) 2024 Dayo Akanji (sf.net/u/dakanji/profile)
-  *
-  * Modifications distributed under the preceding terms.
-  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2024-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #ifndef _FSW_EXT4_DISK_H_
 #define _FSW_EXT4_DISK_H_
@@ -58,7 +58,7 @@ typedef __u64   __le64;
 #define EXT4_ROOT_INO		 2	/* Root inode */
 #define EXT4_USR_QUOTA_INO	 3	/* User quota inode */
 #define EXT4_GRP_QUOTA_INO	 4	/* Group quota inode */
-#define EXT4_BOOT_LOADER_INO	 5	/* Boot loader inode */
+#define EXT4_BOOT_LOADER_INO 5	/* Boot loader inode */
 #define EXT4_UNDEL_DIR_INO	 6	/* Undelete directory inode */
 #define EXT4_RESIZE_INO		 7	/* Reserved group descriptors inode */
 #define EXT4_JOURNAL_INO	 8	/* Journal inode */
@@ -159,6 +159,7 @@ struct ext4_group_desc
 #define EXT4_EXTENTS_FL                 0x00080000 /* Inode uses extents */
 #define EXT4_EA_INODE_FL                0x00200000 /* Inode used for large EA */
 #define EXT4_EOFBLOCKS_FL               0x00400000 /* Blocks allocated beyond EOF */
+#define EXT4_INLINE_DATA_FL             0x20000000 /* Using inline data */
 #define EXT4_RESERVED_FL                0x80000000 /* reserved for ext4 lib */
 
 #define EXT4_FL_USER_VISIBLE		0x004BDFFF /* User visible flags */

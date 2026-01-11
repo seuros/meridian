@@ -33,6 +33,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the MIT License.
+**/
 
 #ifndef _FSW_EFI_EDK2_BASE_H_
 #define _FSW_EFI_EDK2_BASE_H_

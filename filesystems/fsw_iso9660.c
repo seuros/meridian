@@ -58,63 +58,91 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2021-2023 Dayo Akanji (sf.net/u/dakanji/profile)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2021-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the MIT License.
+**/
 
 #include "fsw_iso9660.h"
-//#include <Protocol/MsgLog.h>
 
-#ifndef DEBUG_ISO
-#define DEBUG_ISO 1
-#endif
-
-#if DEBUG_ISO == 2
-#define DBG(x...)	AsciiPrint(x)
-#elif DEBUG_ISO == 1
-#define DBG(x...)	BootLog(x)
-#else
-#define DBG(x...)
-#endif
-
-//#define MsgLog(x...) if(msgCursor){AsciiSPrint(msgCursor, BOOTER_LOG_SIZE, x); while(*msgCursor){msgCursor++;}}
-
-// extern CHAR8     *msgCursor;
-// extern MESSAGE_LOG_PROTOCOL *Msg;
 // functions
 
-static fsw_status_t fsw_iso9660_volume_mount(struct fsw_iso9660_volume *vol);
-static void         fsw_iso9660_volume_free(struct fsw_iso9660_volume *vol);
-static fsw_status_t fsw_iso9660_volume_stat(struct fsw_iso9660_volume *vol, struct fsw_volume_stat *sb);
+static fsw_status_t fsw_iso9660_volume_mount (
+    struct fsw_iso9660_volume *vol
+);
+static void fsw_iso9660_volume_free (
+    struct fsw_iso9660_volume *vol
+);
+static fsw_status_t fsw_iso9660_volume_stat (
+    struct fsw_iso9660_volume *vol,
+    struct fsw_volume_stat    *sb
+);
 
-static fsw_status_t fsw_iso9660_dnode_fill(struct fsw_iso9660_volume *vol, struct fsw_iso9660_dnode *dno);
-static void         fsw_iso9660_dnode_free(struct fsw_iso9660_volume *vol, struct fsw_iso9660_dnode *dno);
-static fsw_status_t fsw_iso9660_dnode_stat(struct fsw_iso9660_volume *vol, struct fsw_iso9660_dnode *dno,
-                                           struct fsw_dnode_stat *sb);
-static fsw_status_t fsw_iso9660_get_extent(struct fsw_iso9660_volume *vol, struct fsw_iso9660_dnode *dno,
-                                           struct fsw_extent *extent);
+static fsw_status_t fsw_iso9660_dnode_fill (
+    struct fsw_iso9660_volume *vol,
+    struct fsw_iso9660_dnode  *dno
+);
+static void fsw_iso9660_dnode_free (
+    struct fsw_iso9660_volume *vol,
+    struct fsw_iso9660_dnode  *dno
+);
+static fsw_status_t fsw_iso9660_dnode_stat (
+    struct fsw_iso9660_volume *vol,
+    struct fsw_iso9660_dnode  *dno,
+    struct fsw_dnode_stat     *sb
+);
+static fsw_status_t fsw_iso9660_get_extent (
+    struct fsw_iso9660_volume *vol,
+    struct fsw_iso9660_dnode  *dno,
+    struct fsw_extent         *extent
+);
+static fsw_status_t fsw_iso9660_dir_lookup (
+    struct fsw_iso9660_volume  *vol,
+    struct fsw_iso9660_dnode   *dno,
+    struct fsw_string          *lookup_name,
+    struct fsw_iso9660_dnode  **child_dno
+);
+static fsw_status_t fsw_iso9660_dir_read (
+    struct fsw_iso9660_volume  *vol,
+    struct fsw_iso9660_dnode   *dno,
+    struct fsw_shandle         *shand,
+    struct fsw_iso9660_dnode  **child_dno
+);
+static fsw_status_t fsw_iso9660_read_dirrec (
+    struct fsw_iso9660_volume    *vol,
+    struct fsw_shandle           *shand,
+    struct iso9660_dirrec_buffer *dirrec_buffer
+);
 
-static fsw_status_t fsw_iso9660_dir_lookup(struct fsw_iso9660_volume *vol, struct fsw_iso9660_dnode *dno,
-                                           struct fsw_string *lookup_name, struct fsw_iso9660_dnode **child_dno);
-static fsw_status_t fsw_iso9660_dir_read(struct fsw_iso9660_volume *vol, struct fsw_iso9660_dnode *dno,
-                                         struct fsw_shandle *shand, struct fsw_iso9660_dnode **child_dno);
-static fsw_status_t fsw_iso9660_read_dirrec(struct fsw_iso9660_volume *vol, struct fsw_shandle *shand, struct iso9660_dirrec_buffer *dirrec_buffer);
+static fsw_status_t fsw_iso9660_readlink (
+    struct fsw_iso9660_volume *vol,
+    struct fsw_iso9660_dnode  *dno,
+    struct fsw_string         *link
+);
 
-static fsw_status_t fsw_iso9660_readlink(struct fsw_iso9660_volume *vol, struct fsw_iso9660_dnode *dno,
-                                         struct fsw_string *link);
+static fsw_status_t rr_find_sp (
+    struct iso9660_dirrec          *dirrec,
+    struct fsw_rock_ridge_susp_sp **psp
+);
+static fsw_status_t rr_find_nm (
+    struct fsw_iso9660_volume *vol,
+    struct iso9660_dirrec     *dirrec,
+    int                        off,
+    struct fsw_string         *str
+);
+static fsw_status_t rr_read_ce (
+    struct fsw_iso9660_volume    *vol,
+    union fsw_rock_ridge_susp_ce *ce,
+    fsw_u8                       *begin
+);
 
-static fsw_status_t rr_find_sp(struct iso9660_dirrec *dirrec, struct fsw_rock_ridge_susp_sp **psp);
-static fsw_status_t rr_find_nm(struct fsw_iso9660_volume *vol, struct iso9660_dirrec *dirrec, int off, struct fsw_string *str);
-static fsw_status_t rr_read_ce(struct fsw_iso9660_volume *vol, union fsw_rock_ridge_susp_ce *ce, fsw_u8 *begin);
-//static void dump_dirrec(struct iso9660_dirrec *dirrec);
 //
 // Dispatch Table
 //
 
-struct fsw_fstype_table   FSW_FSTYPE_TABLE_NAME(iso9660) = {
+struct fsw_fstype_table FSW_FSTYPE_TABLE_NAME(iso9660) = {
     { FSW_STRING_TYPE_ISO88591, 4, 4, "iso9660" },
     sizeof (struct fsw_iso9660_volume),
     sizeof (struct fsw_iso9660_dnode),
@@ -138,12 +166,12 @@ static fsw_status_t rr_find_sp(struct iso9660_dirrec *dirrec, struct fsw_rock_ri
     struct fsw_rock_ridge_susp_sp *sp;
     r = (fsw_u8 *)((fsw_u8 *)dirrec + sizeof (*dirrec) + dirrec->file_identifier_length);
     off = (int)(r - (fsw_u8 *)dirrec);
-    while(off < dirrec->dirrec_length)
+    while (off < dirrec->dirrec_length)
     {
         if (*r == 'S')
         {
             sp = (struct fsw_rock_ridge_susp_sp *)r;
-            if(    sp->e.sig[0] == 'S'
+            if (    sp->e.sig[0] == 'S'
                 && sp->e.sig[1] == 'P'
                 && sp->magic[0] == 0xbe
                 && sp->magic[1] == 0xef)
@@ -171,7 +199,7 @@ static fsw_status_t rr_find_nm(struct fsw_iso9660_volume *vol, struct iso9660_di
     str->len = 0;
     str->size = 0;
     str->type = 0;
-    while(off < limit)
+    while (off < limit)
     {
         if (r[0] == 'C' && r[1] == 'E' && r[2] == 28)
         {
@@ -179,7 +207,7 @@ static fsw_status_t rr_find_nm(struct fsw_iso9660_volume *vol, struct iso9660_di
             int ce_off;
             union fsw_rock_ridge_susp_ce *ce;
             if (fCe == 0)
-                fsw_alloc_zero(ISO9660_BLOCKSIZE, (void *) &begin);
+                fsw_alloc_zero (ISO9660_BLOCKSIZE, (void *) &begin);
             fCe = 1;
         //    DEBUG((DEBUG_WARN, "%a:%d we found CE before NM or its continuation\n", __FILE__, __LINE__));
             ce = (union fsw_rock_ridge_susp_ce *)r;
@@ -188,7 +216,7 @@ static fsw_status_t rr_find_nm(struct fsw_iso9660_volume *vol, struct iso9660_di
             rc = rr_read_ce(vol, ce, begin);
             if (rc != FSW_SUCCESS)
             {
-                fsw_free(begin);
+                FSW_DO_FREE(begin);
                 return rc;
             }
             begin += ce_off;
@@ -197,7 +225,7 @@ static fsw_status_t rr_find_nm(struct fsw_iso9660_volume *vol, struct iso9660_di
         if (r[0] == 'N' && r[1] == 'M')
         {
             nm = (struct fsw_rock_ridge_susp_nm *)r;
-            if(    nm->e.sig[0] == 'N'
+            if (    nm->e.sig[0] == 'N'
                 && nm->e.sig[1] == 'M')
             {
                 int len = 0;
@@ -206,7 +234,7 @@ static fsw_status_t rr_find_nm(struct fsw_iso9660_volume *vol, struct iso9660_di
                 {
                      str->len = 1;
                      if (str->data == NULL) {
-                         fsw_alloc_zero((2 * str->len) + 1, (void **) &str->data);
+                         fsw_alloc_zero ((2 * str->len) + 1, (void **) &str->data);
                      }
                      fsw_memdup(str->data, ".", str->len);
                      goto done;
@@ -215,20 +243,20 @@ static fsw_status_t rr_find_nm(struct fsw_iso9660_volume *vol, struct iso9660_di
                 {
                      str->len = 2;
                      if (str->data == NULL) {
-                         fsw_alloc_zero((2 * str->len) + 1, (void **) &str->data);
+                         fsw_alloc_zero ((2 * str->len) + 1, (void **) &str->data);
                      }
                      fsw_memdup(str->data, "..", str->len);
                      goto done;
                 }
                 len = nm->e.len - sizeof (struct fsw_rock_ridge_susp_nm) + 1;
-                fsw_alloc_zero(str->len + len, (void **) &tmp);
+                fsw_alloc_zero (str->len + len, (void **) &tmp);
                 if (str->data != NULL)
                 {
-                    fsw_memcpy(tmp, str->data, str->len);
-                    fsw_free(str->data);
+                    FSW_DO_MEMCPY(tmp, str->data, str->len);
+                    FSW_DO_FREE(str->data);
                 }
            //     DEBUG((DEBUG_INFO, "dst:%p src:%p len:%d\n", tmp + str->len, &nm->name[0], len));
-                fsw_memcpy(tmp + str->len, &nm->name[0], len);
+                FSW_DO_MEMCPY(tmp + str->len, &nm->name[0], len);
                 str->data = tmp;
                 str->len += len;
 
@@ -239,14 +267,14 @@ static fsw_status_t rr_find_nm(struct fsw_iso9660_volume *vol, struct iso9660_di
         r++;
         off = (int)(r - (fsw_u8 *)begin);
     }
-    if(fCe == 1)
-        fsw_free(begin);
+    if (fCe == 1)
+        FSW_DO_FREE(begin);
     return FSW_NOT_FOUND;
 done:
     str->type = FSW_STRING_TYPE_ISO88591;
     str->size = str->len;
-    if(fCe == 1)
-        fsw_free(begin);
+    if (fCe == 1)
+        FSW_DO_FREE(begin);
     return FSW_SUCCESS;
 }
 
@@ -297,34 +325,32 @@ static fsw_status_t fsw_iso9660_volume_mount(struct fsw_iso9660_volume *vol)
     struct fsw_rock_ridge_susp_entry *entry;
 
     // read through the Volume Descriptor Set
-    fsw_set_blocksize(vol, ISO9660_BLOCKSIZE, ISO9660_BLOCKSIZE);
+    fsw_set_blocksize (vol, ISO9660_BLOCKSIZE, ISO9660_BLOCKSIZE);
     blockno = ISO9660_SUPERBLOCK_BLOCKNO;
 
     do {
-//      DBG("iso9660: check blockno=%d\n", blockno);
-        status = fsw_block_get(vol, blockno, 0, &buffer);
+        status = fsw_block_get (vol, blockno, 0, &buffer);
         if (status)
             return status;
 
         voldesc = (struct iso9660_volume_descriptor *)buffer;
         voldesc_type = voldesc->volume_descriptor_type;
-        if (fsw_memeq(voldesc->standard_identifier, "CD001", 5)) {
+        if (FSW_DO_MEMEQ(voldesc->standard_identifier, "CD001", 5)) {
             // descriptor follows ISO 9660 standard
             if (voldesc_type == 1 && voldesc->volume_descriptor_version == 1) {
                 // suitable Primary Volume Descriptor found
-//              DBG("iso9660: suitable Primary Volume Descriptor found\n");
                 if (vol->primary_voldesc) {
-                    fsw_free(vol->primary_voldesc);
+                    FSW_DO_FREE(vol->primary_voldesc);
                     vol->primary_voldesc = NULL;
                 }
                 status = fsw_memdup((void **) &vol->primary_voldesc, voldesc, ISO9660_BLOCKSIZE);
             }
-        } else if (!fsw_memeq(voldesc->standard_identifier, "CD", 2)) {
+        } else if (!FSW_DO_MEMEQ(voldesc->standard_identifier, "CD", 2)) {
             // Completely alien standard identifier, stop reading
             voldesc_type = 255;
         }
 
-        fsw_block_release(vol, blockno, buffer);
+        fsw_block_release (vol, blockno, buffer);
         blockno++;
     } while (!status && voldesc_type != 255);
     if (status)
@@ -344,7 +370,7 @@ static fsw_status_t fsw_iso9660_volume_mount(struct fsw_iso9660_volume *vol)
     s.type = FSW_STRING_TYPE_ISO88591;
     s.size = s.len = i;
     s.data = pvoldesc->volume_identifier;
-    status = fsw_strdup_coerce(&vol->g.label, vol->g.host_string_type, &s);
+    status = fsw_strdup_coerce (&vol->g.label, vol->g.host_string_type, &s);
     if (status)
         return status;
 
@@ -352,7 +378,7 @@ static fsw_status_t fsw_iso9660_volume_mount(struct fsw_iso9660_volume *vol)
     status = fsw_dnode_create_root(vol, ISO9660_SUPERBLOCK_BLOCKNO << ISO9660_BLOCKSIZE_BITS, &vol->g.root);
     if (status)
         return status;
-    fsw_memcpy(&vol->g.root->dirrec, &pvoldesc->root_directory, sizeof (struct iso9660_dirrec));
+    FSW_DO_MEMCPY(&vol->g.root->dirrec, &pvoldesc->root_directory, sizeof (struct iso9660_dirrec));
 
     if (   pvoldesc->escape[0] == 0x25
         && pvoldesc->escape[1] == 0x2f
@@ -360,8 +386,11 @@ static fsw_status_t fsw_iso9660_volume_mount(struct fsw_iso9660_volume *vol)
             || pvoldesc->escape[2] == 0x43
             || pvoldesc->escape[2] == 0x45))
     {
- //       FSW_MSG_DEBUG((FSW_MSGSTR("fsw_iso9660_volume_mount: success (joliet!!!)\n")));
-//      DBG("fsw_iso9660_volume_mount: success (joliet!!!)\n");
+        FSW_MSG_LEVEL_3((
+            FSW_MSG_STR(
+                "FSW_ISO9660: fsw_iso9660_volume_mount ... Success (joliet)\n"
+            )
+        ));
         vol->fJoliet = 1;
     }
 
@@ -370,8 +399,11 @@ static fsw_status_t fsw_iso9660_volume_mount(struct fsw_iso9660_volume *vol)
     sua_pos = (sizeof (struct iso9660_dirrec)) +
             rootdir.file_identifier_length +
             (rootdir.file_identifier_length % 2) - 2;
-    //int sua_size = rootdir.dirrec_length - rootdir.file_identifier_length;
-    //FSW_MSG_DEBUG((FSW_MSGSTR("fsw_iso9660_volume_mount: success (SUA(pos:%x, sz:%d)!!!)\n"), sua_pos, sua_size));
+    FSW_MSG_LEVEL_3((
+        FSW_MSG_STR(
+            "FSW_ISO9660: fsw_iso9660_volume_mount ... Success (SUA Pos:%x)\n"
+        ), sua_pos
+    ));
 
 #if 1
     status = fsw_block_get (vol, ISOINT(rootdir.extent_location), 0, &buffer);
@@ -388,18 +420,23 @@ static fsw_status_t fsw_iso9660_volume_mount(struct fsw_iso9660_volume *vol)
         if (sp->magic[0] == 0xbe && sp->magic[1] == 0xef) {
             vol->fRockRidge = 1;
         } else {
- //           FSW_MSG_DEBUG((FSW_MSGSTR("fsw_iso9660_volume_mount: SP magic is not valid\n")));
-//          DBG("fsw_iso9660_volume_mount: SP magic is not valid\n");
+            FSW_MSG_LEVEL_3((
+                FSW_MSG_STR(
+                    "FSW_ISO9660: fsw_iso9660_volume_mount: SP magic is not valid\n"
+                )
+            ));
         }
     }
 #endif
     // release volume descriptors
-    fsw_free(vol->primary_voldesc);
+    FSW_DO_FREE(vol->primary_voldesc);
     vol->primary_voldesc = NULL;
 
-
-//    FSW_MSG_DEBUG((FSW_MSGSTR("fsw_iso9660_volume_mount: success\n")));
-//  DBG("fsw_iso9660_volume_mount: success\n");
+    FSW_MSG_LEVEL_3((
+        FSW_MSG_STR(
+            "FSW_ISO9660: fsw_iso9660_volume_mount: success\n"
+        )
+    ));
 
     return FSW_SUCCESS;
 }
@@ -413,7 +450,7 @@ static fsw_status_t fsw_iso9660_volume_mount(struct fsw_iso9660_volume *vol)
 static void fsw_iso9660_volume_free(struct fsw_iso9660_volume *vol)
 {
     if (vol->primary_voldesc)
-        fsw_free(vol->primary_voldesc);
+        FSW_DO_FREE(vol->primary_voldesc);
 }
 
 /**
@@ -549,7 +586,7 @@ static fsw_status_t fsw_iso9660_dir_lookup(struct fsw_iso9660_volume *vol, struc
     // setup a dnode for the child item
     status = fsw_dnode_create(dno, dirrec_buffer.ino, FSW_DNODE_TYPE_UNKNOWN, &dirrec_buffer.name, child_dno_out);
     if (status == FSW_SUCCESS)
-        fsw_memcpy(&(*child_dno_out)->dirrec, dirrec, sizeof (struct iso9660_dirrec));
+        FSW_DO_MEMCPY(&(*child_dno_out)->dirrec, dirrec, sizeof (struct iso9660_dirrec));
 
 errorexit:
     fsw_shandle_close(&shand);
@@ -604,7 +641,7 @@ static fsw_status_t fsw_iso9660_dir_read(struct fsw_iso9660_volume *vol, struct 
     // setup a dnode for the child item
     status = fsw_dnode_create(dno, dirrec_buffer.ino, FSW_DNODE_TYPE_UNKNOWN, &dirrec_buffer.name, child_dno_out);
     if (status == FSW_SUCCESS)
-        fsw_memcpy(&(*child_dno_out)->dirrec, dirrec, sizeof (struct iso9660_dirrec));
+        FSW_DO_MEMCPY(&(*child_dno_out)->dirrec, dirrec, sizeof (struct iso9660_dirrec));
 
     return status;
 }

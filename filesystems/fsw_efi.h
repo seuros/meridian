@@ -34,6 +34,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the MIT License.
+**/
 
 #ifndef _FSW_EFI_H_
 #define _FSW_EFI_H_
@@ -41,7 +47,7 @@
 #include "fsw_core.h"
 
 #ifdef __MAKEWITH_GNUEFI
-#define CompareGuid(a, b) CompareGuid(a, b)==0
+#define CompareGuid(a, b) CompareGuid(a, b) == 0
 #endif
 
 #define REFINDPLUS_EFI_DISK_IO_PROTOCOL_GUID \
@@ -73,9 +79,9 @@ typedef struct {
 } FSW_VOLUME_DATA;
 
 /** Signature for the volume structure. */
-#define FSW_VOLUME_DATA_SIGNATURE  EFI_SIGNATURE_32 ('f', 's', 'w', 'V')
+#define FSW_VOLUME_DATA_SIGNATURE  EFI_SIGNATURE_32('f', 's', 'w', 'V')
 /** Access macro for the volume structure. */
-#define FSW_VOLUME_FROM_FILE_SYSTEM(a)  CR (a, FSW_VOLUME_DATA, FileSystem, FSW_VOLUME_DATA_SIGNATURE)
+#define FSW_VOLUME_FROM_FILE_SYSTEM(a)  CR(a, FSW_VOLUME_DATA, FileSystem, FSW_VOLUME_DATA_SIGNATURE)
 
 /**
  * EFI Host: Private structure for a EFI_FILE_PROTOCOL interface.
@@ -97,19 +103,19 @@ typedef struct {
 #define FSW_EFI_FILE_TYPE_DIR   (1)
 
 /** Signature for the file handle structure. */
-#define FSW_FILE_DATA_SIGNATURE    EFI_SIGNATURE_32 ('f', 's', 'w', 'F')
+#define FSW_FILE_DATA_SIGNATURE    EFI_SIGNATURE_32('f', 's', 'w', 'F')
 /** Access macro for the file handle structure. */
-#define FSW_FILE_FROM_FILE_HANDLE(a)  CR (a, FSW_FILE_DATA, FileHandle, FSW_FILE_DATA_SIGNATURE)
+#define FSW_FILE_FROM_FILE_HANDLE(a)  CR(a, FSW_FILE_DATA, FileHandle, FSW_FILE_DATA_SIGNATURE)
 
 
 //
 // Library functions
 //
 
-VOID fsw_efi_decode_time(OUT EFI_TIME *EfiTime, IN UINT32 UnixTime);
+VOID fsw_efi_decode_time (OUT EFI_TIME *EfiTime, IN UINT32 UnixTime);
 
-UINTN fsw_efi_strsize(struct fsw_string *s);
-VOID fsw_efi_strcpy(CHAR16 *Dest, struct fsw_string *src);
-VOID EFIAPI fsw_efi_clear_cache(VOID);
+UINTN fsw_efi_strsize (struct fsw_string *s);
+VOID fsw_efi_strcpy (CHAR16 *Dest, struct fsw_string *src);
+VOID EFIAPI fsw_efi_clear_cache (VOID);
 
 #endif

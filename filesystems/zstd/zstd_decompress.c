@@ -13,12 +13,12 @@
  * either version 2 of the GNU General Public License ("GPL") or BSD license
  * ("BSD").
  */
- /*
-  * Modified for RefindPlus ... Added FSE_MEMxyz calls
-  * Copyright (c) 2025 Dayo Akanji (sf.net/u/dakanji/profile)
-  *
-  * Modifications distributed under the preceding terms.
-  */
+/**
+** Modified for RefindPlus ... Added FSE_MEMxyz calls
+** Copyright (c) 2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 /* ***************************************************************
 *  Tuning parameters
@@ -802,7 +802,7 @@ size_t ZSTD_execSequenceLast7(BYTE *op, BYTE *const oend, seq_t sequence, const 
 
 static seq_t ZSTD_decodeSequence(seqState_t *seqState)
 {
-	seq_t seq;
+	seq_t seq = {0};
 
 	U32 const llCode = FSE_peekSymbol(&seqState->stateLL);
 	U32 const mlCode = FSE_peekSymbol(&seqState->stateML);

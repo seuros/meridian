@@ -22,65 +22,81 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2021-2024 Dayo Akanji (sf.net/u/dakanji/profile)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2021-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #include "fsw_hfs.h"
 
-#ifdef HOST_POSIX
-#   define DPRINT(x)    printf("%s", x)
-#   define BP(msg)      do { printf("ERROR: %s", msg); asm("int3"); } while (0)
-#else
-#   define CONCAT(x, y) x##y
-#   define DPRINT(x)    Print(L"%a", x)
-#   define BP(msg)      DPRINT(msg)
-#endif
+#define CONCAT(x, y) x##y
+
 
 // functions
-#if 0
-void dump_str(fsw_u16* p, fsw_u32 len, int swap)
-{
-    int i;
 
-    for (i=0; i<len; i++)
-    {
-        fprintf(stderr, "%c", swap ? be16_to_cpu(p[i]) : p[i]);
-    }
-    fprintf(stderr, "\n");
-}
+static fsw_status_t fsw_hfs_volume_mount (
+    struct fsw_hfs_volume *vol
+);
+static void fsw_hfs_volume_free (
+    struct fsw_hfs_volume *vol
+);
+static fsw_status_t fsw_hfs_volume_stat (
+    struct fsw_hfs_volume  *vol,
+    struct fsw_volume_stat *sb
+);
+
+static fsw_status_t fsw_hfs_dnode_fill (
+    struct fsw_hfs_volume *vol,
+    struct fsw_hfs_dnode  *dno
+);
+static void fsw_hfs_dnode_free (
+    struct fsw_hfs_volume *vol,
+    struct fsw_hfs_dnode  *dno
+);
+static fsw_status_t fsw_hfs_dnode_stat (
+    struct fsw_hfs_volume *vol,
+    struct fsw_hfs_dnode  *dno,
+    struct fsw_dnode_stat *sb
+);
+static fsw_status_t fsw_hfs_get_extent (
+    struct fsw_hfs_volume *vol,
+    struct fsw_hfs_dnode  *dno,
+    struct fsw_extent     *extent
+);
+
+static fsw_status_t fsw_hfs_dir_lookup (
+    struct fsw_hfs_volume *vol,
+    struct fsw_hfs_dnode *dno,
+    struct fsw_string *lookup_name,
+    struct fsw_hfs_dnode **child_dno
+);
+static fsw_status_t fsw_hfs_dir_read (
+    struct fsw_hfs_volume  *vol,
+    struct fsw_hfs_dnode   *dno,
+    struct fsw_shandle     *shand,
+    struct fsw_hfs_dnode  **child_dno
+);
+
+#if 0
+static fsw_status_t fsw_hfs_read_dirrec (
+    struct fsw_shandle       *shand,
+    struct hfs_dirrec_buffer *dirrec_buffer
+);
 #endif
 
-static fsw_status_t fsw_hfs_volume_mount(struct fsw_hfs_volume *vol);
-static void         fsw_hfs_volume_free(struct fsw_hfs_volume *vol);
-static fsw_status_t fsw_hfs_volume_stat(struct fsw_hfs_volume *vol, struct fsw_volume_stat *sb);
-
-static fsw_status_t fsw_hfs_dnode_fill(struct fsw_hfs_volume *vol, struct fsw_hfs_dnode *dno);
-static void         fsw_hfs_dnode_free(struct fsw_hfs_volume *vol, struct fsw_hfs_dnode *dno);
-static fsw_status_t fsw_hfs_dnode_stat(struct fsw_hfs_volume *vol, struct fsw_hfs_dnode *dno,
-                                           struct fsw_dnode_stat *sb);
-static fsw_status_t fsw_hfs_get_extent(struct fsw_hfs_volume *vol, struct fsw_hfs_dnode *dno,
-                                           struct fsw_extent *extent);
-
-static fsw_status_t fsw_hfs_dir_lookup(struct fsw_hfs_volume *vol, struct fsw_hfs_dnode *dno,
-                                           struct fsw_string *lookup_name, struct fsw_hfs_dnode **child_dno);
-static fsw_status_t fsw_hfs_dir_read(struct fsw_hfs_volume *vol, struct fsw_hfs_dnode *dno,
-                                         struct fsw_shandle *shand, struct fsw_hfs_dnode **child_dno);
-#if 0
-static fsw_status_t fsw_hfs_read_dirrec(struct fsw_shandle *shand, struct hfs_dirrec_buffer *dirrec_buffer);
-#endif
-
-static fsw_status_t fsw_hfs_readlink(struct fsw_hfs_volume *vol, struct fsw_hfs_dnode *dno,
-                                         struct fsw_string *link);
+static fsw_status_t fsw_hfs_readlink (
+    struct fsw_hfs_volume *vol,
+    struct fsw_hfs_dnode  *dno,
+    struct fsw_string     *link
+);
 
 //
 // Dispatch Table
 //
 
-struct fsw_fstype_table   FSW_FSTYPE_TABLE_NAME(hfs) = {
+struct fsw_fstype_table FSW_FSTYPE_TABLE_NAME(hfs) = {
     { FSW_STRING_TYPE_ISO88591, 4, 4, "hfs" },
     sizeof (struct fsw_hfs_volume),
     sizeof (struct fsw_hfs_dnode),
@@ -97,8 +113,7 @@ struct fsw_fstype_table   FSW_FSTYPE_TABLE_NAME(hfs) = {
     fsw_hfs_readlink,     // Return FSW_UNSUPPORTED;
 };
 
-static const fsw_u16 fsw_latin_case_fold[] =
-{
+static const fsw_u16 fsw_latin_case_fold[] = {
     /* 0 */ 0xFFFF, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x000C, 0x000D, 0x000E, 0x000F,
     /* 1 */ 0x0010, 0x0011, 0x0012, 0x0013, 0x0014, 0x0015, 0x0016, 0x0017, 0x0018, 0x0019, 0x001A, 0x001B, 0x001C, 0x001D, 0x001E, 0x001F,
     /* 2 */ 0x0020, 0x0021, 0x0022, 0x0023, 0x0024, 0x0025, 0x0026, 0x0027, 0x0028, 0x0029, 0x002A, 0x002B, 0x002C, 0x002D, 0x002E, 0x002F,
@@ -117,22 +132,23 @@ static const fsw_u16 fsw_latin_case_fold[] =
     /* F */ 0x00F0, 0x00F1, 0x00F2, 0x00F3, 0x00F4, 0x00F5, 0x00F6, 0x00F7, 0x00F8, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x00FD, 0x00FE, 0x00FF,
 };
 
-static fsw_u16 fsw_to_lower(fsw_u16 ch)
-{
-
-    if (ch < 0x0100)
+static
+fsw_u16 fsw_to_lower(fsw_u16 ch) {
+    if (ch < 0x0100) {
         return fsw_latin_case_fold[ch];
+    }
 
     return ch;
 }
 
-static fsw_s32
-fsw_hfs_read_block (struct fsw_hfs_dnode    * dno,
-                    fsw_u32                   log_bno,
-                    fsw_u32                   off,
-                    fsw_s32                   len,
-                    fsw_u8                  * buf)
-{
+static
+fsw_s32 fsw_hfs_read_block (
+    struct fsw_hfs_dnode    * dno,
+    fsw_u32                   log_bno,
+    fsw_u32                   off,
+    fsw_s32                   len,
+    fsw_u8                  * buf
+) {
     fsw_status_t          status;
     struct fsw_extent     extent;
     fsw_u32               phys_bno;
@@ -145,26 +161,25 @@ fsw_hfs_read_block (struct fsw_hfs_dnode    * dno,
 
     phys_bno = extent.phys_start;
   //Slice - increase cache level from 0 to 3
-    status = fsw_block_get(dno->g.vol, phys_bno, 3, (void **) &buffer);
+    status = fsw_block_get (dno->g.vol, phys_bno, 3, (void **) &buffer);
     if (status)
         return status;
 
-    fsw_memcpy(buf, buffer + off, len);
+    FSW_DO_MEMCPY(buf, buffer + off, len);
 
-    fsw_block_release(dno->g.vol, phys_bno, buffer);
+    fsw_block_release (dno->g.vol, phys_bno, buffer);
 
     return FSW_SUCCESS;
-
 }
 
 /* Read data from HFS file. */
-static fsw_s32
-fsw_hfs_read_file (struct fsw_hfs_dnode    * dno,
-                   fsw_u64                   pos,
-                   fsw_s32                   len,
-                   fsw_u8                  * buf)
-{
-
+static
+fsw_s32 fsw_hfs_read_file (
+    struct fsw_hfs_dnode    * dno,
+    fsw_u64                   pos,
+    fsw_s32                   len,
+    fsw_u8                  * buf
+) {
     fsw_status_t          status;
     fsw_u32               log_bno;
     fsw_u32               block_size_bits = dno->g.vol->block_size_shift;
@@ -172,8 +187,7 @@ fsw_hfs_read_file (struct fsw_hfs_dnode    * dno,
     fsw_u32               block_size_mask = block_size - 1;
     fsw_s32               read = 0;
 
-    while (len > 0)
-    {
+    while (len > 0) {
         fsw_u32 off = (fsw_u32)(pos & block_size_mask);
         fsw_s32 next_len = len;
 
@@ -198,18 +212,18 @@ fsw_hfs_read_file (struct fsw_hfs_dnode    * dno,
 }
 
 
-static fsw_s32
-fsw_hfs_compute_shift(fsw_u32 size)
-{
+static
+fsw_s32 fsw_hfs_compute_shift(
+    fsw_u32 size
+) {
     fsw_s32 i;
 
-    for (i=0; i<32; i++)
-    {
-        if ((size >> i) == 0)
+    for (i=0; i<32; i++) {
+        if ((size >> i) == 0) {
             return i - 1;
+        }
     }
 
-//    BP("BUG\n");
     return 0;
 }
 
@@ -252,8 +266,10 @@ HFSGetDescription(CICell ih, char *str, long strMaxLen)
 */
 
 
-static fsw_status_t fsw_hfs_volume_mount(struct fsw_hfs_volume *vol)
-{
+static
+fsw_status_t fsw_hfs_volume_mount (
+    struct fsw_hfs_volume *vol
+) {
     fsw_status_t              status, rv;
     void                      *buffer = NULL;
     HFSPlusVolumeHeader       *voldesc;
@@ -267,7 +283,7 @@ static fsw_status_t fsw_hfs_volume_mount(struct fsw_hfs_volume *vol)
     rv = FSW_UNSUPPORTED;
 
     vol->primary_voldesc = NULL;
-    fsw_set_blocksize(vol, HFS_BLOCKSIZE, HFS_BLOCKSIZE);
+    fsw_set_blocksize (vol, HFS_BLOCKSIZE, HFS_BLOCKSIZE);
     blockno = HFS_SUPERBLOCK_BLOCKNO;
 
 #define CHECK(s)         \
@@ -284,81 +300,81 @@ static fsw_status_t fsw_hfs_volume_mount(struct fsw_hfs_volume *vol)
         fsw_s32       r;
         fsw_u32       block_size;
 
-        status = fsw_block_get(vol, blockno, 0, &buffer);
+        status = fsw_block_get (vol, blockno, 0, &buffer);
         CHECK(status);
         voldesc   = (HFSPlusVolumeHeader *)buffer;
         mdb       = (HFSMasterDirectoryBlock*)buffer;
         signature = be16_to_cpu(voldesc->signature);
 
-        if ((signature == kHFSPlusSigWord) || (signature == kHFSXSigWord)) //H+ or HX
-        {
-            if (vol->hfs_kind == 0)
-            {
-//                DPRINT("found HFS+\n");
+        if ((signature == kHFSPlusSigWord) || (signature == kHFSXSigWord)) { //H+ or HX
+            if (vol->hfs_kind == 0) {
                 vol->hfs_kind = FSW_HFS_PLUS;
             }
         }
-        else if (signature == kHFSSigWord) // 'BD'
-        {
-            if (be16_to_cpu(mdb->drEmbedSigWord) == kHFSPlusSigWord)
-            {
-                DPRINT("found HFS+ inside HFS, untested\n");
+        else if (signature == kHFSSigWord) { // 'BD'
+            if (be16_to_cpu(mdb->drEmbedSigWord) == kHFSPlusSigWord) {
+                // found HFS+ inside HFS, untested
                 vol->hfs_kind = FSW_HFS_PLUS_EMB;
                 vol->emb_block_off = be32_to_cpu(mdb->drEmbedExtent.startBlock);
                 blockno += vol->emb_block_off;
                 /* retry */
                 continue;
             }
-            else
-            {
-                DPRINT("found plain HFS, unsupported\n");
+            else {
                 vol->hfs_kind = FSW_HFS_PLAIN;
             }
             rv = FSW_UNSUPPORTED;
             break;
         }
-        else
-        {
+        else {
             rv = FSW_UNSUPPORTED;
             break;
         }
 
-        status = fsw_memdup((void **) &vol->primary_voldesc, voldesc,
-                            sizeof (*voldesc));
+        status = fsw_memdup(
+            (void **) &vol->primary_voldesc,
+            voldesc, sizeof (*voldesc)
+        );
         CHECK(status);
 
 
         block_size = be32_to_cpu(voldesc->blockSize);
         vol->block_size_shift = fsw_hfs_compute_shift(block_size);
 
-        fsw_block_release(vol, blockno, buffer);
+        fsw_block_release (vol, blockno, buffer);
         buffer = NULL;
-        fsw_set_blocksize(vol, block_size, block_size);
+        fsw_set_blocksize (vol, block_size, block_size);
 
         /* set default/fallback volume name */
         s.type = FSW_STRING_TYPE_ISO88591;
         #define kHFSVolumeNameFallback "HFS+ volume"
         s.size = s.len = (sizeof(kHFSVolumeNameFallback) - 1);
         s.data = kHFSVolumeNameFallback;
-        status = fsw_strdup_coerce(&vol->g.label, vol->g.host_string_type, &s);
+        status = fsw_strdup_coerce (
+            &vol->g.label, vol->g.host_string_type, &s
+        );
         CHECK(status);
 
         /* Setup catalog dnode */
-        status = fsw_dnode_create_root(vol, kHFSCatalogFileID, &vol->catalog_tree.file);
+        status = fsw_dnode_create_root(
+            vol, kHFSCatalogFileID, &vol->catalog_tree.file
+        );
         CHECK(status);
-        fsw_memcpy (vol->catalog_tree.file->extents,
+        FSW_DO_MEMCPY(vol->catalog_tree.file->extents,
                     vol->primary_voldesc->catalogFile.extents,
                     sizeof vol->catalog_tree.file->extents);
-        vol->catalog_tree.file->g.size =
-                be64_to_cpu(vol->primary_voldesc->catalogFile.logicalSize);
+        vol->catalog_tree.file->g.size = be64_to_cpu(
+            vol->primary_voldesc->catalogFile.logicalSize
+        );
 
         /* Setup extents overflow file */
         fsw_dnode_create_root(vol, kHFSExtentsFileID, &vol->extents_tree.file);
-        fsw_memcpy (vol->extents_tree.file->extents,
+        FSW_DO_MEMCPY(vol->extents_tree.file->extents,
                     vol->primary_voldesc->extentsFile.extents,
                     sizeof vol->extents_tree.file->extents);
-        vol->extents_tree.file->g.size =
-                be64_to_cpu(vol->primary_voldesc->extentsFile.logicalSize);
+        vol->extents_tree.file->g.size = be64_to_cpu(
+            vol->primary_voldesc->extentsFile.logicalSize
+        );
 
         /* Setup the root dnode */
         status = fsw_dnode_create_root(vol, kHFSRootFolderID, &vol->g.root);
@@ -387,17 +403,21 @@ static fsw_status_t fsw_hfs_volume_mount(struct fsw_hfs_volume *vol)
         firstLeafNum = be32_to_cpu(tree_header.firstLeafNode);
         catfOffset = ((fsw_u64)firstLeafNum) * vol->catalog_tree.node_size;
 
-        r = fsw_hfs_read_file(vol->catalog_tree.file, catfOffset, sizeof (cbuff), cbuff);
+        r = fsw_hfs_read_file(
+            vol->catalog_tree.file,
+            catfOffset,
+            sizeof (cbuff), cbuff
+        );
 
-        if (r == sizeof (cbuff))
-        {
+        if (r == sizeof (cbuff)) {
            BTNodeDescriptor* btnd;
            HFSPlusCatalogKey* ck;
 
            btnd = (BTNodeDescriptor*) cbuff;
            ck = (HFSPlusCatalogKey*) (cbuff + sizeof (BTNodeDescriptor));
-           if (btnd->kind == kBTLeafNode && be32_to_cpu (ck->parentID) == kHFSRootParentID)
-           {
+           if (btnd->kind == kBTLeafNode &&
+               be32_to_cpu (ck->parentID) == kHFSRootParentID
+           ) {
               struct fsw_string vn;
 
               vn.type = FSW_STRING_TYPE_UTF16_BE;
@@ -405,17 +425,22 @@ static fsw_status_t fsw_hfs_volume_mount(struct fsw_hfs_volume *vol)
               vn.size = vn.len * sizeof (fsw_u16);
               vn.data = ck->nodeName.unicode;
               fsw_strfree (&vol->g.label);
-              status = fsw_strdup_coerce(&vol->g.label, vol->g.host_string_type, &vn);
+              status = fsw_strdup_coerce (
+                  &vol->g.label,
+                  vol->g.host_string_type, &vn
+              );
               CHECK(status);
            } // if
         } // if
 
         /* Read extents overflow file */
-        r = fsw_hfs_read_file(vol->extents_tree.file,
-                              sizeof (BTNodeDescriptor),
-                              sizeof (BTHeaderRec), (fsw_u8 *) &tree_header);
-        if (r <= 0)
-        {
+        r = fsw_hfs_read_file(
+            vol->extents_tree.file,
+            sizeof (BTNodeDescriptor),
+            sizeof (BTHeaderRec),
+            (fsw_u8 *) &tree_header
+        );
+        if (r <= 0) {
             rv = FSW_VOLUME_CORRUPTED;
             break;
         }
@@ -429,11 +454,11 @@ static fsw_status_t fsw_hfs_volume_mount(struct fsw_hfs_volume *vol)
 #undef CHECK
 
 
-    if (buffer != NULL)
-        fsw_block_release(vol, blockno, buffer);
+    if (buffer != NULL) fsw_block_release (vol, blockno, buffer);
 
     return rv;
 }
+
 //Here is a method to obtain Volume label from Apple
 //how to implement it?
 /*
@@ -483,11 +508,12 @@ str[strMaxLen] = '\0';
  * part of the volume structure.
  */
 
-static void fsw_hfs_volume_free(struct fsw_hfs_volume *vol)
-{
-    if (vol->primary_voldesc)
-    {
-        fsw_free(vol->primary_voldesc);
+static
+void fsw_hfs_volume_free (
+    struct fsw_hfs_volume *vol
+) {
+    if (vol->primary_voldesc) {
+        FSW_DO_FREE(vol->primary_voldesc);
         vol->primary_voldesc = NULL;
     }
 }
@@ -513,8 +539,11 @@ fsw_status_t fsw_hfs_volume_stat (
  * be filled immediately upon creation of the dnode.
  */
 
-static fsw_status_t fsw_hfs_dnode_fill(struct fsw_hfs_volume *vol, struct fsw_hfs_dnode *dno)
-{
+static
+fsw_status_t fsw_hfs_dnode_fill (
+    struct fsw_hfs_volume *vol,
+    struct fsw_hfs_dnode  *dno
+) {
     return FSW_SUCCESS;
 }
 
@@ -532,8 +561,9 @@ void fsw_hfs_dnode_free (
     return;
 }
 
-static fsw_u32 mac_to_posix(fsw_u32 mac_time)
-{
+static fsw_u32 mac_to_posix (
+    fsw_u32 mac_time
+) {
   /* Mac time is 1904 year based */
   return mac_time ?  mac_time - 2082844800 : 0;
 }
@@ -545,10 +575,12 @@ static fsw_u32 mac_to_posix(fsw_u32 mac_time)
  * callback that converts it to the host-specific format.
  */
 
-static fsw_status_t fsw_hfs_dnode_stat(struct fsw_hfs_volume *vol,
-                                       struct fsw_hfs_dnode  *dno,
-                                       struct fsw_dnode_stat *sb)
-{
+static
+fsw_status_t fsw_hfs_dnode_stat (
+    struct fsw_hfs_volume *vol,
+    struct fsw_hfs_dnode  *dno,
+    struct fsw_dnode_stat *sb
+) {
   sb->used_bytes = dno->used_bytes;
   fsw_store_time_posix(sb, FSW_DNODE_STAT_CTIME, mac_to_posix(dno->ctime));
   fsw_store_time_posix(sb, FSW_DNODE_STAT_MTIME, mac_to_posix(dno->mtime));
@@ -558,21 +590,20 @@ static fsw_status_t fsw_hfs_dnode_stat(struct fsw_hfs_volume *vol,
   return FSW_SUCCESS;
 }
 
-static int
-fsw_hfs_find_block(HFSPlusExtentRecord * exts,
-                   fsw_u32             * lbno,
-                   fsw_u32             * pbno)
-{
+static
+int fsw_hfs_find_block (
+    HFSPlusExtentRecord * exts,
+    fsw_u32             * lbno,
+    fsw_u32             * pbno
+) {
     int i;
     fsw_u32 cur_lbno = *lbno;
 
-    for (i = 0; i < 8; i++)
-    {
+    for (i = 0; i < 8; i++) {
         fsw_u32 start = be32_to_cpu ((*exts)[i].startBlock);
         fsw_u32 count = be32_to_cpu ((*exts)[i].blockCount);
 
-        if (cur_lbno < count)
-        {
+        if (cur_lbno < count) {
             *pbno = start + cur_lbno;
             return 1;
         }
@@ -586,11 +617,12 @@ fsw_hfs_find_block(HFSPlusExtentRecord * exts,
 }
 
 /* Find record offset, numbering starts from the end */
-static fsw_u32
-fsw_hfs_btree_recoffset (struct fsw_hfs_btree * btree,
-                         BTNodeDescriptor     * node,
-                         fsw_u32                index)
-{
+static
+fsw_u32 fsw_hfs_btree_recoffset (
+    struct fsw_hfs_btree * btree,
+    BTNodeDescriptor     * node,
+    fsw_u32                index
+) {
   fsw_u8 *cnode = (fsw_u8 *) node;
   fsw_u16 *recptr;
   recptr = (fsw_u16 *) (cnode+btree->node_size - index * 2 - 2);
@@ -598,11 +630,12 @@ fsw_hfs_btree_recoffset (struct fsw_hfs_btree * btree,
 }
 
 /* Pointer to the key inside node */
-static BTreeKey *
-fsw_hfs_btree_rec (struct fsw_hfs_btree   * btree,
-                   BTNodeDescriptor       * node,
-                   fsw_u32                  index)
-{
+static
+BTreeKey * fsw_hfs_btree_rec (
+    struct fsw_hfs_btree   * btree,
+    BTNodeDescriptor       * node,
+    fsw_u32                  index
+) {
   fsw_u8 *cnode = (fsw_u8 *) node;
   fsw_u32 offset;
   offset = fsw_hfs_btree_recoffset (btree, node, index);
@@ -610,13 +643,14 @@ fsw_hfs_btree_rec (struct fsw_hfs_btree   * btree,
 }
 
 
-static fsw_status_t
-fsw_hfs_btree_search (struct fsw_hfs_btree * btree,
-                      BTreeKey             * key,
-                      int (*compare_keys) (BTreeKey* key1, BTreeKey* key2),
-                      BTNodeDescriptor    ** result,
-                      fsw_u32              * key_offset)
-{
+static
+fsw_status_t fsw_hfs_btree_search (
+    struct fsw_hfs_btree * btree,
+    BTreeKey             * key,
+    int (*compare_keys) (BTreeKey* key1, BTreeKey* key2),
+    BTNodeDescriptor    ** result,
+    fsw_u32              * key_offset
+) {
     BTNodeDescriptor* node;
     fsw_u32 currnode;
     fsw_u32 rec;
@@ -624,13 +658,12 @@ fsw_hfs_btree_search (struct fsw_hfs_btree * btree,
     fsw_u8* buffer = NULL;
 
     currnode = btree->root_node;
-    status = fsw_alloc(btree->node_size, &buffer);
+    status = FSW_DO_ALLOC(btree->node_size, &buffer);
     if (status)
         return status;
     node = (BTNodeDescriptor*)buffer;
 
-    while (1)
-    {
+    while (1) {
         int cmp = 0;
         int match;
         fsw_u32 count;
@@ -638,23 +671,31 @@ fsw_hfs_btree_search (struct fsw_hfs_btree * btree,
     readnode:
         match = 0;
         /* Read a node.  */
-        if (fsw_hfs_read_file (btree->file,
-                               (fsw_u64)currnode * btree->node_size,
-                               btree->node_size, buffer) <= 0)
-        {
+        if (fsw_hfs_read_file (
+                btree->file,
+                (fsw_u64)currnode * btree->node_size,
+                btree->node_size, buffer
+            ) <= 0
+        ) {
             status = FSW_VOLUME_CORRUPTED;
             break;
         }
 
-        if (be16_to_cpu(*(fsw_u16*)(buffer + btree->node_size - 2)) != sizeof (BTNodeDescriptor))
-            BP("corrupted node\n");
+        if (be16_to_cpu(
+                *(fsw_u16*)(buffer + btree->node_size - 2)) != sizeof (BTNodeDescriptor)
+            ) {
+            FSW_MSG_LEVEL_3((
+                FSW_MSG_STR(
+                    "FSW_HFS: fsw_hfs_btree_search ... Corrupted Node\n"
+                )
+            ));
+        }
 
         count = be16_to_cpu (node->numRecords);
 
 #if 1
         /* coverity[tainted_data: SUPPRESS] */
-        for (rec = 0; rec < count; rec++)
-        {
+        for (rec = 0; rec < count; rec++) {
              BTreeKey *currkey;
 
              currkey = fsw_hfs_btree_rec (btree, node, rec);
@@ -662,10 +703,8 @@ fsw_hfs_btree_search (struct fsw_hfs_btree * btree,
              //fprintf(stderr, "rec=%d cmp=%d kind=%d \n", rec, cmp, node->kind);
 
              /* Leaf node. */
-             if (node->kind == kBTLeafNode)
-             {
-               if (cmp == 0)
-               {
+             if (node->kind == kBTLeafNode) {
+               if (cmp == 0) {
                  /* Found!  */
                  *result = node;
                  *key_offset = rec;
@@ -674,12 +713,10 @@ fsw_hfs_btree_search (struct fsw_hfs_btree * btree,
                  goto done;
                }
              }
-             else if (node->kind == kBTIndexNode)
-             {
+             else if (node->kind == kBTIndexNode) {
                  fsw_u32 *pointer;
 
-                 if (cmp > 0)
-                     break;
+                 if (cmp > 0) break;
 
                  pointer = (fsw_u32 *) ((char *) currkey
                                         + be16_to_cpu (currkey->length16)
@@ -689,13 +726,11 @@ fsw_hfs_btree_search (struct fsw_hfs_btree * btree,
              }
         }
 
-        if (node->kind == kBTLeafNode && cmp < 0 && node->fLink)
-        {
+        if (node->kind == kBTLeafNode && cmp < 0 && node->fLink) {
             currnode = be32_to_cpu(node->fLink);
             goto readnode;
         }
-        else if (!match)
-        {
+        else if (!match) {
             status = FSW_NOT_FOUND;
             break;
         }
@@ -706,23 +741,20 @@ fsw_hfs_btree_search (struct fsw_hfs_btree * btree,
          fsw_s32 cmp = -1;
          BTreeKey *currkey = NULL;
 
-         if (count == 0)
-         {
+         if (count == 0) {
              status = FSW_NOT_FOUND;
              goto done;
          }
 
-         while (lower <= upper)
-         {
+         while (lower <= upper) {
              fsw_u32 index = (lower + upper) / 2;
 
              currkey = fsw_hfs_btree_rec (btree, node, index);
 
              cmp = compare_keys (currkey, key);
-             if (cmp < 0)  upper = index - 1;
-             if (cmp > 0)  lower = index + 1;
-             if (cmp == 0)
-             {
+             if (cmp <  0)  upper = index - 1;
+             if (cmp >  0)  lower = index + 1;
+             if (cmp == 0) {
                  /* Found!  */
                  *result = node;
                  *key_offset = rec;
@@ -732,11 +764,11 @@ fsw_hfs_btree_search (struct fsw_hfs_btree * btree,
              }
          }
 
-         if (cmp < 0)
+         if (cmp < 0) {
              currkey = fsw_hfs_btree_rec (btree, node, upper);
+         }
 
-         if (node->kind == kBTIndexNode && currkey)
-         {
+         if (node->kind == kBTIndexNode && currkey) {
              fsw_u32 *pointer;
 
              pointer = (fsw_u32 *) ((char *) currkey
@@ -744,8 +776,7 @@ fsw_hfs_btree_search (struct fsw_hfs_btree * btree,
                                     + 2);
              currnode = be32_to_cpu (*pointer);
          }
-         else
-         {
+         else {
              status = FSW_NOT_FOUND;
              break;
          }
@@ -755,30 +786,29 @@ fsw_hfs_btree_search (struct fsw_hfs_btree * btree,
 
   done:
     if (buffer != NULL && status != FSW_SUCCESS)
-        fsw_free(buffer);
+        FSW_DO_FREE(buffer);
 
     return status;
 }
-typedef struct
-{
-    fsw_u32                 id;
-    fsw_u32                 type;
-    struct fsw_string     * name;
-    fsw_u64                 size;
-    fsw_u64                 used;
-    fsw_u32                 ctime;
-    fsw_u32                 mtime;
-    HFSPlusExtentRecord     extents;
+
+typedef struct {
+    fsw_u32                id;
+    fsw_u32                type;
+    struct fsw_string     *name;
+    fsw_u64                size;
+    fsw_u64                used;
+    fsw_u32                ctime;
+    fsw_u32                mtime;
+    HFSPlusExtentRecord    extents;
 } file_info_t;
 
-typedef struct
-{
-    fsw_u32                 cur_pos; /* current position */
-    fsw_u32                 parent;
-    struct fsw_hfs_volume * vol;
+typedef struct {
+    fsw_u32                cur_pos; /* current position */
+    fsw_u32                parent;
+    struct fsw_hfs_volume *vol;
 
-    struct fsw_shandle *    shandle; /* this one track iterator's state */
-    file_info_t             file_info;
+    struct fsw_shandle    *shandle; /* this one track iterator's state */
+    file_info_t            file_info;
 } visitor_parameter_t;
 
 static
@@ -805,8 +835,7 @@ int fsw_hfs_btree_visit_node (
     }
 
     switch (rec_type) {
-        case kHFSPlusFolderRecord:
-        {
+        case kHFSPlusFolderRecord: {
             HFSPlusCatalogFolder* folder_info = (HFSPlusCatalogFolder*)base;
 
             vp->file_info.id = be32_to_cpu(folder_info->folderID);
@@ -817,8 +846,7 @@ int fsw_hfs_btree_visit_node (
             vp->file_info.mtime = be32_to_cpu(folder_info->contentModDate);
             break;
         }
-        case kHFSPlusFileRecord:
-        {
+        case kHFSPlusFileRecord: {
             HFSPlusCatalogFile* file_info = (HFSPlusCatalogFile*)base;
 
             vp->file_info.id = be32_to_cpu(file_info->fileID);
@@ -827,20 +855,25 @@ int fsw_hfs_btree_visit_node (
             vp->file_info.used = ((fsw_u64)be32_to_cpu(file_info->dataFork.totalBlocks)) << vp->vol->block_size_shift;
             vp->file_info.ctime = be32_to_cpu(file_info->createDate);
             vp->file_info.mtime = be32_to_cpu(file_info->contentModDate);
-            fsw_memcpy(&vp->file_info.extents, &file_info->dataFork.extents,
+            FSW_DO_MEMCPY(&vp->file_info.extents, &file_info->dataFork.extents,
                        sizeof vp->file_info.extents);
             break;
         }
         case kHFSPlusFolderThreadRecord:
-        case kHFSPlusFileThreadRecord:
-        {
+        case kHFSPlusFileThreadRecord: {
             vp->shandle->pos++;
             return 0;
         }
-        default:
-            BP("unknown file type\n");
+        default: {
+            FSW_MSG_LEVEL_3((
+                FSW_MSG_STR(
+                    "FSW_HFS: fsw_hfs_btree_visit_node ... Unknown File Type\n"
+                )
+            ));
+
             vp->file_info.type = FSW_DNODE_TYPE_UNKNOWN;
             break;
+        }
     }
 
     name_len       = be16_to_cpu(cat_key->nodeName.length);
@@ -860,24 +893,24 @@ int fsw_hfs_btree_visit_node (
     return 1;
 }
 
-static fsw_status_t
-fsw_hfs_btree_iterate_node (struct fsw_hfs_btree * btree,
-                            BTNodeDescriptor     * first_node,
-                            fsw_u32                first_rec,
-                            int                    (*callback) (BTreeKey *record, void* param),
-                            void                  * param)
-{
+static
+fsw_status_t fsw_hfs_btree_iterate_node (
+    struct fsw_hfs_btree * btree,
+    BTNodeDescriptor     * first_node,
+    fsw_u32                first_rec,
+    int                    (*callback) (BTreeKey *record, void* param),
+    void                  * param
+) {
   fsw_status_t status;
   /* We modify node, so make a copy */
   BTNodeDescriptor * node   = first_node;
   fsw_u8           * buffer = NULL;
 
-  status = fsw_alloc(btree->node_size, &buffer);
+  status = FSW_DO_ALLOC(btree->node_size, &buffer);
   if (status)
       return status;
 
-  while (1)
-  {
+  while (1) {
       fsw_u32 i;
       fsw_u32 count =  be16_to_cpu(node->numRecords);
       fsw_u32 next_node;
@@ -886,8 +919,7 @@ fsw_hfs_btree_iterate_node (struct fsw_hfs_btree * btree,
       for (i = first_rec; i < count; i++) { // Iterate over all records in this node
           int rv = callback(fsw_hfs_btree_rec (btree, node, i), param);
 
-          switch (rv)
-          {
+          switch (rv) {
               case 1:
                   status = FSW_SUCCESS;
                   goto done;
@@ -900,8 +932,7 @@ fsw_hfs_btree_iterate_node (struct fsw_hfs_btree * btree,
 
       next_node = be32_to_cpu(node->fLink);
 
-      if (!next_node)
-      {
+      if (!next_node) {
           status = FSW_NOT_FOUND;
           break;
       }
@@ -918,8 +949,7 @@ fsw_hfs_btree_iterate_node (struct fsw_hfs_btree * btree,
       first_rec = 0;
   }
  done:
-  if (buffer)
-      fsw_free(buffer);
+  if (buffer) FSW_DO_FREE(buffer);
 
   return status;
 }
@@ -928,8 +958,7 @@ fsw_hfs_btree_iterate_node (struct fsw_hfs_btree * btree,
 void deb(fsw_u16* p, int len, int swap)
 {
     int i;
-    for (i=0; i<len; i++)
-    {
+    for (i=0; i<len; i++) {
       printf("%c", swap ?  be16_to_cpu(p[i]) : p[i]);
     }
     printf("\n");
@@ -937,30 +966,27 @@ void deb(fsw_u16* p, int len, int swap)
 #endif
 
 static int
-fsw_hfs_cmp_extkey(BTreeKey* key1, BTreeKey* key2)
-{
+fsw_hfs_cmp_extkey(BTreeKey* key1, BTreeKey* key2) {
     HFSPlusExtentKey* ekey1 = (HFSPlusExtentKey*)key1;
     HFSPlusExtentKey* ekey2 = (HFSPlusExtentKey*)key2;
     int result;
 
     /* First key is read from the FS data, second is in-memory in CPU endianess */
     result = be32_to_cpu(ekey1->fileID) - ekey2->fileID;
-
-    if (result)
-        return result;
+    if (result) return result;
 
     result = ekey1->forkType - ekey2->forkType;
-
-    if (result)
-        return result;
+    if (result) return result;
 
     result = be32_to_cpu(ekey1->startBlock) - ekey2->startBlock;
     return result;
 }
 
-static int
-fsw_hfs_cmp_catkey (BTreeKey *key1, BTreeKey *key2)
-{
+static
+int fsw_hfs_cmp_catkey (
+    BTreeKey *key1,
+    BTreeKey *key2
+) {
   HFSPlusCatalogKey *ckey1 = (HFSPlusCatalogKey*)key1;
   HFSPlusCatalogKey *ckey2 = (HFSPlusCatalogKey*)key2;
 
@@ -973,18 +999,15 @@ fsw_hfs_cmp_catkey (BTreeKey *key1, BTreeKey *key2)
 
   parentId1 = be32_to_cpu(ckey1->parentID);
 
-  if (parentId1 > ckey2->parentID)
-      return 1;
-  if (parentId1 < ckey2->parentID)
-      return -1;
+  if (parentId1 > ckey2->parentID) return  1;
+  if (parentId1 < ckey2->parentID) return -1;
 
   p1 = &ckey1->nodeName.unicode[0];
   p2 = &ckey2->nodeName.unicode[0];
   key1Len = be16_to_cpu (ckey1->nodeName.length);
   apos = bpos = 0;
 
-  while(1)
-  {
+  while (1) {
     /* coverity[tainted_data: SUPPRESS] */
     for (lc = 0; lc == 0 && apos < key1Len; apos++) { // get next valid character from ckey1
       ac = be16_to_cpu(p1[apos]);
@@ -1004,9 +1027,11 @@ fsw_hfs_cmp_catkey (BTreeKey *key1, BTreeKey *key2)
   }
 }
 
-static int
-fsw_hfs_cmpi_catkey (BTreeKey *key1, BTreeKey *key2)
-{
+static
+int fsw_hfs_cmpi_catkey (
+    BTreeKey *key1,
+    BTreeKey *key2
+) {
   HFSPlusCatalogKey *ckey1 = (HFSPlusCatalogKey*)key1;
   HFSPlusCatalogKey *ckey2 = (HFSPlusCatalogKey*)key2;
 
@@ -1019,23 +1044,18 @@ fsw_hfs_cmpi_catkey (BTreeKey *key1, BTreeKey *key2)
 
   parentId1 = be32_to_cpu(ckey1->parentID);
 
-  if (parentId1 > ckey2->parentID)
-      return 1;
-  if (parentId1 < ckey2->parentID)
-      return -1;
+  if (parentId1 > ckey2->parentID) return  1;
+  if (parentId1 < ckey2->parentID) return -1;
 
   key1Len = be16_to_cpu (ckey1->nodeName.length);
-
-  if (key1Len == 0 && ckey2->nodeName.length == 0)
-      return 0;
+  if (key1Len == 0 && ckey2->nodeName.length == 0) return 0;
 
   p1 = &ckey1->nodeName.unicode[0];
   p2 = &ckey2->nodeName.unicode[0];
 
   apos = bpos = 0;
 
-  while(1)
-  {
+  while (1) {
     /* coverity[tainted_data: SUPPRESS] */
     for (lc = 0; lc == 0 && apos < key1Len; apos++) { // get next valid character from ckey1
       ac = be16_to_cpu(p1[apos]);
@@ -1063,10 +1083,12 @@ fsw_hfs_cmpi_catkey (BTreeKey *key1, BTreeKey *key2)
  * the requested logical block number.
  */
 
-static fsw_status_t fsw_hfs_get_extent(struct fsw_hfs_volume * vol,
-                                       struct fsw_hfs_dnode  * dno,
-                                       struct fsw_extent     * extent)
-{
+static
+fsw_status_t fsw_hfs_get_extent(
+    struct fsw_hfs_volume *vol,
+    struct fsw_hfs_dnode  *dno,
+    struct fsw_extent     *extent
+) {
     fsw_status_t         status = FSW_NOT_FOUND;
     fsw_u32              lbno;
     HFSPlusExtentRecord  *exts;
@@ -1079,15 +1101,13 @@ static fsw_status_t fsw_hfs_get_extent(struct fsw_hfs_volume * vol,
     /* we only care about data forks atm, do we? */
     exts = &dno->extents;
 
-    while (1)
-    {
+    while (1) {
         struct HFSPlusExtentKey* key;
         struct HFSPlusExtentKey  overflowkey;
         fsw_u32                  ptr;
         fsw_u32                  phys_bno;
 
-        if (fsw_hfs_find_block(exts, &lbno, &phys_bno))
-        {
+        if (fsw_hfs_find_block(exts, &lbno, &phys_bno)) {
             extent->phys_start = phys_bno + vol->emb_block_off;
             status = FSW_SUCCESS;
             break;
@@ -1098,32 +1118,31 @@ static fsw_status_t fsw_hfs_get_extent(struct fsw_hfs_volume * vol,
         overflowkey.fileID = dno->g.dnode_id;
         overflowkey.startBlock = extent->log_start - lbno;
 
-        if (node != NULL)
-        {
-            fsw_free(node);
+        if (node != NULL) {
+            FSW_DO_FREE(node);
             node = NULL;
         }
 
-        status = fsw_hfs_btree_search (&vol->extents_tree,
-                                       (BTreeKey*) &overflowkey,
-                                       fsw_hfs_cmp_extkey,
-                                       &node, &ptr);
-        if (status)
-            break;
+        status = fsw_hfs_btree_search (
+            &vol->extents_tree,
+            (BTreeKey*) &overflowkey,
+            fsw_hfs_cmp_extkey,
+            &node, &ptr
+        );
+        if (status) break;
 
-        key = (struct HFSPlusExtentKey *)
-                fsw_hfs_btree_rec (&vol->extents_tree, node, ptr);
+        key = (struct HFSPlusExtentKey *)fsw_hfs_btree_rec (
+            &vol->extents_tree, node, ptr
+        );
         exts = (HFSPlusExtentRecord*) (key + 1);
     }
 
-    if (node != NULL)
-        fsw_free(node);
+    if (node != NULL) FSW_DO_FREE(node);
 
     return status;
 }
 
-static const fsw_u16* g_blacklist[] =
-{
+static const fsw_u16* g_blacklist[] = {
     //L"AppleIntelCPUPowerManagement.kext",
     NULL
 };
@@ -1132,8 +1151,7 @@ static const fsw_u16* g_blacklist[] =
 //#define HFS_FILE_INJECTION
 
 #ifdef HFS_FILE_INJECTION
-static struct
-{
+static struct {
   const fsw_u16* path;
   const fsw_u16* name;
 } g_injectList[] =
@@ -1149,29 +1167,35 @@ static struct
 };
 #endif
 
-static fsw_status_t
-create_hfs_dnode(struct fsw_hfs_dnode  * dno,
-                 file_info_t           * file_info,
-                 struct fsw_hfs_dnode ** child_dno_out)
-{
+static
+fsw_status_t create_hfs_dnode(
+    struct fsw_hfs_dnode  *dno,
+    file_info_t           *file_info,
+    struct fsw_hfs_dnode **child_dno_out
+) {
     fsw_status_t           status;
-    struct fsw_hfs_dnode * baby;
+    struct fsw_hfs_dnode  *baby;
 
-    status = fsw_dnode_create(dno, file_info->id, file_info->type,
-                              file_info->name, &baby);
-    if (status)
-        return status;
+    status = fsw_dnode_create(
+        dno, file_info->id,
+        file_info->type,
+        file_info->name, &baby
+    );
+    if (status) return status;
 
-    baby->g.size = file_info->size;
+    baby->g.size     = file_info->size;
     baby->used_bytes = file_info->used;
-    baby->ctime = file_info->ctime;
-    baby->mtime = file_info->mtime;
+    baby->ctime      = file_info->ctime;
+    baby->mtime      = file_info->mtime;
 
 
     /* Fill-in extents info */
-    if (file_info->type == FSW_DNODE_TYPE_FILE)
-    {
-        fsw_memcpy(baby->extents, &file_info->extents, sizeof file_info->extents);
+    if (file_info->type == FSW_DNODE_TYPE_FILE) {
+        FSW_DO_MEMCPY(
+            baby->extents,
+            &file_info->extents,
+            sizeof file_info->extents
+        );
     }
 
     *child_dno_out = baby;
@@ -1187,61 +1211,77 @@ create_hfs_dnode(struct fsw_hfs_dnode  * dno,
  * and the dnode is actually a directory.
  */
 
-static fsw_status_t fsw_hfs_dir_lookup(struct fsw_hfs_volume * vol,
-                                       struct fsw_hfs_dnode  * dno,
-                                       struct fsw_string     * lookup_name,
-                                       struct fsw_hfs_dnode ** child_dno_out)
-{
+static fsw_status_t fsw_hfs_dir_lookup (
+    struct fsw_hfs_volume *vol,
+    struct fsw_hfs_dnode  *dno,
+    struct fsw_string     *lookup_name,
+    struct fsw_hfs_dnode **child_dno_out
+) {
     fsw_status_t               status;
     struct HFSPlusCatalogKey   catkey;
     fsw_u32                    ptr = 0;
     fsw_u16                    rec_type;
-    BTNodeDescriptor *         node = NULL;
+    BTNodeDescriptor          *node = NULL;
     struct fsw_string          rec_name;
     int                        free_data = 0, i;
-    HFSPlusCatalogKey*         file_key;
+    HFSPlusCatalogKey         *file_key;
     file_info_t                file_info;
-    fsw_u8*                    base;
+    fsw_u8                    *base;
 
 
-    fsw_memzero(&file_info, sizeof file_info);
+    FSW_DO_MEMZERO(&file_info, sizeof file_info);
     file_info.name = &rec_name;
 
     catkey.parentID = dno->g.dnode_id;
     catkey.nodeName.length = (fsw_u16)lookup_name->len;
 
     /* no need to allocate anything */
-    if (lookup_name->type == FSW_STRING_TYPE_UTF16)
-    {
-        fsw_memcpy(catkey.nodeName.unicode, lookup_name->data, lookup_name->size);
+    if (lookup_name->type == FSW_STRING_TYPE_UTF16) {
+        FSW_DO_MEMCPY(
+            catkey.nodeName.unicode,
+            lookup_name->data,
+            lookup_name->size
+        );
         rec_name = *lookup_name;
-    } else
-    {
-        status = fsw_strdup_coerce(&rec_name, FSW_STRING_TYPE_UTF16, lookup_name);
+    }
+    else {
+        status = fsw_strdup_coerce (
+            &rec_name,
+            FSW_STRING_TYPE_UTF16,
+            lookup_name
+        );
         /* nothing allocated so far */
-        if (status)
-            goto done;
+        if (status) goto done;
+
         free_data = 1;
-        fsw_memcpy(catkey.nodeName.unicode, rec_name.data, rec_name.size);
+        FSW_DO_MEMCPY(
+            catkey.nodeName.unicode,
+            rec_name.data,
+            rec_name.size
+        );
     }
 
     /* Dirty hack: blacklisting of certain files on FS driver level */
-    for (i = 0; g_blacklist[i]; i++)
-    {
-        if (fsw_memeq(g_blacklist[i], catkey.nodeName.unicode, catkey.nodeName.length*2))
-        {
+    for (i = 0; g_blacklist[i]; i++) {
+        if (FSW_DO_MEMEQ(
+                g_blacklist[i],
+                catkey.nodeName.unicode,
+                catkey.nodeName.length*2
+            )
+        ) {
             status = FSW_NOT_FOUND;
             goto done;
         }
     }
 
 #ifdef HFS_FILE_INJECTION
-    if (fsw_hfs_inject(vol,
-                       dno,
-                       catkey.nodeName.unicode,
-                       catkey.nodeName.length,
-                       &file_info))
-    {
+    if (fsw_hfs_inject(
+            vol, dno,
+            catkey.nodeName.unicode,
+            catkey.nodeName.length,
+            &file_info
+        )
+    ) {
         status = FSW_SUCCESS;
         goto create;
     }
@@ -1249,13 +1289,13 @@ static fsw_status_t fsw_hfs_dir_lookup(struct fsw_hfs_volume * vol,
 
     catkey.keyLength = (fsw_u16)(5 + rec_name.size);
 
-    status = fsw_hfs_btree_search (&vol->catalog_tree,
-                                   (BTreeKey*) &catkey,
-                                   vol->case_sensitive ?
-                                       fsw_hfs_cmp_catkey : fsw_hfs_cmpi_catkey,
-                                   &node, &ptr);
-    if (status)
-        goto done;
+    status = fsw_hfs_btree_search (
+        &vol->catalog_tree,
+        (BTreeKey*) &catkey,
+        vol->case_sensitive ? fsw_hfs_cmp_catkey : fsw_hfs_cmpi_catkey,
+        &node, &ptr
+    );
+    if (status) goto done;
 
     file_key = (HFSPlusCatalogKey *)fsw_hfs_btree_rec (&vol->catalog_tree, node, ptr);
     /* for plain HFS "-(keySize & 1)" would be needed */
@@ -1263,10 +1303,8 @@ static fsw_status_t fsw_hfs_dir_lookup(struct fsw_hfs_volume * vol,
     rec_type =  be16_to_cpu(*(fsw_u16*)base);
 
     /** @todo: read additional info */
-    switch (rec_type)
-    {
-        case kHFSPlusFolderRecord:
-        {
+    switch (rec_type) {
+        case kHFSPlusFolderRecord: {
             HFSPlusCatalogFolder* info = (HFSPlusCatalogFolder*)base;
 
             file_info.id = be32_to_cpu(info->folderID);
@@ -1278,8 +1316,7 @@ static fsw_status_t fsw_hfs_dir_lookup(struct fsw_hfs_volume * vol,
             file_info.mtime = be32_to_cpu(info->contentModDate);
             break;
         }
-        case kHFSPlusFileRecord:
-        {
+        case kHFSPlusFileRecord: {
             HFSPlusCatalogFile* info = (HFSPlusCatalogFile*)base;
 
             file_info.id = be32_to_cpu(info->fileID);
@@ -1288,30 +1325,33 @@ static fsw_status_t fsw_hfs_dir_lookup(struct fsw_hfs_volume * vol,
             file_info.used = ((fsw_u64)be32_to_cpu(info->dataFork.totalBlocks)) << vol->block_size_shift;
             file_info.ctime = be32_to_cpu(info->createDate);
             file_info.mtime = be32_to_cpu(info->contentModDate);
-            fsw_memcpy(&file_info.extents, &info->dataFork.extents,
+            FSW_DO_MEMCPY(&file_info.extents, &info->dataFork.extents,
                        sizeof file_info.extents);
             break;
         }
-        default:
-            BP("unknown file type\n");
+        default: {
+            FSW_MSG_LEVEL_3((
+                FSW_MSG_STR(
+                    "FSW_HFS: fsw_hfs_dir_lookup ... Unknown File Type\n"
+                )
+            ));
+
             file_info.type = FSW_DNODE_TYPE_UNKNOWN;
 
             break;
+        }
     }
 #ifdef HFS_FILE_INJECTION
 create:
 #endif
     status = create_hfs_dnode(dno, &file_info, child_dno_out);
-    if (status)
-        goto done;
+    if (status) goto done;
 
 done:
 
-    if (node != NULL)
-        fsw_free(node);
+    if (node != NULL) FSW_DO_FREE(node);
 
-    if (free_data)
-        fsw_strfree(&rec_name);
+    if (free_data) fsw_strfree (&rec_name);
 
     return status;
 }
@@ -1324,11 +1364,13 @@ done:
  * record the position in the directory between calls.
  */
 
-static fsw_status_t fsw_hfs_dir_read(struct fsw_hfs_volume *vol,
-                                     struct fsw_hfs_dnode  *dno,
-                                     struct fsw_shandle    *shand,
-                                     struct fsw_hfs_dnode  **child_dno_out)
-{
+static
+fsw_status_t fsw_hfs_dir_read (
+    struct fsw_hfs_volume  *vol,
+    struct fsw_hfs_dnode   *dno,
+    struct fsw_shandle     *shand,
+    struct fsw_hfs_dnode  **child_dno_out
+) {
     fsw_status_t               status;
     struct HFSPlusCatalogKey   catkey;
     fsw_u32                    ptr  = 0;
@@ -1340,39 +1382,40 @@ static fsw_status_t fsw_hfs_dir_read(struct fsw_hfs_volume *vol,
     catkey.parentID = dno->g.dnode_id;
     catkey.nodeName.length = 0;
 
-    fsw_memzero(&param, sizeof (param));
+    FSW_DO_MEMZERO(&param, sizeof (param));
 
     rec_name.type = FSW_STRING_TYPE_EMPTY;
     param.file_info.name = &rec_name;
 
-    status = fsw_hfs_btree_search (&vol->catalog_tree,
-                                   (BTreeKey*) &catkey,
-                                   vol->case_sensitive ?
-                                       fsw_hfs_cmp_catkey : fsw_hfs_cmpi_catkey,
-                                   &node, &ptr);
-    if (status)
-        goto done;
+    status = fsw_hfs_btree_search (
+        &vol->catalog_tree,
+        (BTreeKey*) &catkey,
+        vol->case_sensitive ? fsw_hfs_cmp_catkey : fsw_hfs_cmpi_catkey,
+        &node, &ptr
+    );
+    if (status) goto done;
 
     /* Iterator updates shand state */
-    param.vol = vol;
+    param.vol     = vol;
     param.shandle = shand;
-    param.parent = dno->g.dnode_id;
+    param.parent  = dno->g.dnode_id;
     param.cur_pos = 0;
-    status = fsw_hfs_btree_iterate_node (&vol->catalog_tree,
-                                         node,
-                                         ptr,
-                                         fsw_hfs_btree_visit_node,
-                                         &param);
-    if (status)
-      goto done;
+    status = fsw_hfs_btree_iterate_node (
+        &vol->catalog_tree, node, ptr,
+        fsw_hfs_btree_visit_node,
+        &param
+    );
+    if (status) goto done;
 
-    status = create_hfs_dnode(dno, &param.file_info, child_dno_out);
-
-    if (status)
-        goto done;
+    status = create_hfs_dnode (
+        dno,
+        &param.file_info,
+        child_dno_out
+    );
+    if (status) goto done;
 
  done:
-    fsw_strfree(&rec_name);
+    fsw_strfree (&rec_name);
 
     return status;
 }
@@ -1383,10 +1426,11 @@ static fsw_status_t fsw_hfs_dir_read(struct fsw_hfs_volume *vol,
  * called on the dnode and that it really is a symlink.
  *
  */
-static fsw_status_t fsw_hfs_readlink(struct fsw_hfs_volume *vol, struct fsw_hfs_dnode *dno,
-                                     struct fsw_string *link_target)
-{
+static
+fsw_status_t fsw_hfs_readlink (
+    struct fsw_hfs_volume *vol,
+    struct fsw_hfs_dnode  *dno,
+    struct fsw_string     *link_target
+) {
     return FSW_UNSUPPORTED;
 }
-
-// EOF

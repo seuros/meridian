@@ -13,12 +13,12 @@
  * either version 2 of the GNU General Public License ("GPL") or BSD license
  * ("BSD").
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2025 Dayo Akanji (sf.net/u/dakanji/profile)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2025-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #ifndef ZSTD_CCOMMON_H_MODULE
 #define ZSTD_CCOMMON_H_MODULE
@@ -50,7 +50,7 @@
 /**************************************
 *  shared macros
 ***************************************/
-#define MEMCPY_ALT(a, b, c) fsw_memcpy(a, b, c);
+#define MEMCPY_ALT(a, b, c) FSW_DO_MEMCPY(a, b, c);
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif

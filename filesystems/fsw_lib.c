@@ -1,9 +1,9 @@
 /**
  * \file fsw_lib.c
  * Core file system wrapper library functions.
- */
+**/
 
-/*
+/**
  * Copyright (c) 2006 Christoph Pfisterer
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+**/
+/**
+** Modified for RefindPlus
+** Copyright (c) 2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the MIT License.
+**/
 
 #include "fsw_core.h"
 
@@ -45,14 +51,17 @@
  * Allocate memory and clear it.
  */
 
-fsw_status_t fsw_alloc_zero(int len, void **ptr_out)
-{
+fsw_status_t fsw_alloc_zero (
+    int    len,
+    void **ptr_out
+) {
     fsw_status_t status;
 
-    status = fsw_alloc(len, ptr_out);
-    if (status)
-        return status;
-    fsw_memzero(*ptr_out, len);
+    status = FSW_DO_ALLOC(len, ptr_out);
+    if (status) return status;
+
+    FSW_DO_MEMZERO(*ptr_out, len);
+
     return FSW_SUCCESS;
 }
 
@@ -60,14 +69,18 @@ fsw_status_t fsw_alloc_zero(int len, void **ptr_out)
  * Duplicate a piece of data.
  */
 
-fsw_status_t fsw_memdup(void **dest_out, void *src, int len)
-{
+fsw_status_t fsw_memdup (
+    void **dest_out,
+    void  *src,
+    int    len
+) {
     fsw_status_t status;
 
-    status = fsw_alloc(len, dest_out);
-    if (status)
-        return status;
-    fsw_memcpy(*dest_out, src, len);
+    status = FSW_DO_ALLOC(len, dest_out);
+    if (status) return status;
+
+    FSW_DO_MEMCPY(*dest_out, src, len);
+
     return FSW_SUCCESS;
 }
 
@@ -75,10 +88,13 @@ fsw_status_t fsw_memdup(void **dest_out, void *src, int len)
  * Get the length of a string. Returns the number of characters in the string.
  */
 
-int fsw_strlen(struct fsw_string *s)
-{
-    if (s->type == FSW_STRING_TYPE_EMPTY)
+int fsw_strlen (
+    struct fsw_string *s
+) {
+    if (s->type == FSW_STRING_TYPE_EMPTY) {
         return 0;
+    }
+
     return s->len;
 }
 
@@ -88,35 +104,43 @@ int fsw_strlen(struct fsw_string *s)
  * Otherwise, boolean false is returned.
  */
 
-int fsw_streq(struct fsw_string *s1, struct fsw_string *s2)
-{
+int fsw_streq (
+    struct fsw_string *s1,
+    struct fsw_string *s2
+) {
     struct fsw_string temp_s;
 
-    // handle empty strings
+    // Handle empty strings
     if (s1->type == FSW_STRING_TYPE_EMPTY) {
         temp_s.type = FSW_STRING_TYPE_ISO88591;
         temp_s.size = temp_s.len = 0;
         temp_s.data = NULL;
+
         return fsw_streq(&temp_s, s2);
     }
+
     if (s2->type == FSW_STRING_TYPE_EMPTY) {
         temp_s.type = FSW_STRING_TYPE_ISO88591;
         temp_s.size = temp_s.len = 0;
         temp_s.data = NULL;
+
         return fsw_streq(s1, &temp_s);
     }
 
-    // check length (count of chars)
-    if (s1->len != s2->len)
-        return 0;
-    if (s1->len == 0)   // both strings are empty
-        return 1;
+    // Check length (count of chars)
+    if (s1->len != s2->len) return 0;
+    if (s1->len == 0)       return 1;  // Both strings are empty
+
 
     if (s1->type == s2->type) {
         // same type, do a dumb memory compare
-        if (s1->size != s2->size)
-            return 0;
-        return fsw_memeq(s1->data, s2->data, s1->size);
+        if (s1->size != s2->size) return 0;
+
+        return FSW_DO_MEMEQ(
+            s1->data,
+            s2->data,
+            s1->size
+        );
     }
 
     // dispatch to type-specific functions
@@ -143,19 +167,20 @@ int fsw_streq(struct fsw_string *s1, struct fsw_string *s2)
  * Returns boolean true if the strings are considered equal, boolean false otherwise.
  */
 
-int fsw_streq_cstr(struct fsw_string *s1, const char *s2)
-{
+int fsw_streq_cstr (
+    struct fsw_string *s1,
+    const char        *s2
+) {
     struct fsw_string temp_s;
     int i;
 
-    for (i = 0; s2[i]; i++)
-        ;
+    for (i = 0; s2[i]; i++);
 
     temp_s.type = FSW_STRING_TYPE_ISO88591;
     temp_s.size = temp_s.len = i;
-    temp_s.data = (char *)s2;
+    temp_s.data = (char *) s2;
 
-    return fsw_streq(s1, &temp_s);
+    return fsw_streq (s1, &temp_s);
 }
 
 /**
@@ -164,14 +189,18 @@ int fsw_streq_cstr(struct fsw_string *s1, const char *s2)
  * fsw_strfree.
  */
 
-fsw_status_t fsw_strdup_coerce(struct fsw_string *dest, int type, struct fsw_string *src)
-{
+fsw_status_t fsw_strdup_coerce (
+    struct fsw_string *dest,
+    int                type,
+    struct fsw_string *src
+) {
     fsw_status_t    status;
 
     if (src->type == FSW_STRING_TYPE_EMPTY || src->len == 0) {
         dest->type = type;
         dest->size = dest->len = 0;
         dest->data = NULL;
+
         return FSW_SUCCESS;
     }
 
@@ -179,15 +208,14 @@ fsw_status_t fsw_strdup_coerce(struct fsw_string *dest, int type, struct fsw_str
         dest->type = type;
         dest->len  = src->len;
         dest->size = src->size;
-        status = fsw_alloc(dest->size, &dest->data);
-        if (status)
-            return status;
+        status = FSW_DO_ALLOC(dest->size, &dest->data);
+        if (status) return status;
 
-        fsw_memcpy(dest->data, src->data, dest->size);
+        FSW_DO_MEMCPY(dest->data, src->data, dest->size);
         return FSW_SUCCESS;
     }
 
-    // dispatch to type-specific functions
+    // Dispatch to type-specific functions
     #define STRCOERCE_DISPATCH(type1, type2) \
       if (src->type == FSW_STRING_TYPE_##type1 && type == FSW_STRING_TYPE_##type2) \
         return fsw_strcoerce_##type1##_##type2(src->data, src->len, dest);
@@ -220,16 +248,20 @@ fsw_status_t fsw_strdup_coerce(struct fsw_string *dest, int type, struct fsw_str
  * you must make a copy of it so that you can release it later.
  */
 
-void fsw_strsplit(struct fsw_string *element, struct fsw_string *buffer, char separator)
-{
+void fsw_strsplit (
+    struct fsw_string *element,
+    struct fsw_string *buffer,
+    char separator
+) {
     int i, maxlen;
 
     if (buffer->type == FSW_STRING_TYPE_EMPTY || buffer->len == 0) {
         element->type = FSW_STRING_TYPE_EMPTY;
+
         return;
     }
 
-    maxlen = buffer->len;
+    maxlen   =  buffer->len;
     *element = *buffer;
 
     if (buffer->type == FSW_STRING_TYPE_ISO88591) {
@@ -240,19 +272,22 @@ void fsw_strsplit(struct fsw_string *element, struct fsw_string *buffer, char se
             if (*p == separator) {
                 buffer->data = p + 1;
                 buffer->len -= i + 1;
+
                 break;
             }
         }
-        element->len = i;
+
         if (i == maxlen) {
             buffer->data = p;
             buffer->len -= i;
         }
 
+        element->len  = i;
         element->size = element->len;
         buffer->size  = buffer->len;
 
-    } else if (buffer->type == FSW_STRING_TYPE_UTF16) {
+    }
+    else if (buffer->type == FSW_STRING_TYPE_UTF16) {
         fsw_u16 *p;
 
         p = (fsw_u16 *)element->data;
@@ -263,17 +298,19 @@ void fsw_strsplit(struct fsw_string *element, struct fsw_string *buffer, char se
                 break;
             }
         }
-        element->len = i;
+
         if (i == maxlen) {
             buffer->data = p;
             buffer->len -= i;
         }
 
+        element->len  = i;
         element->size = element->len * sizeof (fsw_u16);
-        buffer->size  = buffer->len  * sizeof (fsw_u16);
+        buffer->size  =  buffer->len * sizeof (fsw_u16);
 
-    } else {
-        // fallback
+    }
+    else {
+        // Fallback
         buffer->type = FSW_STRING_TYPE_EMPTY;
     }
 
@@ -281,14 +318,12 @@ void fsw_strsplit(struct fsw_string *element, struct fsw_string *buffer, char se
 }
 
 /**
- * Frees the memory used by a string returned from fsw_strdup_coerce.
+ * Frees memory used by a string returned from fsw_strdup_coerce.
  */
 
-void fsw_strfree(struct fsw_string *s)
-{
-    if (s->type != FSW_STRING_TYPE_EMPTY && s->data)
-        fsw_free(s->data);
+void fsw_strfree (struct fsw_string *s) {
+    if (s->type != FSW_STRING_TYPE_EMPTY && s->data) {
+        FSW_DO_FREE(s->data);
+    }
     s->type = FSW_STRING_TYPE_EMPTY;
 }
-
-// EOF

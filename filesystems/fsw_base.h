@@ -36,6 +36,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the MIT License.
+**/
 
 #ifndef _FSW_BASE_H_
 #define _FSW_BASE_H_
@@ -44,36 +50,32 @@
 #include "fsw_efi_base.h"
 #endif
 
-#ifdef HOST_POSIX
-#include "test/fsw_posix_base.h"
-#endif
-
 #ifndef FSW_DEBUG_LEVEL
 /**
  * Global debugging level. Can be set locally for the scope of a single
  * file by defining the macro before fsw_base.h is included.
  */
-#define FSW_DEBUG_LEVEL 1
+#define FSW_DEBUG_LEVEL 0
 #endif
 
 // message printing
 
 #if FSW_DEBUG_LEVEL >= 1
-#define FSW_MSG_ASSERT(params) FSW_MSGFUNC params
+#define FSW_MSG_LEVEL_1(params) FSW_MSG_FUNC params
 #else
-#define FSW_MSG_ASSERT(params)
+#define FSW_MSG_LEVEL_1(params)
 #endif
 
 #if FSW_DEBUG_LEVEL >= 2
-#define FSW_MSG_DEBUG(params) FSW_MSGFUNC params
+#define FSW_MSG_LEVEL_2(params) FSW_MSG_FUNC params
 #else
-#define FSW_MSG_DEBUG(params)
+#define FSW_MSG_LEVEL_2(params)
 #endif
 
 #if FSW_DEBUG_LEVEL >= 3
-#define FSW_MSG_DEBUGV(params) FSW_MSGFUNC params
+#define FSW_MSG_LEVEL_3(params) FSW_MSG_FUNC params
 #else
-#define FSW_MSG_DEBUGV(params)
+#define FSW_MSG_LEVEL_3(params)
 #endif
 
 
@@ -121,7 +123,7 @@
 
 
 /**
- * \def fsw_alloc(size,ptrptr)
+ * \def FSW_DO_ALLOC(size,ptrptr)
  * Allocate memory on the heap. This function or macro allocates \a size
  * bytes of memory using host-specific methods. The address of the
  * allocated memory block is stored into the pointer variable pointed
@@ -131,26 +133,26 @@
  */
 
 /**
- * \def fsw_free(ptr)
+ * \def FSW_DO_FREE(ptr)
  * Release allocated memory. This function or macro returns an allocated
  * memory block to the heap for reuse. Does not return a status.
  */
 
 /**
- * \def fsw_memcpy(dest,src,size)
+ * \def FSW_DO_MEMCPY(dest,src,size)
  * Copies a block of memory from \a src to \a dest. The two memory blocks
  * must not overlap, or the result of the operation will be undefined.
  * Does not return a status.
  */
 
 /**
- * \def fsw_memeq(dest,src,size)
+ * \def FSW_DO_MEMEQ(dest,src,size)
  * Compares two blocks of memory for equality. Returns boolean true if the
  * memory blocks are equal, boolean false if they are different.
  */
 
 /**
- * \def fsw_memzero(dest,size)
+ * \def FSW_DO_MEMZERO(dest,size)
  * Initializes a block of memory with zeros. Does not return a status.
  */
 

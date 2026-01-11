@@ -39,7 +39,7 @@
  */
 /*
  * Modified for RefindPlus
- * Copyright (c) 2025 Dayo Akanji (sf.net/u/dakanji/profile)
+ * Copyright (c) 2025-2026 Dayo Akanji (sf.net/u/dakanji/profile)
  *
  * Modifications distributed under the preceding terms.
  */
@@ -109,7 +109,7 @@ void xxh64_reset (
     state.v2 = seed + PRIME64_2;
     state.v3 = seed + 0;
     state.v4 = seed - PRIME64_1;
-    fsw_memcpy (
+    FSW_DO_MEMCPY(
         statePtr,
         &state, sizeof (state)
     );
@@ -128,7 +128,7 @@ int xxh64_update (
     state->total_len += len;
 
     if (state->memsize + len < 32) { /* fill in tmp buffer */
-        fsw_memcpy (
+        FSW_DO_MEMCPY(
             ((uint8_t *)state->mem64) + state->memsize,
             input, len
         );
@@ -140,7 +140,7 @@ int xxh64_update (
     if (state->memsize) { /* tmp buffer is full */
         uint64_t *p64 = state->mem64;
 
-        fsw_memcpy (
+        FSW_DO_MEMCPY(
             ((uint8_t *)p64) + state->memsize,
             input, 32 - state->memsize
         );
@@ -182,7 +182,7 @@ int xxh64_update (
     }
 
     if (p < b_end) {
-        fsw_memcpy (
+        FSW_DO_MEMCPY(
             state->mem64, p,
             (size_t)(b_end-p)
         );

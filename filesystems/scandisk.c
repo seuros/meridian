@@ -1,6 +1,6 @@
 /*
  * scandisk.c
- * Scanning disk for btrfs multi-devices
+ * Scan disks for BtrFS multi-devices
  * by Samuel Liao
  *
  * Copyright (c) 2013 Tencent, Inc.
@@ -19,6 +19,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2020-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #include "fsw_efi.h"
 #ifdef __MAKEWITH_GNUEFI
@@ -30,10 +36,11 @@ extern EFI_GUID gMyEfiBlockIoProtocolGuid;
 #define gMyEfiBlockIoProtocolGuid gEfiBlockIoProtocolGuid
 #define gMyEfiDiskIoProtocolGuid gEfiDiskIoProtocolGuid
 #endif
+
 #include "../include/refit_call_wrapper.h"
 
 extern struct fsw_host_table   fsw_efi_host_table;
-static void dummy_volume_free(struct fsw_volume *vol) { }
+static void dummy_volume_free (struct fsw_volume *vol) { }
 static struct fsw_fstype_table   dummy_fstype = {
     { FSW_STRING_TYPE_UTF8, 4, 4, "dummy" },
     sizeof (struct fsw_volume),
@@ -51,18 +58,21 @@ static struct fsw_fstype_table   dummy_fstype = {
     NULL, //readlink,
 };
 
-static struct fsw_volume *create_dummy_volume(EFI_DISK_IO_PROTOCOL *diskio, UINT32 mediaid)
-{
+static
+struct fsw_volume * dsk_btrfs_create_dummy_volume (
+    EFI_DISK_IO_PROTOCOL *diskio,
+    UINT32 mediaid
+) {
     fsw_status_t err;
     struct fsw_volume *vol;
     FSW_VOLUME_DATA *Volume;
 
-    err = fsw_alloc_zero(sizeof (struct fsw_volume), (void **) &vol);
-    if(err)
-        return NULL;
-    err = fsw_alloc_zero(sizeof (FSW_VOLUME_DATA), (void **) &Volume);
-    if(err) {
-        fsw_free(vol);
+    err = fsw_alloc_zero (sizeof (struct fsw_volume), (void **) &vol);
+    if (err) return NULL;
+
+    err = fsw_alloc_zero (sizeof (FSW_VOLUME_DATA), (void **) &Volume);
+    if (err) {
+        FSW_DO_FREE(vol);
         return NULL;
     }
     /* fstype_table->volume_free for fsw_unmount */
@@ -76,24 +86,33 @@ static struct fsw_volume *create_dummy_volume(EFI_DISK_IO_PROTOCOL *diskio, UINT
     return vol;
 }
 
-static struct fsw_volume *clone_dummy_volume(struct fsw_volume *vol)
-{
+static
+struct fsw_volume * dsk_btrfs_clone_dummy_volume (
+    struct fsw_volume *vol
+) {
     FSW_VOLUME_DATA *Volume = (FSW_VOLUME_DATA *)vol->host_data;
-    return create_dummy_volume(Volume->DiskIo, Volume->MediaId);
+    return dsk_btrfs_create_dummy_volume(Volume->DiskIo, Volume->MediaId);
 }
 
-static void free_dummy_volume(struct fsw_volume *vol)
-{
-    fsw_free(vol->host_data);
-    fsw_unmount(vol);
+static
+void dsk_btrfs_free_dummy_volume (
+    struct fsw_volume *vol
+) {
+    FSW_DO_FREE(vol->host_data);
+    fsw_unmount (vol);
 }
 
-static int scan_disks(int (*hook)(struct fsw_volume *, struct fsw_volume *), struct fsw_volume *master)
-{
+static
+int dsk_btrfs_scan_disks (
+    int (*hook)(
+        struct fsw_volume *,
+        struct fsw_volume *
+    ), struct fsw_volume *master
+) {
     EFI_STATUS  Status;
     EFI_HANDLE *Handles;
-    UINTN       HandleCount = 0;
     UINTN       i;
+    UINTN       HandleCount = 0;
     UINTN       scanned = 0;
 
     // Driver hangs if compiled with GNU-EFI unless there is a Print() statement somewhere.
@@ -101,14 +120,19 @@ static int scan_disks(int (*hook)(struct fsw_volume *, struct fsw_volume *), str
 #if defined(__MAKEWITH_GNUEFI)
     Print(L" ");
 #endif
-    DPRINT(L"Scanning disks\n");
+    FSW_MSG_LEVEL_3((
+        FSW_MSG_STR(
+            "SCANDISK: dsk_btrfs_scan_disks ... Scanning Disks\n"
+        )
+    ));
+
     Status = REFIT_CALL_5_WRAPPER(
         gBS->LocateHandleBuffer, ByProtocol,
         &gMyEfiDiskIoProtocolGuid, NULL,
         &HandleCount, &Handles
     );
     if (Status == EFI_NOT_FOUND) {
-        return -1;  // no filesystems. strange, but true...
+        return -1;  // No filesystems ... Strange, but true!
     }
 
     for (i = 0; i < HandleCount; i++) {
@@ -131,14 +155,21 @@ static int scan_disks(int (*hook)(struct fsw_volume *, struct fsw_volume *), str
             continue;
         }
 
-        struct fsw_volume *vol = create_dummy_volume(diskio, blockio->Media->MediaId);
+        struct fsw_volume *vol = dsk_btrfs_create_dummy_volume (
+            diskio, blockio->Media->MediaId
+        );
 
-        if(vol) {
-            DPRINT(L"Checking disk %d\n", i);
-            if(hook(master, vol) == FSW_SUCCESS) {
+        if (vol) {
+            FSW_MSG_LEVEL_3((
+                FSW_MSG_STR(
+                    "SCANDISK: dsk_btrfs_scan_disks ... Checking Disk %d\n"
+                ), i
+            ));
+
+            if (hook(master, vol) == FSW_SUCCESS) {
                 scanned++;
             }
-            free_dummy_volume(vol);
+            dsk_btrfs_free_dummy_volume (vol);
         }
     }
 

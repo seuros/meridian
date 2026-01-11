@@ -10,7 +10,7 @@
 ##
 ##
 # Modified for Refindplus
-# Copyright (c) 2022-2023 Dayo Akanji (sf.net/u/dakanji/profile)
+# Copyright (c) 2022-2026 Dayo Akanji (sf.net/u/dakanji/profile)
 #
 # Modifications distributed under the preceding terms.
 ##
@@ -34,7 +34,6 @@
 #
 
 [Sources]
-    fsw_efi.c
     fsw_btrfs.c
     fsw_core.c
     fsw_efi.c
@@ -70,17 +69,40 @@
 
 [Pcd]
 
+##
+# Debug Level Definitions
+#
+# FSW_DEBUG_LEVEL 0: Output == None
+# FSW_DEBUG_LEVEL 1: Output == Standard
+# FSW_DEBUG_LEVEL 2: Output == Detailed
+# FSW_DEBUG_LEVEL 3: Output == Verbose
+##
 [BuildOptions.common]
     DEFINE RFT_BLD_ALL = -D__MAKEWITH_TIANO -DFSTYPE=btrfs -DLZO_CFG_FREESTANDING
+    DEFINE RFT_BLD_REL = $(RFT_BLD_ALL) -DFSW_DEBUG_LEVEL=0
+    DEFINE RFT_BLD_DBG = $(RFT_BLD_ALL) -DFSW_DEBUG_LEVEL=1
+    DEFINE RFT_BLD_NPT = $(RFT_BLD_ALL) -DFSW_DEBUG_LEVEL=2
 
 [BuildOptions.IA32]
-    XCODE:*_*_*_CC_FLAGS = -Os -DEFI32 $(RFT_BLD_ALL)
-    GCC:*_*_*_CC_FLAGS   = -Os -DEFI32 $(RFT_BLD_ALL)
+    XCODE:RELEASE_*_*_CC_FLAGS = -Os -DEFI32 $(RFT_BLD_REL)
+    XCODE:DEBUG_*_*_CC_FLAGS   = -Os -DEFI32 $(RFT_BLD_DBG)
+    XCODE:NOOPT_*_*_CC_FLAGS   = -Os -DEFI32 $(RFT_BLD_NPT)
+    GCC:RELEASE_*_*_CC_FLAGS   = -Os -DEFI32 $(RFT_BLD_REL)
+    GCC:DEBUG_*_*_CC_FLAGS     = -Os -DEFI32 $(RFT_BLD_DBG)
+    GCC:NOOPT_*_*_CC_FLAGS     = -Os -DEFI32 $(RFT_BLD_NPT)
 
 [BuildOptions.X64]
-    XCODE:*_*_*_CC_FLAGS = -Os -DEFIX64 $(RFT_BLD_ALL)
-    GCC:*_*_*_CC_FLAGS   = -Os -DEFIX64 $(RFT_BLD_ALL)
+    XCODE:RELEASE_*_*_CC_FLAGS = -Os -DEFIX64 $(RFT_BLD_REL)
+    XCODE:DEBUG_*_*_CC_FLAGS   = -Os -DEFIX64 $(RFT_BLD_DBG)
+    XCODE:NOOPT_*_*_CC_FLAGS   = -Os -DEFIX64 $(RFT_BLD_NPT)
+    GCC:RELEASE_*_*_CC_FLAGS   = -Os -DEFIX64 $(RFT_BLD_REL)
+    GCC:DEBUG_*_*_CC_FLAGS     = -Os -DEFIX64 $(RFT_BLD_DBG)
+    GCC:NOOPT_*_*_CC_FLAGS     = -Os -DEFIX64 $(RFT_BLD_NPT)
 
 [BuildOptions.AARCH64]
-    XCODE:*_*_*_CC_FLAGS = -Os -DEFIAARCH64 $(RFT_BLD_ALL)
-    GCC:*_*_*_CC_FLAGS   = -Os -DEFIAARCH64 $(RFT_BLD_ALL)
+    XCODE:RELEASE_*_*_CC_FLAGS = -Os -DEFIAARCH64 $(RFT_BLD_REL)
+    XCODE:DEBUG_*_*_CC_FLAGS   = -Os -DEFIAARCH64 $(RFT_BLD_DBG)
+    XCODE:NOOPT_*_*_CC_FLAGS   = -Os -DEFIAARCH64 $(RFT_BLD_NPT)
+    GCC:RELEASE_*_*_CC_FLAGS   = -Os -DEFIAARCH64 $(RFT_BLD_REL)
+    GCC:DEBUG_*_*_CC_FLAGS     = -Os -DEFIAARCH64 $(RFT_BLD_DBG)
+    GCC:NOOPT_*_*_CC_FLAGS     = -Os -DEFIAARCH64 $(RFT_BLD_NPT)

@@ -19,12 +19,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
- /*
-  * Modified for RefindPlus
-  * Copyright (c) 2024 Dayo Akanji (sf.net/u/dakanji/profile)
-  *
-  * Modifications distributed under the preceding terms.
-  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2024-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #include "fsw_core.h"
 
@@ -37,17 +37,17 @@ static inline fsw_u8 GETU8(fsw_u8 *buf, int pos)
 
 static inline fsw_u16 GETU16(fsw_u8 *buf, int pos)
 {
-    return fsw_u16_le_swap(*(fsw_u16 *)(buf+pos));
+    return FSW_U16_LE_SWAP(*(fsw_u16 *)(buf+pos));
 }
 
 static inline fsw_u32 GETU32(fsw_u8 *buf, int pos)
 {
-    return fsw_u32_le_swap(*(fsw_u32 *)(buf+pos));
+    return FSW_U32_LE_SWAP(*(fsw_u32 *)(buf+pos));
 }
 
 static inline fsw_u64 GETU64(fsw_u8 *buf, int pos)
 {
-    return fsw_u64_le_swap(*(fsw_u64 *)(buf+pos));
+    return FSW_U64_LE_SWAP(*(fsw_u64 *)(buf+pos));
 }
 
 #define MFTMASK  ((1ULL<<48) - 1)
@@ -170,16 +170,16 @@ static fsw_status_t fixup(fsw_u8 *record, char *magic, int sectorsize, int size)
     int off, cnt, i;
     fsw_u16 val;
 
-    if(*(int *)record != *(int *)magic)
+    if (*(int *)record != *(int *)magic)
 	return FSW_VOLUME_CORRUPTED;
 
     off = GETU16(record, 4);
     cnt = GETU16(record, 6);
-    if(size && sectorsize*(cnt-1) != size)
+    if (size && sectorsize*(cnt-1) != size)
 	return FSW_VOLUME_CORRUPTED;
     val = GETU16(record, off);
-    for(i=1; i<cnt; i++) {
-	if(GETU16(record, i*sectorsize-2)!=val)
+    for (i=1; i<cnt; i++) {
+	if (GETU16(record, i*sectorsize-2) != val)
 	    return FSW_VOLUME_CORRUPTED;
 
 	*(fsw_u16 *)(record+i*sectorsize-2) = *(fsw_u16 *)(record+off+i*2);
@@ -193,7 +193,7 @@ static fsw_status_t find_attribute_direct(fsw_u8 *mft, int mftsize, int type, fs
     int namelen;
     fsw_u32 n;
 
-    if(GETU32(mft, 0x18) < mftsize)
+    if (GETU32(mft, 0x18) < mftsize)
 	mftsize = GETU32(mft, 0x18);
     mftsize -= GETU16(mft, 0x14);
     mft += GETU16(mft, 0x14);
@@ -201,17 +201,17 @@ static fsw_status_t find_attribute_direct(fsw_u8 *mft, int mftsize, int type, fs
     namelen = type>>ATTRBITS;
     type &= ATTRMASK;
 
-    for(n = 0; mftsize >= 8; mft += n, mftsize -= n) {
+    for (n = 0; mftsize >= 8; mft += n, mftsize -= n) {
 	int t = GETU32(mft, 0);
 	n = GETU32(mft, 4);
-	if( t==0 || (t+1)==0 || t==0xffff || n<24 || mftsize<n)
+	if ( t==0 || (t+1)==0 || t==0xffff || n<24 || mftsize<n)
 	    break;
 
 	fsw_u8 ns = GETU8(mft, 9);
 	fsw_u8 *nm = mft + GETU8(mft, 10);
-	if(type==t && namelen==ns && (ns==0 || fsw_memeq(NAME_I30, nm, ns*2))) {
-	    if(outptr) *outptr = mft;
-	    if(outlen) *outlen = n;
+	if (type==t && namelen==ns && (ns==0 || FSW_DO_MEMEQ(NAME_I30, nm, ns*2))) {
+	    if (outptr) *outptr = mft;
+	    if (outlen) *outlen = n;
 	    return FSW_SUCCESS;
 	}
     }
@@ -227,33 +227,33 @@ static fsw_status_t find_attrlist_direct(fsw_u8 *atlst, int atlen, int type, fsw
     namelen = type>>ATTRBITS;
     type &= ATTRMASK;
 
-    while( *pos + 0x18 <= atlen) {
+    while ( *pos + 0x18 <= atlen) {
 	int off = *pos;
 	fsw_u32 t = GETU32(atlst, off);
 	fsw_u32 n = GETU16(atlst, off+4);
 
 	*pos = off + n;
-	if(t==0 || (t+1)==0 || t==0xffff || n < 0x18 || *pos > atlen)
+	if (t==0 || (t+1)==0 || t==0xffff || n < 0x18 || *pos > atlen)
 	    break;
 
 	fsw_u8 ns = GETU8(atlst, off+6);
 	fsw_u8 *nm = atlst + off + GETU8(atlst, off+7);
-	if( type == t && namelen==ns && (ns==0 || fsw_memeq(NAME_I30, nm, ns*2))) {
+	if ( type == t && namelen==ns && (ns==0 || FSW_DO_MEMEQ(NAME_I30, nm, ns*2))) {
 	    fsw_u64 avcn = GETU64(atlst, off+8);
-	    if(vcn < avcn) {
-		if(mftno == BADMFT)
+	    if (vcn < avcn) {
+		if (mftno == BADMFT)
 		    return FSW_NOT_FOUND;
 		*out = mftno;
 		return FSW_SUCCESS;
 	    }
-	    if(vcn == avcn) {
+	    if (vcn == avcn) {
 		*out = GETU64(atlst, off+0x10) & MFTMASK;
 		return FSW_SUCCESS;
 	    }
 	    mftno = GETU64(atlst, off+0x10) & MFTMASK;
 	}
     }
-    if(mftno != BADMFT) {
+    if (mftno != BADMFT) {
 	*out = mftno;
 	return FSW_SUCCESS;
     }
@@ -270,31 +270,31 @@ static fsw_status_t get_extent(fsw_u8 **rlep, int *rlenp, fsw_u64 *lcnp, fsw_u64
     fsw_u64 v = 0;
 
     int n = f & 0xf;
-    if(n==0) return FSW_NOT_FOUND;
+    if (n==0) return FSW_NOT_FOUND;
 
-    if(rle + n > rle_end) return FSW_VOLUME_CORRUPTED;
+    if (rle + n > rle_end) return FSW_VOLUME_CORRUPTED;
 
-    while(--n >= 0) {
+    while (--n >= 0) {
 	c += m * (*rle++);
 	m <<= 8;
     }
 
     n = f >> 4;
-    if(n==0) {
+    if (n==0) {
 	/* LCN 0 as sparse, due to we do not need $Boot */
 	*lcnp = 0;
 	*lenp = c;
     } else {
-	if(rle + n > rle_end) return FSW_VOLUME_CORRUPTED;
+	if (rle + n > rle_end) return FSW_VOLUME_CORRUPTED;
 
 	m = 1;
-	while(--n >= 0) {
+	while (--n >= 0) {
 	    v += m * (*rle++);
 	    m <<= 8;
 	}
 
 	*pos += v;
-	if(v & (m>>1))
+	if (v & (m>>1))
 	    *pos -= m;
 
 	*lcnp = *pos;
@@ -334,7 +334,7 @@ static void attribute_get_embeded(fsw_u8 *ptr, int len, fsw_u8 **outp, int *outl
 {
     int off  = GETU16(ptr, 0x14); // ATTRIBUTE_RECORD_HEADER.Form.Resident.ValueOffset
     int olen = GETU16(ptr, 0x10); // ATTRIBUTE_RECORD_HEADER.Form.Resident.ValueLength
-    if(olen + off > len)
+    if (olen + off > len)
 	olen = len - off;
     *outp = ptr + off;
     *outlenp = olen;
@@ -364,7 +364,7 @@ static inline fsw_u64 attribute_inited_size(fsw_u8 *ptr, int len)
 }
 
 static inline int attribute_has_vcn(fsw_u8 *ptr, int len, fsw_u64 vcn) {
-    if(attribute_ondisk(ptr, len)==0)
+    if (attribute_ondisk(ptr, len)==0)
 	return 1;
     return vcn >= GETU64(ptr, 0x10) && vcn <= GETU64(ptr, 0x18); // ATTRIBUTE_RECORD_HEADER.Form.Nonresident.LowestVcn .. ATTRIBUTE_RECORD_HEADER.Form.Nonresident.HighestVcn
 }
@@ -384,24 +384,24 @@ static fsw_status_t read_attribute_direct(struct fsw_ntfs_volume *vol, fsw_u8 *p
     fsw_status_t err;
     int olen;
 
-    if(attribute_ondisk(ptr, len) == 0) { // RESIDENT_FORM
+    if (attribute_ondisk(ptr, len) == 0) { // RESIDENT_FORM
 	/* EMBEDED DATA */
 	attribute_get_embeded(ptr, len, &ptr, &len);
 	*olenp = len;
-	if(optrp) {
-	    if((err = fsw_alloc(len, (void **)optrp)) != FSW_SUCCESS)
+	if (optrp) {
+	    if ((err = FSW_DO_ALLOC(len, (void **)optrp)) != FSW_SUCCESS)
 		return err;
-	    fsw_memcpy(*optrp, ptr, len);
+	    FSW_DO_MEMCPY(*optrp, ptr, len);
 	}
 	return FSW_SUCCESS;
     }
 
     olen = attribute_size(ptr, len);
     *olenp = olen;
-    if(!optrp)
+    if (!optrp)
 	return FSW_SUCCESS;
 
-    if((err = fsw_alloc_zero(olen, (void **)optrp)) != FSW_SUCCESS)
+    if ((err = fsw_alloc_zero (olen, (void **)optrp)) != FSW_SUCCESS)
 	return err;
     fsw_u8 *buf = *optrp;
 
@@ -411,19 +411,19 @@ static fsw_status_t read_attribute_direct(struct fsw_ntfs_volume *vol, fsw_u8 *p
     int clustersize = 1<<vol->clbits;
     fsw_u64 lcn, cnt;
 
-    while(olen > 0 && len > 0 && get_extent(&ptr, &len, &lcn, &cnt, &pos)==FSW_SUCCESS) {
-	if(lcn) {
-	    for(; cnt>0; lcn++, cnt--) {
+    while (olen > 0 && len > 0 && get_extent(&ptr, &len, &lcn, &cnt, &pos)==FSW_SUCCESS) {
+	if (lcn) {
+	    for (; cnt>0; lcn++, cnt--) {
 		fsw_u8 *block;
-		if (fsw_block_get(&vol->g, lcn, 0, (void **) &block) != FSW_SUCCESS)
+		if (fsw_block_get (&vol->g, lcn, 0, (void **) &block) != FSW_SUCCESS)
 		{
-		    fsw_free(*optrp);
+		    FSW_DO_FREE(*optrp);
 		    *optrp = NULL;
 		    *olenp = 0;
 		    return FSW_VOLUME_CORRUPTED;
 		}
-		fsw_memcpy(buf, block, clustersize > olen ? olen : clustersize);
-		fsw_block_release(&vol->g, lcn, block);
+		FSW_DO_MEMCPY(buf, block, clustersize > olen ? olen : clustersize);
+		fsw_block_release (&vol->g, lcn, block);
 
 		buf += clustersize;
 		olen -= clustersize;
@@ -440,14 +440,14 @@ static void init_mft(struct fsw_ntfs_volume *vol, struct ntfs_mft *mft, fsw_u64 
 {
     mft->mftno = mftno;
     mft->atlst = NULL;
-    mft->atlen = fsw_alloc(1<<vol->mftbits, &mft->buf);
+    mft->atlen = FSW_DO_ALLOC(1<<vol->mftbits, &mft->buf);
     mft->atlen = 0;
 }
 
 static void free_mft(struct ntfs_mft *mft)
 {
-    if(mft->buf) fsw_free(mft->buf);
-    if(mft->atlst) fsw_free(mft->atlst);
+    if (mft->buf) FSW_DO_FREE(mft->buf);
+    if (mft->atlst) FSW_DO_FREE(mft->atlst);
 }
 
 static fsw_status_t load_atlist(struct fsw_ntfs_volume *vol, struct ntfs_mft *mft)
@@ -455,7 +455,7 @@ static fsw_status_t load_atlist(struct fsw_ntfs_volume *vol, struct ntfs_mft *mf
     fsw_u8 *ptr;
     int len;
     fsw_status_t err = find_attribute_direct(mft->buf, 1<<vol->mftbits, AT_ATTRIBUTE_LIST, &ptr, &len);
-    if(err != FSW_SUCCESS)
+    if (err != FSW_SUCCESS)
 	return err;
     return read_attribute_direct(vol, ptr, len, &mft->atlst, &mft->atlen);
 }
@@ -469,28 +469,28 @@ static fsw_status_t read_mft(struct fsw_ntfs_volume *vol, fsw_u8 *mft, fsw_u64 m
     struct extent_slot *e = vol->extmap.extent;
     fsw_status_t err;
 
-    while(l <= r) {
+    while (l <= r) {
         m = (l+r)/2;
-        if(vcn < e[m].vcn) {
+        if (vcn < e[m].vcn) {
             r = m - 1;
-        } else if(vcn >= e[m].vcn + e[m].cnt) {
+        } else if (vcn >= e[m].vcn + e[m].cnt) {
             l = m + 1;
-        } else if(vol->mftbits <= vol->clbits) {
+        } else if (vol->mftbits <= vol->clbits) {
             fsw_u64 lcn = e[m].lcn + (vcn - e[m].vcn);
             int offset = (mftno << vol->mftbits) & ((1<<vol->clbits)-1);
             fsw_u8 *buffer;
 
-            if(e[m].lcn + 1 == 0) {
+            if (e[m].lcn + 1 == 0) {
                 return FSW_VOLUME_CORRUPTED;
             }
 
-            err = fsw_block_get(&vol->g, lcn, 0, (void **) &buffer);
+            err = fsw_block_get (&vol->g, lcn, 0, (void **) &buffer);
             if (err != FSW_SUCCESS) {
                 return FSW_VOLUME_CORRUPTED;
             }
 
-            fsw_memcpy(mft, buffer+offset, 1<<vol->mftbits);
-            fsw_block_release(&vol->g, lcn, buffer);
+            FSW_DO_MEMCPY(mft, buffer+offset, 1<<vol->mftbits);
+            fsw_block_release (&vol->g, lcn, buffer);
 
             return fixup(mft, "FILE", 1<<vol->sctbits, 1<<vol->mftbits);
         } else {
@@ -499,27 +499,27 @@ static fsw_status_t read_mft(struct fsw_ntfs_volume *vol, fsw_u8 *mft, fsw_u64 m
             fsw_u64 ecnt = e[m].cnt - (vcn - e[m].vcn);
             int count = 1 << (vol->mftbits - vol->clbits);
 
-            if(e[m].lcn + 1 == 0) {
+            if (e[m].lcn + 1 == 0) {
                 return FSW_VOLUME_CORRUPTED;
             }
 
-            while(count-- > 0) {
+            while (count-- > 0) {
                 fsw_u8 *buffer;
-                err = fsw_block_get(&vol->g, lcn, 0, (void **) &buffer);
+                err = fsw_block_get (&vol->g, lcn, 0, (void **) &buffer);
                 if (err != FSW_SUCCESS) {
                     return FSW_VOLUME_CORRUPTED;
                 }
 
-                fsw_memcpy(p, buffer, 1<<vol->clbits);
-                fsw_block_release(&vol->g, lcn, buffer);
+                FSW_DO_MEMCPY(p, buffer, 1<<vol->clbits);
+                fsw_block_release (&vol->g, lcn, buffer);
 
                 p += 1<<vol->clbits;
                 ecnt--;
                 vcn++;
-                if(count==0) break;
-                if(ecnt > 0) {
+                if (count==0) break;
+                if (ecnt > 0) {
                     lcn++;
-                } else if(++m >= vol->extmap.used || e[m].vcn != vcn) {
+                } else if (++m >= vol->extmap.used || e[m].vcn != vcn) {
                     return FSW_VOLUME_CORRUPTED;
                 } else {
                     lcn = e[m].lcn;
@@ -534,41 +534,41 @@ static fsw_status_t read_mft(struct fsw_ntfs_volume *vol, fsw_u8 *mft, fsw_u64 m
 
 static void init_attr(struct fsw_ntfs_volume *vol, struct ntfs_attr *attr, int type)
 {
-    fsw_memzero(attr, sizeof (*attr));
+    FSW_DO_MEMZERO(attr, sizeof (*attr));
     attr->type = type;
     attr->emftno = BADMFT;
 }
 
 static void free_attr(struct ntfs_attr *attr)
 {
-    if(attr->emft) fsw_free(attr->emft);
+    if (attr->emft) FSW_DO_FREE(attr->emft);
 }
 
 static fsw_status_t find_attribute(struct fsw_ntfs_volume *vol, struct ntfs_mft *mft, struct ntfs_attr *attr, fsw_u64 vcn)
 {
     fsw_u8 *buf = mft->buf;
-    if(mft->atlst && mft->atlen) {
+    if (mft->atlst && mft->atlen) {
 	fsw_status_t err;
 	fsw_u64 mftno;
 	int pos = 0;
 
 	err = find_attrlist_direct(mft->atlst, mft->atlen, attr->type, vcn, &mftno, &pos);
-	if(err != FSW_SUCCESS)
+	if (err != FSW_SUCCESS)
 	    return err;
 
-	if(mftno == mft->mftno) {
+	if (mftno == mft->mftno) {
 	    buf = mft->buf;
-	} else if(mftno == attr->emftno && attr->emft) {
+	} else if (mftno == attr->emftno && attr->emft) {
 	    buf = attr->emft;
 	} else {
 	    attr->emftno = BADMFT;
-	    if(attr->emft==NULL) {
-		err = fsw_alloc(1<<vol->mftbits, &attr->emft);
-		if(err != FSW_SUCCESS)
+	    if (attr->emft==NULL) {
+		err = FSW_DO_ALLOC(1<<vol->mftbits, &attr->emft);
+		if (err != FSW_SUCCESS)
 		    return err;
 	    }
 	    err = read_mft(vol, attr->emft, mftno);
-	    if(err != FSW_SUCCESS)
+	    if (err != FSW_SUCCESS)
 		return err;
 	    attr->emftno = mftno;
 	    buf = attr->emft;
@@ -584,7 +584,7 @@ static fsw_status_t read_small_attribute(struct fsw_ntfs_volume *vol, struct ntf
 
     init_attr(vol, &attr, type);
     err = find_attribute(vol, mft, &attr, 0);
-    if(err == FSW_SUCCESS)
+    if (err == FSW_SUCCESS)
 	err = read_attribute_direct(vol, attr.ptr, attr.len, optrp, olenp);
     free_attr(&attr);
     return err;
@@ -595,10 +595,10 @@ static void add_single_mft_map(struct fsw_ntfs_volume *vol, fsw_u8 *mft)
     fsw_u8 *ptr;
     int len;
 
-    if(find_attribute_direct(mft, 1<<vol->mftbits, AT_DATA, &ptr, &len)!=FSW_SUCCESS)
+    if (find_attribute_direct(mft, 1<<vol->mftbits, AT_DATA, &ptr, &len) != FSW_SUCCESS)
 	return;
 
-    if(attribute_ondisk(ptr, len) == 0) // RESIDENT_FORM
+    if (attribute_ondisk(ptr, len) == 0) // RESIDENT_FORM
 	return;
 
     fsw_u64 vcn = GETU64(ptr, 0x10); // ATTRIBUTE_RECORD_HEADER.Form.Nonresident.LowestVcn
@@ -609,17 +609,17 @@ static void add_single_mft_map(struct fsw_ntfs_volume *vol, fsw_u8 *mft)
     fsw_u64 pos = 0;
     fsw_u64 lcn, cnt;
 
-    while(len > 0 && get_extent(&ptr, &len, &lcn, &cnt, &pos)==FSW_SUCCESS) {
-	if(lcn) {
+    while (len > 0 && get_extent(&ptr, &len, &lcn, &cnt, &pos)==FSW_SUCCESS) {
+	if (lcn) {
 	    int u = vol->extmap.used;
-	    if(u >= vol->extmap.total) {
+	    if (u >= vol->extmap.total) {
 		vol->extmap.total = vol->extmap.extent ? u*2 : 16;
 		struct extent_slot *e;
-		if(fsw_alloc(vol->extmap.total * sizeof (struct extent_slot), &e)!=FSW_SUCCESS)
+		if (FSW_DO_ALLOC(vol->extmap.total * sizeof (struct extent_slot), &e) != FSW_SUCCESS)
 		    break;
-		if(vol->extmap.extent) {
-		    fsw_memcpy(e, vol->extmap.extent, u*sizeof (struct extent_slot));
-		    fsw_free(vol->extmap.extent);
+		if (vol->extmap.extent) {
+		    FSW_DO_MEMCPY(e, vol->extmap.extent, u*sizeof (struct extent_slot));
+		    FSW_DO_FREE(vol->extmap.extent);
 		}
 		vol->extmap.extent = e;
 	    }
@@ -636,19 +636,19 @@ static void add_mft_map(struct fsw_ntfs_volume *vol, struct ntfs_mft *mft)
 {
     load_atlist(vol, mft);
     add_single_mft_map(vol, mft->buf);
-    if(mft->atlst == NULL) return;
+    if (mft->atlst == NULL) return;
 
     fsw_u64 mftno;
     int pos = 0;
 
     fsw_u8 *emft;
-    if(fsw_alloc(1<<vol->mftbits, &emft) != FSW_SUCCESS) return;
-    while(find_attrlist_direct(mft->atlst, mft->atlen, AT_DATA, 0, &mftno, &pos) == FSW_SUCCESS) {
-	if(mftno == 0) continue;
-	if(read_mft(vol, emft, mftno)==FSW_SUCCESS)
+    if (FSW_DO_ALLOC(1<<vol->mftbits, &emft) != FSW_SUCCESS) return;
+    while (find_attrlist_direct(mft->atlst, mft->atlen, AT_DATA, 0, &mftno, &pos) == FSW_SUCCESS) {
+	if (mftno == 0) continue;
+	if (read_mft(vol, emft, mftno)==FSW_SUCCESS)
 	    add_single_mft_map(vol, emft);
     }
-    fsw_free(emft);
+    FSW_DO_FREE(emft);
 }
 
 static int tobits(fsw_u32 val)
@@ -667,15 +667,15 @@ static fsw_status_t fsw_ntfs_volume_mount(struct fsw_volume *volg)
     fsw_u64 mft_start[2];
     struct ntfs_mft mft0;
 
-    fsw_set_blocksize(volg, 512, 512);
-    if ((err = fsw_block_get(volg, 0, 0, (void **) &buffer)) != FSW_SUCCESS)
+    fsw_set_blocksize (volg, 512, 512);
+    if ((err = fsw_block_get (volg, 0, 0, (void **) &buffer)) != FSW_SUCCESS)
 	return FSW_UNSUPPORTED;
 
-    if (!fsw_memeq(buffer+3, "NTFS    ", 8))
+    if (!FSW_DO_MEMEQ(buffer+3, "NTFS    ", 8))
 	return FSW_UNSUPPORTED;
 
     sector_size = GETU16(buffer, 0xB);
-    if(sector_size==0 || (sector_size & (sector_size-1)) || sector_size < 0x100 || sector_size > 0x1000)
+    if (sector_size==0 || (sector_size & (sector_size-1)) || sector_size < 0x100 || sector_size > 0x1000)
 	return FSW_UNSUPPORTED;
 
     vol->sctbits = tobits(sector_size);
@@ -683,55 +683,55 @@ static fsw_status_t fsw_ntfs_volume_mount(struct fsw_volume *volg)
     Print(L"NTFS size=%ld M\n", vol->totalbytes>>20);
 
     cluster_size = GETU8(buffer, 0xD) * sector_size;
-    if(cluster_size==0 || (cluster_size & (cluster_size-1)) || cluster_size > 0x10000)
+    if (cluster_size==0 || (cluster_size & (cluster_size-1)) || cluster_size > 0x10000)
 	return FSW_UNSUPPORTED;
 
     vol->clbits = tobits(cluster_size);
 
     tmp = GETU8(buffer, 0x40);
-    if(tmp > 0)
+    if (tmp > 0)
 	vol->mftbits = vol->clbits + tobits(tmp);
     else
 	vol->mftbits = -tmp;
 
-    if(vol->mftbits < vol->sctbits || vol->mftbits > 16)
+    if (vol->mftbits < vol->sctbits || vol->mftbits > 16)
 	return FSW_UNSUPPORTED;
 
     tmp = GETU8(buffer, 0x44);
-    if(tmp > 0)
+    if (tmp > 0)
 	vol->idxbits = vol->clbits + tobits(tmp);
     else
 	vol->idxbits = -tmp;
 
-    if(vol->idxbits < vol->sctbits || vol->idxbits > 16)
+    if (vol->idxbits < vol->sctbits || vol->idxbits > 16)
 	return FSW_UNSUPPORTED;
 
     mft_start[0] = GETU64(buffer, 0x30);
     mft_start[1] = GETU64(buffer, 0x38);
 
-    fsw_block_release(volg, 0, (void *)buffer);
-    fsw_set_blocksize(volg, cluster_size, cluster_size);
+    fsw_block_release (volg, 0, (void *)buffer);
+    fsw_set_blocksize (volg, cluster_size, cluster_size);
 
     init_mft(vol, &mft0, MFTNO_MFT);
-    for(tmp=0; tmp<2; tmp++) {
+    for (tmp=0; tmp<2; tmp++) {
 	fsw_u8 *ptr = mft0.buf;
 	int len = 1 << vol->mftbits;
 	fsw_u64 lcn = mft_start[tmp];
-	while(len > 0) {
-	    if ((err = fsw_block_get(volg, lcn, 0, (void **) &buffer)) != FSW_SUCCESS)
+	while (len > 0) {
+	    if ((err = fsw_block_get (volg, lcn, 0, (void **) &buffer)) != FSW_SUCCESS)
 	    {
 		free_mft(&mft0);
 		return FSW_UNSUPPORTED;
 	    }
 	    int n = vol->mftbits < vol->clbits ? (1<<vol->mftbits) : cluster_size;
-	    fsw_memcpy(ptr, buffer, n);
-	    fsw_block_release(volg, lcn, (void *)buffer);
+	    FSW_DO_MEMCPY(ptr, buffer, n);
+	    fsw_block_release (volg, lcn, (void *)buffer);
 	    ptr += n;
 	    len -= n;
 	    lcn++;
 	}
 	err = fixup(mft0.buf, "FILE", sector_size, 1<<vol->mftbits);
-	if(err != FSW_SUCCESS)
+	if (err != FSW_SUCCESS)
 	    return err;
     }
 
@@ -739,7 +739,7 @@ static fsw_status_t fsw_ntfs_volume_mount(struct fsw_volume *volg)
 
     {
     int i;
-    for(i=0; i<vol->extmap.used; i++)
+    for (i=0; i<vol->extmap.used; i++)
 	Print(L"extent %d: vcn=%lx lcn=%lx len=%lx\n",
 		i,
 		vol->extmap.extent[i].vcn,
@@ -753,7 +753,7 @@ static fsw_status_t fsw_ntfs_volume_mount(struct fsw_volume *volg)
     init_mft(vol, &mft0, MFTNO_VOLUME);
     fsw_u8 *ptr;
     int len;
-    if(read_mft(vol, mft0.buf, MFTNO_VOLUME)==FSW_SUCCESS &&
+    if (read_mft(vol, mft0.buf, MFTNO_VOLUME)==FSW_SUCCESS &&
 	    find_attribute_direct(mft0.buf, 1<<vol->mftbits, AT_VOLUME_NAME, &ptr, &len)==FSW_SUCCESS &&
 	    attribute_ondisk(ptr, len)==0 // RESIDENT_FORM
     ) {
@@ -763,7 +763,7 @@ static fsw_status_t fsw_ntfs_volume_mount(struct fsw_volume *volg)
         s.len = s.size / 2;
         s.data = ptr + GETU16(ptr, 0x14); // ATTRIBUTE_RECORD_HEADER.Form.Resident.ValueOffset
         Print(L"Volume name [%.*ls]\n", s.len, s.data);
-        fsw_strdup_coerce(&volg->label, volg->host_string_type, &s);
+        fsw_strdup_coerce (&volg->label, volg->host_string_type, &s);
     }
     free_mft(&mft0);
 
@@ -777,10 +777,10 @@ static fsw_status_t fsw_ntfs_volume_mount(struct fsw_volume *volg)
 static void fsw_ntfs_volume_free(struct fsw_volume *volg)
 {
     struct fsw_ntfs_volume *vol = (struct fsw_ntfs_volume *)volg;
-    if(vol->extmap.extent)
-	fsw_free(vol->extmap.extent);
-    if(vol->upcase && vol->upcase != upcase)
-	fsw_free((void *)vol->upcase);
+    if (vol->extmap.extent)
+	FSW_DO_FREE(vol->extmap.extent);
+    if (vol->upcase && vol->upcase != upcase)
+	FSW_DO_FREE((void *)vol->upcase);
 }
 
 static fsw_status_t fsw_ntfs_volume_stat(struct fsw_volume *volg, struct fsw_volume_stat *sb)
@@ -797,12 +797,12 @@ static void fsw_ntfs_dnode_free(struct fsw_volume *vol, struct fsw_dnode *dnog)
     struct fsw_ntfs_dnode *dno = (struct fsw_ntfs_dnode *)dnog;
     free_mft(&dno->mft);
     free_attr(&dno->attr);
-    if(dno->idxroot)
-	fsw_free(dno->idxroot);
-    if(dno->idxbmp)
-	fsw_free(dno->idxbmp);
-    if(dno->cbuf)
-	fsw_free(dno->cbuf);
+    if (dno->idxroot)
+	FSW_DO_FREE(dno->idxroot);
+    if (dno->idxbmp)
+	FSW_DO_FREE(dno->idxbmp);
+    if (dno->cbuf)
+	FSW_DO_FREE(dno->cbuf);
 }
 
 static fsw_status_t fsw_ntfs_dnode_fill(struct fsw_volume *volg, struct fsw_dnode *dnog)
@@ -812,12 +812,12 @@ static fsw_status_t fsw_ntfs_dnode_fill(struct fsw_volume *volg, struct fsw_dnod
     fsw_status_t err;
     int len;
 
-    if(dno->mft.buf != NULL)
+    if (dno->mft.buf != NULL)
 	    return FSW_SUCCESS;
 
     init_mft(vol, &dno->mft, dno->g.dnode_id);
     err = read_mft(vol, dno->mft.buf, dno->g.dnode_id);
-    if(err != FSW_SUCCESS)
+    if (err != FSW_SUCCESS)
 	goto error_out;
 
     if (dno->mft.buf == NULL) {
@@ -826,14 +826,14 @@ static fsw_status_t fsw_ntfs_dnode_fill(struct fsw_volume *volg, struct fsw_dnod
     }
 
     len = GETU8(dno->mft.buf, 22);
-    if( (len & 1) == 0 ) {
+    if ( (len & 1) == 0 ) {
 	err = FSW_NOT_FOUND;
 	goto error_out;
     }
 
     load_atlist(vol, &dno->mft);
 
-    if(read_small_attribute(vol, &dno->mft, AT_REPARSE_POINT, &dno->cbuf, &len)==FSW_SUCCESS) {
+    if (read_small_attribute(vol, &dno->mft, AT_REPARSE_POINT, &dno->cbuf, &len)==FSW_SUCCESS) {
 	switch(GETU32(dno->cbuf, 0)) {
 	    case 0xa0000003:
 	    case 0xa000000c:
@@ -843,28 +843,28 @@ static fsw_status_t fsw_ntfs_dnode_fill(struct fsw_volume *volg, struct fsw_dnod
 		dno->fsize  = len;
 		return FSW_SUCCESS;
 	    default:
-		fsw_free(dno->cbuf);
+		FSW_DO_FREE(dno->cbuf);
 		dno->cbuf = NULL;
 	};
     }
 
-    if( (len & 2) ) {
+    if ( (len & 2) ) {
 	dno->g.type = FSW_DNODE_TYPE_DIR;
 	/* $INDEX_ROOT:$I30 must present */
 	err = read_small_attribute(vol, &dno->mft, AT_INDEX_ROOT|AT_I30, &dno->idxroot, &dno->rootsz);
-	if(err != FSW_SUCCESS)
+	if (err != FSW_SUCCESS)
 	{
 	    Print(L"dno_fill INDEX_ROOT:$I30 error %d\n", err);
 	    goto error_out;
 	}
 
 	dno->idxsz = GETU32(dno->idxroot, 8);
-	if(dno->idxsz == 0)
+	if (dno->idxsz == 0)
 	    dno->idxsz = 1<<vol->idxbits;
 
 	/* $Bitmap:$I30 is optional */
 	err = read_small_attribute(vol, &dno->mft, AT_BITMAP|AT_I30, &dno->idxbmp, &dno->bmpsz);
-	if(err != FSW_SUCCESS && err != FSW_NOT_FOUND)
+	if (err != FSW_SUCCESS && err != FSW_NOT_FOUND)
 	{
 	    Print(L"dno_fill $Bitmap:$I30 error %d\n", err);
 	    goto error_out;
@@ -873,11 +873,11 @@ static fsw_status_t fsw_ntfs_dnode_fill(struct fsw_volume *volg, struct fsw_dnod
 	/* $INDEX_ALLOCATION:$I30 is optional */
 	init_attr(vol, &dno->attr, AT_INDEX_ALLOCATION|AT_I30);
 	err = find_attribute(vol, &dno->mft, &dno->attr, 0);
-	if(err == FSW_SUCCESS) {
+	if (err == FSW_SUCCESS) {
 	    dno->has_idxtree = 1;
 	    dno->fsize = attribute_size(dno->attr.ptr, dno->attr.len);
 	    dno->finited = dno->fsize;
-	} else if(err != FSW_NOT_FOUND) {
+	} else if (err != FSW_NOT_FOUND) {
 	    Print(L"dno_fill $INDEX_ALLOCATION:$I30 error %d\n", err);
 	    goto error_out;
 	}
@@ -886,7 +886,7 @@ static fsw_status_t fsw_ntfs_dnode_fill(struct fsw_volume *volg, struct fsw_dnod
 	dno->g.type = FSW_DNODE_TYPE_FILE;
 	init_attr(vol, &dno->attr, AT_DATA);
 	err = find_attribute(vol, &dno->mft, &dno->attr, 0);
-	if(err != FSW_SUCCESS)
+	if (err != FSW_SUCCESS)
 	{
 	    Print(L"dno_fill AT_DATA error %d\n", err);
 	    goto error_out;
@@ -894,11 +894,11 @@ static fsw_status_t fsw_ntfs_dnode_fill(struct fsw_volume *volg, struct fsw_dnod
 	dno->embeded = !attribute_ondisk(dno->attr.ptr, dno->attr.len); // RESIDENT_FORM = embedded, NONRESIDENT_FORM = not embedded
 	dno->fsize = attribute_size(dno->attr.ptr, dno->attr.len);
 	dno->finited = attribute_inited_size(dno->attr.ptr, dno->attr.len);
-	if(attribute_encrypted(dno->attr.ptr, dno->attr.len))
+	if (attribute_encrypted(dno->attr.ptr, dno->attr.len))
 	    dno->unreadable = 1;
-	else if(attribute_compressed_future(dno->attr.ptr, dno->attr.len))
+	else if (attribute_compressed_future(dno->attr.ptr, dno->attr.len))
 	    dno->unreadable = 1;
-	else if(attribute_compressed(dno->attr.ptr, dno->attr.len))
+	else if (attribute_compressed(dno->attr.ptr, dno->attr.len))
 	    dno->compressed = 1;
 	dno->cvcn = BADVCN;
 	dno->g.size = dno->fsize;
@@ -930,7 +930,7 @@ static fsw_status_t fsw_ntfs_dnode_stat(struct fsw_volume *volg, struct fsw_dnod
 
     err = find_attribute_direct(dno->mft.buf, 1<<vol->mftbits, AT_STANDARD_INFORMATION, &ptr, &len);
 
-    if(err != FSW_SUCCESS || attribute_ondisk(ptr, len)) // NONRESIDENT_FORM
+    if (err != FSW_SUCCESS || attribute_ondisk(ptr, len)) // NONRESIDENT_FORM
 	return err;
 
     ptr += GETU16(ptr, 0x14); // ATTRIBUTE_RECORD_HEADER.Form.Resident.ValueOffset
@@ -944,7 +944,7 @@ static fsw_status_t fsw_ntfs_dnode_stat(struct fsw_volume *volg, struct fsw_dnod
 #endif
     attr &= EFI_FILE_READ_ONLY | EFI_FILE_HIDDEN | EFI_FILE_SYSTEM | EFI_FILE_ARCHIVE;
     /* add DIR again if symlink */
-    if(GETU8(dno->mft.buf, 22) & 2)
+    if (GETU8(dno->mft.buf, 22) & 2)
 	attr |= EFI_FILE_DIRECTORY;
 
     fsw_store_attr_efi(sb, attr);
@@ -959,15 +959,15 @@ static fsw_status_t fsw_ntfs_dnode_stat(struct fsw_volume *volg, struct fsw_dnod
 static fsw_status_t fsw_ntfs_dnode_get_lcn(struct fsw_ntfs_volume *vol, struct fsw_ntfs_dnode *dno, fsw_u64 vcn, fsw_u64 *lcnp)
 {
     fsw_status_t err;
-    if(vcn >= dno->cext.vcn && vcn < dno->cext.vcn+dno->cext.cnt) {
+    if (vcn >= dno->cext.vcn && vcn < dno->cext.vcn+dno->cext.cnt) {
 	*lcnp = dno->cext.lcn + vcn - dno->cext.vcn;
 	return FSW_SUCCESS;
     }
-    if(!attribute_has_vcn(dno->attr.ptr, dno->attr.len, vcn)) {
+    if (!attribute_has_vcn(dno->attr.ptr, dno->attr.len, vcn)) {
 	err = find_attribute(vol, &dno->mft, &dno->attr, vcn);
-	if( err != FSW_SUCCESS )
+	if ( err != FSW_SUCCESS )
 	    return err;
-	if(!attribute_has_vcn(dno->attr.ptr, dno->attr.len, vcn))
+	if (!attribute_has_vcn(dno->attr.ptr, dno->attr.len, vcn))
 	    return FSW_VOLUME_CORRUPTED;
     }
     fsw_u8 *ptr = dno->attr.ptr;
@@ -979,18 +979,18 @@ static fsw_status_t fsw_ntfs_dnode_get_lcn(struct fsw_ntfs_volume *vol, struct f
     int off = GETU16(ptr, 0x20); // ATTRIBUTE_RECORD_HEADER.Form.Nonresident.MappingPairsOffset
     ptr += off;
     len -= off;
-    while(len > 0 && get_extent(&ptr, &len, &lcn, &cnt, &pos)==FSW_SUCCESS) {
-	if(vcn >= svcn && vcn < svcn+cnt) {
+    while (len > 0 && get_extent(&ptr, &len, &lcn, &cnt, &pos)==FSW_SUCCESS) {
+	if (vcn >= svcn && vcn < svcn+cnt) {
 	    dno->cext.vcn = svcn;
 	    dno->cext.lcn = lcn;
 	    dno->cext.cnt = cnt;
-	    if(lcn == 0)
+	    if (lcn == 0)
 		return FSW_NOT_FOUND;
 	    *lcnp = lcn + vcn - svcn;
 	    return FSW_SUCCESS;
 	}
 	svcn += cnt;
-	if(svcn >= evcn)
+	if (svcn >= evcn)
 	    break;
     }
     return FSW_NOT_FOUND;
@@ -998,39 +998,39 @@ static fsw_status_t fsw_ntfs_dnode_get_lcn(struct fsw_ntfs_volume *vol, struct f
 
 static int fsw_ntfs_read_buffer(struct fsw_ntfs_volume *vol, struct fsw_ntfs_dnode *dno, fsw_u8 *buf, fsw_u64 offset, int size)
 {
-    if(dno->embeded) {
+    if (dno->embeded) {
 	fsw_u8 *ptr;
 	int len;
 	attribute_get_embeded(dno->attr.ptr, dno->attr.len, &ptr, &len);
-	if(offset >= len)
+	if (offset >= len)
 	    return 0;
 	ptr += offset;
 	len -= offset;
-	if(size > len)
+	if (size > len)
 	    size = len;
-	fsw_memcpy(buf, ptr, size);
+	FSW_DO_MEMCPY(buf, ptr, size);
 	return size;
     }
 
-    if(!dno->attr.ptr || !dno->attr.len) {
+    if (!dno->attr.ptr || !dno->attr.len) {
 	Print(L"BAD--------: attr.ptr %p attr.len %x cleared\n", dno->attr.ptr, dno->attr.len);
-	if(find_attribute(vol, &dno->mft, &dno->attr, 0) != FSW_SUCCESS)
+	if (find_attribute(vol, &dno->mft, &dno->attr, 0) != FSW_SUCCESS)
 	    return 0;
     }
 
-    if(offset >= dno->fsize)
+    if (offset >= dno->fsize)
 	return 0;
-    if(offset + size >= dno->fsize)
+    if (offset + size >= dno->fsize)
 	size = dno->fsize - offset;
 
-    if(offset >= dno->finited) {
-	fsw_memzero(buf, size);
+    if (offset >= dno->finited) {
+	FSW_DO_MEMZERO(buf, size);
 	return size;
     }
 
     int ret = 0;
     int zsize = 0;
-    if(offset + size >= dno->finited) {
+    if (offset + size >= dno->finited) {
 	zsize = offset + size - dno->finited;
 	size = dno->finited - offset;
     }
@@ -1039,7 +1039,7 @@ static int fsw_ntfs_read_buffer(struct fsw_ntfs_volume *vol, struct fsw_ntfs_dno
     int boff = offset & ((1<<vol->clbits)-1);
     fsw_u64 lcn = 0;
 
-    while(size > 0) {
+    while (size > 0) {
 	fsw_u8 *block;
 	fsw_status_t err;
 	int bsz;
@@ -1049,7 +1049,7 @@ static int fsw_ntfs_read_buffer(struct fsw_ntfs_volume *vol, struct fsw_ntfs_dno
         break;
     }
 
-	err = fsw_block_get(&vol->g, lcn, 0, (void **) &block);
+	err = fsw_block_get (&vol->g, lcn, 0, (void **) &block);
     if (err != FSW_SUCCESS) {
         break;
     }
@@ -1059,8 +1059,8 @@ static int fsw_ntfs_read_buffer(struct fsw_ntfs_volume *vol, struct fsw_ntfs_dno
 	    bsz = size;
     }
 
-	fsw_memcpy(buf, block+boff, bsz);
-	fsw_block_release(&vol->g, lcn, block);
+	FSW_DO_MEMCPY(buf, block+boff, bsz);
+	fsw_block_release (&vol->g, lcn, block);
 
 	ret += bsz;
 	buf += bsz;
@@ -1069,7 +1069,7 @@ static int fsw_ntfs_read_buffer(struct fsw_ntfs_volume *vol, struct fsw_ntfs_dno
 	vcn++;
     }
     if (size==0 && zsize > 0) {
-	    fsw_memzero(buf, zsize);
+	    FSW_DO_MEMZERO(buf, zsize);
 	    ret += zsize;
     }
     return ret;
@@ -1078,17 +1078,17 @@ static int fsw_ntfs_read_buffer(struct fsw_ntfs_volume *vol, struct fsw_ntfs_dno
 static fsw_status_t fsw_ntfs_get_extent_embeded(struct fsw_ntfs_volume *vol, struct fsw_ntfs_dnode *dno, struct fsw_extent *extent)
 {
     fsw_status_t err;
-    if(extent->log_start > 0)
+    if (extent->log_start > 0)
 	return FSW_NOT_FOUND;
     extent->log_count = 1;
-    err = fsw_alloc(1<<vol->clbits, &extent->buffer);
-    if(err != FSW_SUCCESS) return err;
+    err = FSW_DO_ALLOC(1<<vol->clbits, &extent->buffer);
+    if (err != FSW_SUCCESS) return err;
     fsw_u8 *ptr;
     int len;
     attribute_get_embeded(dno->attr.ptr, dno->attr.len, &ptr, &len);
-    if(len > (1<<vol->clbits))
+    if (len > (1<<vol->clbits))
 	len = 1<<vol->clbits;
-    fsw_memcpy(extent->buffer, ptr, len);
+    FSW_DO_MEMCPY(extent->buffer, ptr, len);
     extent->type = FSW_EXTENT_TYPE_BUFFER;
     return FSW_SUCCESS;
 }
@@ -1096,29 +1096,29 @@ static fsw_status_t fsw_ntfs_get_extent_embeded(struct fsw_ntfs_volume *vol, str
 static int ntfs_decomp_1page(fsw_u8 *src, int slen, fsw_u8 *dst) {
     int soff = 0;
     int doff = 0;
-    while(soff < slen) {
+    while (soff < slen) {
 	int j;
 	int tag = src[soff++];
-	for(j = 0; j < 8 && soff < slen; j++) {
-	    if(tag & (1<<j)){
+	for (j = 0; j < 8 && soff < slen; j++) {
+	    if (tag & (1<<j)){
 		int len;
 		int back;
 		int bits;
 
-		if(!doff || soff + 2 > slen)
+		if (!doff || soff + 2 > slen)
 		    return -1;
 		len = GETU16(src, soff); soff += 2;
 		bits = __builtin_clz((doff-1)>>3)-19;
 		back = (len >> bits) + 1;
 		len = (len & ((1<<bits)-1)) + 3;
-		if(doff < back || doff + len > 0x1000)
+		if (doff < back || doff + len > 0x1000)
 		    return -1;
-		while(len-- > 0) {
+		while (len-- > 0) {
 		    dst[doff] = dst[doff-back];
 		    doff++;
 		}
 	    } else {
-		if(doff >= 0x1000)
+		if (doff >= 0x1000)
 		    return -1;
 		dst[doff++] = src[soff++];
 	    }
@@ -1131,27 +1131,27 @@ static int ntfs_decomp(fsw_u8 *src, int slen, fsw_u8 *dst, int npage) {
     fsw_u8 *se = src + slen;
     fsw_u8 *de = dst + (npage<<12);
     int i;
-    for(i=0; i<npage; i++) {
+    for (i=0; i<npage; i++) {
 	fsw_u16 slen = GETU16(src, 0);
 	int comp = slen & 0x8000;
 	slen = (slen&0xfff)+1;
 	src += 2;
 
-	if(src + slen > se || dst + 0x1000 > de)
+	if (src + slen > se || dst + 0x1000 > de)
 	    return -1;
 
-	if(!comp) {
-	    fsw_memcpy(dst, src, slen);
-	    if(slen < 0x1000)
-		fsw_memzero(dst+slen, 0x1000-slen);
-	} else if(slen == 1) {
-	    fsw_memzero(dst, 0x1000);
+	if (!comp) {
+	    FSW_DO_MEMCPY(dst, src, slen);
+	    if (slen < 0x1000)
+		FSW_DO_MEMZERO(dst+slen, 0x1000-slen);
+	} else if (slen == 1) {
+	    FSW_DO_MEMZERO(dst, 0x1000);
 	} else {
 	    int dlen = ntfs_decomp_1page(src, slen, dst);
-	    if(dlen < 0)
+	    if (dlen < 0)
 		return -1;
-	    if(dlen < 0x1000)
-		fsw_memzero(dst+dlen, 0x1000-dlen);
+	    if (dlen < 0x1000)
+		FSW_DO_MEMZERO(dst+dlen, 0x1000-dlen);
 	}
 	src += slen;
 	dst += 0x1000;
@@ -1161,92 +1161,92 @@ static int ntfs_decomp(fsw_u8 *src, int slen, fsw_u8 *dst, int npage) {
 
 static fsw_status_t fsw_ntfs_get_extent_compressed(struct fsw_ntfs_volume *vol, struct fsw_ntfs_dnode *dno, struct fsw_extent *extent)
 {
-    if(vol->clbits > 16)
+    if (vol->clbits > 16)
 	return FSW_VOLUME_CORRUPTED;
 
-    if((extent->log_start << vol->clbits) > dno->fsize)
+    if ((extent->log_start << vol->clbits) > dno->fsize)
 	return FSW_NOT_FOUND;
 
     int i;
     fsw_u64 vcn = extent->log_start & ~15;
 
-    if(vcn == dno->cvcn)
+    if (vcn == dno->cvcn)
 	goto hit;
     dno->cvcn = vcn;
     dno->cperror = 0;
     dno->cpfull = 0;
     dno->cpzero = 0;
 
-    for(i=0; i<16; i++) {
+    for (i=0; i<16; i++) {
 	fsw_status_t err;
 	err = fsw_ntfs_dnode_get_lcn(vol, dno, vcn+i, &dno->clcn[i]);
-	if(err == FSW_NOT_FOUND) {
+	if (err == FSW_NOT_FOUND) {
 	    break;
-	} else if(err != FSW_SUCCESS) {
+	} else if (err != FSW_SUCCESS) {
 	    Print(L"BAD LCN\n");
 	    dno->cperror = 1;
 	    return FSW_VOLUME_CORRUPTED;
 	}
     }
-    if(i == 0)
+    if (i == 0)
 	dno->cpzero = 1;
-    else if(i==16)
+    else if (i==16)
 	dno->cpfull = 1;
     else {
 	fsw_status_t err;
-	if(dno->cbuf == NULL) {
-	    err = fsw_alloc(16<<vol->clbits, &dno->cbuf);
-	    if(err != FSW_SUCCESS) {
+	if (dno->cbuf == NULL) {
+	    err = FSW_DO_ALLOC(16<<vol->clbits, &dno->cbuf);
+	    if (err != FSW_SUCCESS) {
 		dno->cvcn = BADVCN;
 		return err;
 	    }
 	}
 	fsw_u8 *src;
-	err = fsw_alloc(i << vol->clbits, &src);
-	if(err != FSW_SUCCESS) {
+	err = FSW_DO_ALLOC(i << vol->clbits, &src);
+	if (err != FSW_SUCCESS) {
 	    dno->cvcn = BADVCN;
 	    return err;
 	}
 	int b;
-	for(b=0; b<i; b++) {
+	for (b=0; b<i; b++) {
 	    char *block;
-	    if (fsw_block_get(&vol->g, dno->clcn[b], 0, (void **) &block) != FSW_SUCCESS) {
+	    if (fsw_block_get (&vol->g, dno->clcn[b], 0, (void **) &block) != FSW_SUCCESS) {
 		dno->cperror = 1;
 		Print(L"Read ERROR at block %d\n", i);
 		break;
 	    }
-	    fsw_memcpy(src+(b<<vol->clbits), block, 1<<vol->clbits);
-	    fsw_block_release(&vol->g, dno->clcn[b], block);
+	    FSW_DO_MEMCPY(src+(b<<vol->clbits), block, 1<<vol->clbits);
+	    fsw_block_release (&vol->g, dno->clcn[b], block);
 	}
 
-	if(dno->fsize >= ((vcn+16)<<vol->clbits))
+	if (dno->fsize >= ((vcn+16)<<vol->clbits))
 	    b = 16<<vol->clbits>>12;
 	else
 	    b = (dno->fsize - (vcn << vol->clbits) + 0xfff)>>12;
-	if(!dno->cperror && ntfs_decomp(src, i<<vol->clbits, dno->cbuf, b) < 0)
+	if (!dno->cperror && ntfs_decomp(src, i<<vol->clbits, dno->cbuf, b) < 0)
 	    dno->cperror = 1;
-	fsw_free(src);
+	FSW_DO_FREE(src);
     }
 hit:
-    if(dno->cperror)
+    if (dno->cperror)
 	return FSW_VOLUME_CORRUPTED;
     i = extent->log_start - vcn;
-    if(dno->cpfull) {
+    if (dno->cpfull) {
 	fsw_u64 lcn = dno->clcn[i];
 	extent->phys_start = lcn;
 	extent->log_count = 1;
 	extent->type = FSW_EXTENT_TYPE_PHYSBLOCK;
-	for(i++, lcn++; i<16 && lcn==dno->clcn[i]; i++, lcn++)
+	for (i++, lcn++; i<16 && lcn==dno->clcn[i]; i++, lcn++)
 		extent->log_count++;
-    } else if(dno->cpzero) {
+    } else if (dno->cpzero) {
 	extent->log_count = 16 - i;
 	extent->buffer = NULL;
 	extent->type = FSW_EXTENT_TYPE_SPARSE;
     } else {
 	extent->log_count = 1;
-	fsw_status_t err = fsw_alloc(1<<vol->clbits, &extent->buffer);
-	if(err != FSW_SUCCESS) return err;
-	fsw_memcpy(extent->buffer, dno->cbuf + (i<<vol->clbits), 1<<vol->clbits);
+	fsw_status_t err = FSW_DO_ALLOC(1<<vol->clbits, &extent->buffer);
+	if (err != FSW_SUCCESS) return err;
+	FSW_DO_MEMCPY(extent->buffer, dno->cbuf + (i<<vol->clbits), 1<<vol->clbits);
 	extent->type = FSW_EXTENT_TYPE_BUFFER;
     }
     return FSW_SUCCESS;
@@ -1256,9 +1256,9 @@ static fsw_status_t fsw_ntfs_get_extent_sparse(struct fsw_ntfs_volume *vol, stru
 {
     fsw_status_t err;
 
-    if((extent->log_start << vol->clbits) > dno->fsize)
+    if ((extent->log_start << vol->clbits) > dno->fsize)
 	return FSW_NOT_FOUND;
-    if((extent->log_start << vol->clbits) > dno->finited)
+    if ((extent->log_start << vol->clbits) > dno->finited)
     {
 	extent->log_count = 1;
 	extent->buffer = NULL;
@@ -1267,17 +1267,17 @@ static fsw_status_t fsw_ntfs_get_extent_sparse(struct fsw_ntfs_volume *vol, stru
     }
     fsw_u64 lcn;
     err = fsw_ntfs_dnode_get_lcn(vol, dno, extent->log_start, &lcn);
-    if(err == FSW_NOT_FOUND) {
+    if (err == FSW_NOT_FOUND) {
 	extent->log_count = 1;
 	extent->buffer = NULL;
 	extent->type = FSW_EXTENT_TYPE_SPARSE;
 	return FSW_SUCCESS;
     }
-    if(err != FSW_SUCCESS)
+    if (err != FSW_SUCCESS)
 	return err;
     extent->phys_start = lcn;
     extent->log_count = 1;
-    if(extent->log_start >= dno->cext.vcn && extent->log_start < dno->cext.vcn+dno->cext.cnt)
+    if (extent->log_start >= dno->cext.vcn && extent->log_start < dno->cext.vcn+dno->cext.cnt)
 	extent->log_count = dno->cext.cnt + extent->log_start - dno->cext.vcn;
     extent->type = FSW_EXTENT_TYPE_PHYSBLOCK;
     return FSW_SUCCESS;
@@ -1288,11 +1288,11 @@ static fsw_status_t fsw_ntfs_get_extent(struct fsw_volume *volg, struct fsw_dnod
     struct fsw_ntfs_volume *vol = (struct fsw_ntfs_volume *)volg;
     struct fsw_ntfs_dnode *dno = (struct fsw_ntfs_dnode *)dnog;
 
-    if(dno->unreadable)
+    if (dno->unreadable)
 	return FSW_UNSUPPORTED;
-    if(dno->embeded)
+    if (dno->embeded)
 	return fsw_ntfs_get_extent_embeded(vol, dno, extent);
-    if(dno->compressed)
+    if (dno->compressed)
 	return fsw_ntfs_get_extent_compressed(vol, dno, extent);
     return fsw_ntfs_get_extent_sparse(vol, dno, extent);
 }
@@ -1303,13 +1303,13 @@ static fsw_status_t load_upcase(struct fsw_ntfs_volume *vol)
     struct ntfs_mft mft;
     init_mft(vol, &mft, MFTNO_UPCASE);
     err = read_mft(vol, mft.buf, MFTNO_UPCASE);
-    if(err == FSW_SUCCESS) {
-	if((err = read_small_attribute(vol, &mft, AT_DATA, (fsw_u8 **) &vol->upcase, &vol->upcount))==FSW_SUCCESS) {
+    if (err == FSW_SUCCESS) {
+	if ((err = read_small_attribute(vol, &mft, AT_DATA, (fsw_u8 **) &vol->upcase, &vol->upcount))==FSW_SUCCESS) {
 	    vol->upcount /= 2;
 #ifndef FSW_LITTLE_ENDIAN
 	    int i;
-	    for( i=0; i<vol->upcount; i++)
-		vol->upcase[i] = fsw_u16_le_swap(vol->upcase[i]);
+	    for ( i=0; i<vol->upcount; i++)
+		vol->upcase[i] = FSW_U16_LE_SWAP(vol->upcase[i]);
 #endif
 	}
     }
@@ -1319,40 +1319,40 @@ static fsw_status_t load_upcase(struct fsw_ntfs_volume *vol)
 
 static int ntfs_filename_cmp(struct fsw_ntfs_volume *vol, fsw_u8 *p1, int s1, fsw_u8 *p2, int s2)
 {
-    while(s1 > 0 && s2 > 0) {
+    while (s1 > 0 && s2 > 0) {
 	fsw_u16 c1 = GETU16(p1,0);
 	fsw_u16 c2 = GETU16(p2,0);
-	if(c1 < 0x80 || c2 < 0x80) {
-	    if(c1 < 0x80) c1 = upcase[c1];
-	    if(c2 < 0x80) c2 = upcase[c2];
+	if (c1 < 0x80 || c2 < 0x80) {
+	    if (c1 < 0x80) c1 = upcase[c1];
+	    if (c2 < 0x80) c2 = upcase[c2];
 	} else {
 	    /*
 	     * Only load upcase table if both char is international.
 	     * We assume international char never upcased to ASCII.
 	     */
-	    if(!vol->upcase) {
+	    if (!vol->upcase) {
 		load_upcase(vol);
-		if(!vol->upcase) {
+		if (!vol->upcase) {
 		    /* use raw value & prevent load again */
 		    vol->upcase = upcase;
 		    vol->upcount = 0;
 		}
 	    }
-	    if(c1 < vol->upcount) c1 = vol->upcase[c1];
-	    if(c2 < vol->upcount) c2 = vol->upcase[c2];
+	    if (c1 < vol->upcount) c1 = vol->upcase[c1];
+	    if (c2 < vol->upcount) c2 = vol->upcase[c2];
 	}
-	if(c1 < c2)
+	if (c1 < c2)
 	    return -1;
-	if(c1 > c2)
+	if (c1 > c2)
 	    return 1;
 	p1+=2;
 	p2+=2;
 	s1--;
 	s2--;
     }
-    if(s1 < s2)
+    if (s1 < s2)
 	return -1;
-    if(s1 > s2)
+    if (s1 > s2)
 	return 1;
     return 0;
 }
@@ -1360,7 +1360,7 @@ static int ntfs_filename_cmp(struct fsw_ntfs_volume *vol, fsw_u8 *p1, int s1, fs
 static fsw_status_t fsw_ntfs_create_subnode(struct fsw_ntfs_dnode *dno, fsw_u8 *buf, struct fsw_dnode **child_dno)
 {
     fsw_u64 mftno = GETU64(buf, 0) & MFTMASK;
-    if(mftno < MFTNO_META)
+    if (mftno < MFTNO_META)
 	return FSW_NOT_FOUND;
 
     int type = GETU32(buf, 0x48) & 0x10000000 ? FSW_DNODE_TYPE_DIR: FSW_DNODE_TYPE_FILE;
@@ -1375,16 +1375,16 @@ static fsw_status_t fsw_ntfs_create_subnode(struct fsw_ntfs_dnode *dno, fsw_u8 *
 
 static fsw_u8 *fsw_ntfs_read_index_block(struct fsw_ntfs_volume *vol, struct fsw_ntfs_dnode *dno, fsw_u64 block)
 {
-    if(dno->cbuf==NULL) {
-	if(fsw_alloc(dno->idxsz, &dno->cbuf) != FSW_SUCCESS)
+    if (dno->cbuf==NULL) {
+	if (FSW_DO_ALLOC(dno->idxsz, &dno->cbuf) != FSW_SUCCESS)
 	    return NULL;
-    } else if(block == dno->cvcn)
+    } else if (block == dno->cvcn)
 	return dno->cbuf;
 
     dno->cvcn = BADVCN;
-    if(fsw_ntfs_read_buffer(vol, dno, dno->cbuf, (block-1)*dno->idxsz, dno->idxsz) != dno->idxsz)
+    if (fsw_ntfs_read_buffer(vol, dno, dno->cbuf, (block-1)*dno->idxsz, dno->idxsz) != dno->idxsz)
 	return NULL;
-    if(fixup(dno->cbuf, "INDX", 1<<vol->sctbits, dno->idxsz) != FSW_SUCCESS)
+    if (fixup(dno->cbuf, "INDX", 1<<vol->sctbits, dno->idxsz) != FSW_SUCCESS)
 	return NULL;
 
     dno->cvcn = block;
@@ -1405,36 +1405,36 @@ static fsw_status_t fsw_ntfs_dir_lookup(struct fsw_volume *volg, struct fsw_dnod
     fsw_u8 cpb;
 
     *child_dno = NULL;
-    err = fsw_strdup_coerce(&s, FSW_STRING_TYPE_UTF16_LE, lookup_name);
-    if(err)
+    err = fsw_strdup_coerce (&s, FSW_STRING_TYPE_UTF16_LE, lookup_name);
+    if (err)
 	return err;
 
     /* start from AT_INDEX_ROOT */
     buf = dno->idxroot + 16;
     len = dno->rootsz - 16;
-    if(len < 0x18)
+    if (len < 0x18)
 	goto notfound;
 
     cpb = GETU8(dno->idxroot, 12);
-    if(cpb == 0) cpb = 1;
+    if (cpb == 0) cpb = 1;
 
-    while(depth < 10) {
+    while (depth < 10) {
 	/* real index size */
-	if(GETU32(buf, 4) < len)
+	if (GETU32(buf, 4) < len)
 	    len = GETU32(buf, 4);
 
 	/* skip index header */
 	off = GETU32(buf, 0);
-	if(off >= len)
+	if (off >= len)
 	    goto notfound;
 
 	block = 0;
-	while(off + 0x18 <= len) {
+	while (off + 0x18 <= len) {
 	    int flag = GETU8(buf, off+12);
 	    int next = off + GETU16(buf, off+8);
 	    int cmp;
 
-	    if(flag & 2) {
+	    if (flag & 2) {
 		/* the end of index entry */
 		cmp = -1;
 		Print(L"depth %d len %x off %x flag %x next %x cmp %d\n", depth, len, off, flag, next, cmp);
@@ -1445,11 +1445,11 @@ static fsw_status_t fsw_ntfs_dir_lookup(struct fsw_volume *volg, struct fsw_dnod
 		Print(L"depth %d len %x off %x flag %x next %x cmp %d name %d[%.*ls]\n", depth, len, off, flag, next, cmp, nlen, nlen, name);
 	    }
 
-	    if(cmp == 0) {
-		fsw_strfree(&s);
+	    if (cmp == 0) {
+		fsw_strfree (&s);
 		return fsw_ntfs_create_subnode(dno, buf+off, child_dno);
-	    } else if(cmp < 0) {
-		if(!(flag & 1) || !dno->has_idxtree)
+	    } else if (cmp < 0) {
+		if (!(flag & 1) || !dno->has_idxtree)
 		    goto notfound;
 		block = FSW_U64_DIV(GETU64(buf, next-8), cpb) + 1;
 		break;
@@ -1457,10 +1457,10 @@ static fsw_status_t fsw_ntfs_dir_lookup(struct fsw_volume *volg, struct fsw_dnod
 		off = next;
 	    }
 	}
-	if(!block)
+	if (!block)
 	    break;
 
-	if(!(buf = fsw_ntfs_read_index_block(vol, dno, block)))
+	if (!(buf = fsw_ntfs_read_index_block(vol, dno, block)))
 	    break;
 	buf += 24;
 	len = dno->idxsz - 24;
@@ -1468,7 +1468,7 @@ static fsw_status_t fsw_ntfs_dir_lookup(struct fsw_volume *volg, struct fsw_dnod
     }
 
 notfound:
-    fsw_strfree(&s);
+    fsw_strfree (&s);
     return FSW_NOT_FOUND;
 }
 
@@ -1480,12 +1480,12 @@ static inline void set_shand_pos( struct fsw_shandle *shand, int block, int off)
 static inline int test_idxbmp(struct fsw_ntfs_dnode *dno, int block)
 {
     int mask;
-    if(dno->idxbmp==NULL)
+    if (dno->idxbmp==NULL)
 	return 1;
     block--;
     mask = 1 << (block & 7);
     block >>= 3;
-    if(block > dno->bmpsz)
+    if (block > dno->bmpsz)
 	return 0;
     return dno->idxbmp[block] & mask;
 }
@@ -1507,16 +1507,16 @@ static fsw_status_t fsw_ntfs_dir_read(struct fsw_volume *volg, struct fsw_dnode 
 
     mblocks = FSW_U64_DIV(dno->fsize, dno->idxsz);
 
-    while(block <= mblocks) {
+    while (block <= mblocks) {
 	fsw_u8 *buf;
 	int len;
-	if(block == 0) {
+	if (block == 0) {
 	    /* AT_INDEX_ROOT */
 	    buf = dno->idxroot + 16;
 	    len = dno->rootsz - 16;
-	    if(len < 0x18)
+	    if (len < 0x18)
 		goto miss;
-	} else if(!test_idxbmp(dno, block) || !(buf = fsw_ntfs_read_index_block(vol, dno, block)))
+	} else if (!test_idxbmp(dno, block) || !(buf = fsw_ntfs_read_index_block(vol, dno, block)))
 	{
 	    /* unused or bad index block */
 	    goto miss;
@@ -1525,20 +1525,20 @@ static fsw_status_t fsw_ntfs_dir_read(struct fsw_volume *volg, struct fsw_dnode 
 	    buf += 24;
 	    len = dno->idxsz - 24;
 	}
-	if(GETU32(buf, 4) < len)
+	if (GETU32(buf, 4) < len)
 	    len = GETU32(buf, 4);
-	if(off == 0)
+	if (off == 0)
 	    off = GETU32(buf, 0);
 	Print(L"block %d len %x off %x\n", block, len, off);
-	while(off + 0x18 <= len) {
+	while (off + 0x18 <= len) {
 	    int flag = GETU8(buf, off+12);
-	    if(flag & 2) break;
+	    if (flag & 2) break;
 	    int next = off + GETU16(buf, off+8);
 	    Print(L"flag %x next %x nt %x [%.*ls]\n", flag, next, GETU8(buf, off+0x51), GETU8(buf, off+0x50), buf+off+0x52);
-	    if((GETU8(buf, off+0x51) != 2)) {
+	    if ((GETU8(buf, off+0x51) != 2)) {
 		/* LONG FILE NAME */
 		fsw_status_t err = fsw_ntfs_create_subnode(dno, buf+off, child_dno);
-		if(err != FSW_NOT_FOUND) {
+		if (err != FSW_NOT_FOUND) {
 		    set_shand_pos(shand, block, next);
 		    return err;
 		}
@@ -1547,7 +1547,7 @@ static fsw_status_t fsw_ntfs_dir_read(struct fsw_volume *volg, struct fsw_dnode 
 	    off = next;
 	}
 miss:
-	if(!dno->has_idxtree)
+	if (!dno->has_idxtree)
 	    break;
 	block++;
 	off = 0;
@@ -1563,19 +1563,19 @@ static fsw_status_t fsw_ntfs_readlink(struct fsw_volume *volg, struct fsw_dnode 
     int i;
     int len;
 
-    if(!dno->islink)
+    if (!dno->islink)
 	return FSW_UNSUPPORTED;
 
     name = dno->cbuf + 0x10 + GETU16(dno->cbuf, 8);
     len = GETU16(dno->cbuf, 10);
-    if(GETU32(dno->cbuf, 0) == 0xa000000c)
+    if (GETU32(dno->cbuf, 0) == 0xa000000c)
 	name += 4;
 
-    for(i=0; i<len; i+=2)
-	if(GETU16(name, i)=='\\')
-	    *(fsw_u16 *)(name+i) = fsw_u16_le_swap('/');
+    for (i=0; i<len; i+=2)
+	if (GETU16(name, i)=='\\')
+	    *(fsw_u16 *)(name+i) = FSW_U16_LE_SWAP('/');
 
-    if(len > 6 && GETU16(name,0)=='/' && GETU16(name,2)=='?' &&
+    if (len > 6 && GETU16(name,0)=='/' && GETU16(name,2)=='?' &&
 	    GETU16(name,4)=='?' && GETU16(name,6)=='/' &&
 	    GETU16(name,10)==':' && GETU16(name,12)=='/' &&
 	    (GETU16(name,8)|0x20)>='a' && (GETU16(name,8)|0x20)<='z')
@@ -1588,7 +1588,7 @@ static fsw_status_t fsw_ntfs_readlink(struct fsw_volume *volg, struct fsw_dnode 
     s.size = len;
     s.len = len/2;
     s.data = name;
-    return fsw_strdup_coerce(link, volg->host_string_type, &s);
+    return fsw_strdup_coerce (link, volg->host_string_type, &s);
 }
 
 //

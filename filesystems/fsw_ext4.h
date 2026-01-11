@@ -21,6 +21,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #ifndef _FSW_EXT4_H_
 #define _FSW_EXT4_H_
@@ -44,7 +50,7 @@
 
 struct fsw_ext4_volume {
     struct fsw_volume g;            //!< Generic volume structure
-    
+
     struct ext4_super_block *sb;    //!< Full raw ext2 superblock structure
     fsw_u64     *inotab_bno;        //!< Block numbers of the inode tables
     fsw_u32     ind_bcnt;           //!< Number of blocks addressable through an indirect block
@@ -58,9 +64,63 @@ struct fsw_ext4_volume {
 
 struct fsw_ext4_dnode {
     struct fsw_dnode g;             //!< Generic dnode structure
-    
+
     struct ext4_inode *raw;         //!< Full raw inode structure
 };
+
+//
+// functions
+//
+
+void fsw_ext4_volume_free (
+    struct fsw_ext4_volume  *vol
+);
+void fsw_ext4_dnode_free (
+    struct fsw_ext4_volume  *vol,
+    struct fsw_ext4_dnode   *dno
+);
+fsw_status_t fsw_ext4_volume_mount (
+    struct fsw_ext4_volume  *vol
+);
+fsw_status_t fsw_ext4_volume_stat (
+    struct fsw_ext4_volume  *vol,
+    struct fsw_volume_stat  *sb
+);
+fsw_status_t fsw_ext4_dnode_fill (
+    struct fsw_ext4_volume  *vol,
+    struct fsw_ext4_dnode   *dno
+);
+fsw_status_t fsw_ext4_dnode_stat (
+    struct fsw_ext4_volume  *vol,
+    struct fsw_ext4_dnode   *dno,
+    struct fsw_dnode_stat   *sb
+);
+fsw_status_t fsw_ext4_get_extent (
+    struct fsw_ext4_volume  *vol,
+    struct fsw_ext4_dnode   *dno,
+    struct fsw_extent       *extent
+);
+fsw_status_t fsw_ext4_dir_lookup (
+    struct fsw_ext4_volume  *vol,
+    struct fsw_ext4_dnode   *dno,
+    struct fsw_string       *lookup_name,
+    struct fsw_ext4_dnode  **child_dno
+);
+fsw_status_t fsw_ext4_dir_read (
+    struct fsw_ext4_volume  *vol,
+    struct fsw_ext4_dnode   *dno,
+    struct fsw_shandle      *shand,
+    struct fsw_ext4_dnode  **child_dno
+);
+fsw_status_t fsw_ext4_read_dentry (
+    struct fsw_shandle      *shand,
+    struct ext4_dir_entry   *entry
+);
+fsw_status_t fsw_ext4_readlink (
+    struct fsw_ext4_volume  *vol,
+    struct fsw_ext4_dnode   *dno,
+    struct fsw_string       *link
+);
 
 
 #endif
