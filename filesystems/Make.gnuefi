@@ -8,14 +8,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+##
+# Modified for RefindPlus
+# Copyright (c) 2021 Dayo Akanji (sf.net/u/dakanji/profile)
+#
+# Modifications distributed under the preceding terms.
+##
+
 SRCDIR = .
 
 VPATH = $(SRCDIR)
 HOSTARCH        = $(shell uname -m | sed s,i[3456789]86,ia32,)
 
-LOCAL_GNUEFI_CFLAGS   = -DFSTYPE=$(DRIVERNAME) -I$(SRCDIR) 
+LOCAL_GNUEFI_CFLAGS   = -DFSTYPE=$(DRIVERNAME) -I$(SRCDIR)
 ifeq ($(HOSTARCH),x86_64)
-  LOCAL_GNUEFI_CFLAGS += "-DEFIAPI=__attribute__((ms_abi))" 
+  LOCAL_GNUEFI_CFLAGS += "-DEFIAPI=__attribute__((ms_abi))"
 endif
 
 OBJS            = fsw_core.o fsw_efi.o fsw_efi_lib.o fsw_lib.o fsw_$(DRIVERNAME).o

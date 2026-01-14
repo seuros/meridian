@@ -17,12 +17,12 @@
 /*
  * Modified for rEFInd by Roderick W Smith
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2020-2021 Dayo Akanji (sf.net/u/dakanji/profile)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2020-2025 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #ifndef _FSW_HFS_H_
 #define _FSW_HFS_H_

@@ -24,6 +24,13 @@
    <markus@oberhumer.com>
    http://www.oberhumer.com/opensource/lzo/
  */
+/**
+ ** Modified for RefindPlus
+ ** Copyright (c) 2021 Dayo Akanji (sf.net/u/dakanji/profile)
+ ** Portions Copyright (c) 2021 Joe van Tunen (joevt@shaw.ca)
+ **
+ ** Modifications distributed under the preceding terms.
+ **/
 
 /*
  * NOTE:

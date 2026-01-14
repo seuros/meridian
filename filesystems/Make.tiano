@@ -8,6 +8,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+##
+# Modified for RefindPlus
+# Copyright (c) 2021 Dayo Akanji (sf.net/u/dakanji/profile)
+#
+# Modifications distributed under the preceding terms.
+##
+
 include ../Make.common
 
 # Below file defines TARGET (RELEASE or DEBUG) and TOOL_CHAIN_TAG (GCC44, GCC45, or GCC46)

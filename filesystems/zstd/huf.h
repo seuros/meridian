@@ -37,6 +37,12 @@
  * You can contact the author at :
  * - Source repository : https://github.com/Cyan4973/FiniteStateEntropy
  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2021 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 #ifndef HUF_H_298734234
 #define HUF_H_298734234
 

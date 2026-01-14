@@ -39,7 +39,8 @@
  */
 /**
 ** Modified for RefindPlus
-** Copyright (c) 2026 Dayo Akanji (sf.net/u/dakanji/profile)
+** Copyright (c) 2021-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+** Portions Copyright (c) 2021 Joe van Tunen (joevt@shaw.ca)
 **
 ** Modifications distributed under the preceding terms.
 **/

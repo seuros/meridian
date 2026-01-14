@@ -2,7 +2,12 @@
  * \file design.dox
  * Documentation title page with design information
  */
-
+/**
+** Modified for RefindPlus
+** Copyright (c) 2021 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the MIT License.
+**/
 
 /**
 \mainpage File System Wrapper Documentation

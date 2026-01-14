@@ -11,6 +11,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+##
+# Modified for RefindPlus
+# Copyright (c) 2021-2023 Dayo Akanji (sf.net/u/dakanji/profile)
+#
+# Modifications distributed under the preceding terms.
+##
+
 INSTALL_DIR = /boot/efi/EFI/refindplus/drivers
 
 FILESYSTEMS = ext2 ext4 reiserfs iso9660 hfs btrfs

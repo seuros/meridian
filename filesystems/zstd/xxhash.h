@@ -37,6 +37,12 @@
  * - xxHash homepage: http://cyan4973.github.io/xxHash/
  * - xxHash source repository: https://github.com/Cyan4973/xxHash
  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2021 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 /*
  * Notice extracted from xxHash homepage:

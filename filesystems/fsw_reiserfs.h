@@ -20,6 +20,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2021 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #ifndef _FSW_REISERFS_H_
 #define _FSW_REISERFS_H_
@@ -43,18 +49,18 @@
 
 struct fsw_reiserfs_item {
     int valid;
-    
+
     // the found item
     struct item_head ih;
     fsw_u64 item_offset;
     fsw_u32 item_type;
-    
+
     fsw_u8 *item_data;
-    
+
     // path information
     fsw_u32 path_bno[MAX_HEIGHT];
     fsw_u32 path_index[MAX_HEIGHT];
-    
+
     // block release information
     fsw_u32 block_bno;
     void *block_buffer;
@@ -67,7 +73,7 @@ struct fsw_reiserfs_item {
 
 struct fsw_reiserfs_volume {
     struct fsw_volume g;            //!< Generic volume structure
-    
+
     struct reiserfs_super_block *sb;  //!< Full raw reiserfs superblock structure
     int version;                    //!< Flag for 3.5 or 3.6 format
 };
@@ -78,7 +84,7 @@ struct fsw_reiserfs_volume {
 
 struct fsw_reiserfs_dnode {
     struct fsw_dnode g;             //!< Generic dnode structure
-    
+
     fsw_u32 dir_id;                 //!< Locality ID for the reiserfs tree (parent dir id)
     struct stat_data_v1 *sd_v1;     //!< Full stat_data, version 1
     struct stat_data *sd_v2;        //!< Full stat_data, version 2
