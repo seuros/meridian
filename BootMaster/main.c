@@ -39,13 +39,13 @@
  * Modifications distributed under the terms of the GNU General Public
  * License (GPL) version 3 (GPLv3), or (at your option) any later version.
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2020-2025 Dayo Akanji (sf.net/u/dakanji/profile)
- * Portions Copyright (c) 2021 Joe van Tunen (joevt@shaw.ca)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2020-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+** Portions Copyright (c) 2021 Joe van Tunen (joevt@shaw.ca)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #include "global.h"
 #include "icns.h"
@@ -366,7 +366,10 @@ VOID UnexpectedReturn (
     CHAR16 *MsgStr;
 
 
-    MsgStr = PoolPrint (L"Unexpected Return from %s", ItemType);
+    MsgStr = PoolPrint (
+        L"Unexpected Return from %s",
+        ItemType
+    );
     ALT_LOG(1, LOG_STAR_SEPARATOR, L"%s", MsgStr);
     LOG_MSG("** WARN: %s", MsgStr);
     LOG_MSG("\n\n");
@@ -438,7 +441,9 @@ EFI_STATUS StoreBootArgsNvram (
         VariableSize = 0;
     }
     else {
-        VariableSize = AsciiStrSize ((CHAR8 *) VariableData);
+        VariableSize = AsciiStrSize (
+            (CHAR8 *) VariableData
+        );
         if (VariableSize == 0) {
             VariableData = NULL;
         }
@@ -462,7 +467,11 @@ EFI_STATUS StoreBootArgsNvram (
             // Check for match
             SettingMatch = (
                 VariableSize == OldSize &&
-                CompareMem (VariableData, OldBuf, VariableSize) == 0
+                CompareMem (
+                    VariableData,
+                    OldBuf,
+                    VariableSize
+                ) == 0
             );
         }
         MY_FREE_POOL(OldBuf);
@@ -521,7 +530,10 @@ EFI_STATUS EFIAPI gRTSetVariableEx (
     }
 
     RevokeVar = (VariableData == NULL && VariableSize == 0);
-    IsVendorMS = GuidsAreEqual (VendorGuid, &MicrosoftVendorGuid);
+    IsVendorMS = GuidsAreEqual (
+        VendorGuid,
+        &MicrosoftVendorGuid
+    );
     CurPolicyOEM = (
         IsVendorMS &&
         !AppleFirmware &&
@@ -584,9 +596,9 @@ EFI_STATUS EFIAPI gRTSetVariableEx (
         );
     }
 
-    Status = (BlockUEFI || BlockCert || BlockSize)
-    ? EFI_SUCCESS
-    : SetHardwareNvramVariable (
+    Status = (
+        BlockUEFI || BlockCert || BlockSize
+    ) ? EFI_SUCCESS : SetHardwareNvramVariable (
         VariableName,
         VendorGuid,
         Attributes, VariableSize, VariableData
@@ -598,8 +610,9 @@ EFI_STATUS EFIAPI gRTSetVariableEx (
         // Log Outcome
         LogStatus = PoolPrint (
             L"%r",
-            (BlockUEFI || BlockCert || BlockSize)
-                ? EFI_ACCESS_DENIED : Status
+            (
+                BlockUEFI || BlockCert || BlockSize
+            ) ? EFI_ACCESS_DENIED : Status
         );
         LimitStringLength (LogStatus, 18);
     }
@@ -709,7 +722,10 @@ VOID EFIAPI HandleVirtualAddressChangeEvent (
     IN EFI_EVENT   Event,
     IN VOID       *Context
 ) {
-    gRT->ConvertPointer (EFI_OPTIONAL_PTR, (VOID **) &OrigSetVariableRT);
+    gRT->ConvertPointer (
+        EFI_OPTIONAL_PTR,
+        (VOID **) &OrigSetVariableRT
+    );
     FlagKernelActive();
 } // static VOID EFIAPI HandleExitBootServicesEvent()
 
@@ -738,9 +754,11 @@ VOID SetProtectNvram (
                 gRT->Hdr.HeaderSize, &gRT->Hdr.CRC32
             );
 
-            Status = (OurBootServicesEvent != NULL)
-                ? REFIT_CALL_1_WRAPPER(gBS->CheckEvent, OurBootServicesEvent)
-                : EFI_NOT_FOUND;
+            Status = (
+                OurBootServicesEvent != NULL
+            ) ? REFIT_CALL_1_WRAPPER(
+                gBS->CheckEvent, OurBootServicesEvent
+            ) : EFI_NOT_FOUND;
             if (EFI_ERROR(Status)) {
                 REFIT_CALL_5_WRAPPER(
                     gBS->CreateEvent, EVT_SIGNAL_EXIT_BOOT_SERVICES,
@@ -749,9 +767,11 @@ VOID SetProtectNvram (
                 );
             }
 
-            Status = (OurAddressChangeEvent != NULL)
-                ? REFIT_CALL_1_WRAPPER(gBS->CheckEvent, OurAddressChangeEvent)
-                : EFI_NOT_FOUND;
+            Status = (
+                OurAddressChangeEvent != NULL
+            ) ? REFIT_CALL_1_WRAPPER(
+                    gBS->CheckEvent, OurAddressChangeEvent
+            ) : EFI_NOT_FOUND;
             if (EFI_ERROR(Status)) {
                 REFIT_CALL_5_WRAPPER(
                     gBS->CreateEvent, EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE,
@@ -792,9 +812,9 @@ static
 EFI_STATUS FilterCSR (VOID) {
     EFI_STATUS Status;
 
-    Status = (GlobalConfig.NormaliseCSR)
-        ? NormaliseCSR()
-        : EFI_NOT_STARTED;
+    Status = (
+        !GlobalConfig.NormaliseCSR
+    ) ? EFI_NOT_STARTED : NormaliseCSR();
 
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_THREE_STAR_MID, L"Normalise CSR ... %r", Status);
@@ -810,12 +830,9 @@ BOOLEAN CheckToggledCSR (VOID) {
     BOOLEAN Retval;
 
 
-    if (MyStrStr (gCsrStatus, L"Enabled"))  {
-        Active = FALSE;
-    }
-    else {
-        Active = TRUE;
-    }
+    Active = (
+        MyStrStr (gCsrStatus, L"Enabled")
+    ) ? FALSE : TRUE;
 
     Retval = TRUE;
     if (GlobalConfig.DynamicCSR == -1) {
@@ -825,11 +842,13 @@ BOOLEAN CheckToggledCSR (VOID) {
             Retval = FALSE;
         }
     }
-    else if (GlobalConfig.DynamicCSR == 1) {
-        // Configured to Always Enable SIP/SSV
-        if (Active) {
-            // Enable SIP/SSV as currently disbled
-            Retval = FALSE;
+    else {
+        if (GlobalConfig.DynamicCSR == 1) {
+            // Configured to Always Enable SIP/SSV
+            if (Active) {
+                // Enable SIP/SSV as currently disbled
+                Retval = FALSE;
+            }
         }
     }
 
@@ -863,7 +882,9 @@ VOID AlignCSR (VOID) {
     }
 
     #if REFIT_DEBUG > 0
-    MsgStr = StrDuplicate (L"E N F O R C E   C S R   P O L I C Y");
+    MsgStr = StrDuplicate (
+        L"E N F O R C E   C S R   P O L I C Y"
+    );
     ALT_LOG(1, LOG_LINE_SEPARATOR, L"%s", MsgStr);
     LOG_MSG("%s", MsgStr);
     MY_FREE_POOL(MsgStr);
@@ -938,7 +959,9 @@ VOID AlignCSR (VOID) {
 
     #if REFIT_DEBUG > 0
     if (RotatedCSR && HandledCSR) {
-        TmpStr = (GlobalConfig.DynamicCSR == 1) ? L"Enable" : L"Disable";
+        TmpStr = (
+            GlobalConfig.DynamicCSR == 1
+        ) ? L"Enable" : L"Disable";
     }
     else if (!HandledCSR) {
         // Aborted
@@ -951,7 +974,10 @@ VOID AlignCSR (VOID) {
         TmpStr = L"Could *NOT* Definitively Set";
     }
 
-    MsgStr = PoolPrint (L"%s SIP/SSV ... %r", TmpStr, Status);
+    MsgStr = PoolPrint (
+        L"%s SIP/SSV ... %r",
+        TmpStr, Status
+    );
     ALT_LOG(1, LOG_STAR_HEAD_SEP, L"%s", MsgStr);
     ALT_LOG(1, LOG_BLANK_LINE_SEP, L"X");
     LOG_MSG("\n");
@@ -1008,7 +1034,10 @@ EFI_STATUS StoreArgs (
     }
 
     // Convert Unicode String 'BootArg' to Ascii String 'DataNVram'
-    UnicodeStrToAsciiStr (BootArg, DataNVram);
+    UnicodeStrToAsciiStr (
+        BootArg,
+        DataNVram
+    );
 
     return StoreBootArgsNvram (DataNVram);
 } // static EFI_STATUS StoreArgs()
@@ -1049,7 +1078,7 @@ VOID SetBootArgs (VOID) {
 
     if (MyStrStr (GlobalConfig.SetBootArgs, L"nvram_paniclog")) {
         // Do not duplicate 'nvram_paniclog=0'
-        VarDisablePanicLog  = FALSE;
+        VarDisablePanicLog = FALSE;
 #if REFIT_DEBUG > 0
         LogDisableNvramPanicLog = GlobalConfig.DisableNvramPanicLog;
     }
@@ -1080,11 +1109,11 @@ VOID SetBootArgs (VOID) {
 #endif
     }
 
-    if (GlobalConfig.DisableCheckAMFI &&
+    if (GlobalConfig.DisableCheckAMFI   &&
         GlobalConfig.DisableCheckCompat &&
         GlobalConfig.DisableNvramPanicLog
     ) {
-        // Combine Args with DisableNvramPanicLog and DisableCheckAMFI and DisableCheckCompat
+        // Combine with DisableNvramPanicLog, DisableCheckAMFI and DisableCheckCompat
         BootArg = PoolPrint (
             L"%s nvram_paniclog=0 amfi_get_out_of_my_way=1 -no_compat_check",
             GlobalConfig.SetBootArgs
@@ -1094,7 +1123,7 @@ VOID SetBootArgs (VOID) {
         GlobalConfig.DisableCheckAMFI &&
         GlobalConfig.DisableNvramPanicLog
     ) {
-        // Combine Args with DisableNvramPanicLog and DisableCheckAMFI
+        // Combine with DisableNvramPanicLog and DisableCheckAMFI
         BootArg = PoolPrint (
             L"%s nvram_paniclog=0 amfi_get_out_of_my_way=1",
             GlobalConfig.SetBootArgs
@@ -1104,7 +1133,7 @@ VOID SetBootArgs (VOID) {
         GlobalConfig.DisableCheckCompat &&
         GlobalConfig.DisableNvramPanicLog
     ) {
-        // Combine Args with DisableNvramPanicLog and DisableCheckCompat
+        // Combine with DisableNvramPanicLog and DisableCheckCompat
         BootArg = PoolPrint (
             L"%s nvram_paniclog=0 -no_compat_check",
             GlobalConfig.SetBootArgs
@@ -1114,41 +1143,47 @@ VOID SetBootArgs (VOID) {
         GlobalConfig.DisableCheckAMFI &&
         GlobalConfig.DisableCheckCompat
     ) {
-        // Combine Args with DisableCheckAMFI and DisableCheckCompat
+        // Combine with DisableCheckAMFI and DisableCheckCompat
         BootArg = PoolPrint (
             L"%s amfi_get_out_of_my_way=1 -no_compat_check",
             GlobalConfig.SetBootArgs
         );
     }
     else if (GlobalConfig.DisableNvramPanicLog) {
-        // Combine Args with DisableNvramPanicLog
+        // Combine with DisableNvramPanicLog
         BootArg = PoolPrint (
             L"%s nvram_paniclog=0",
             GlobalConfig.SetBootArgs
         );
     }
     else if (GlobalConfig.DisableCheckAMFI) {
-        // Combine Args with DisableCheckAMFI
+        // Combine with DisableCheckAMFI
         BootArg = PoolPrint (
             L"%s amfi_get_out_of_my_way=1",
             GlobalConfig.SetBootArgs
         );
     }
     else if (GlobalConfig.DisableCheckCompat) {
-        // Combine Args with DisableCheckCompat
+        // Combine with DisableCheckCompat
         BootArg = PoolPrint (
             L"%s -no_compat_check",
             GlobalConfig.SetBootArgs
         );
     }
     else {
-        // Use Args Alone
-        BootArg = StrDuplicate (GlobalConfig.SetBootArgs);
+        // Use alone
+        BootArg = StrDuplicate (
+            GlobalConfig.SetBootArgs
+        );
     }
 
     VarData = NULL;
-    DataNVram = AllocatePool ((StrLen (BootArg) + 1) * sizeof (CHAR8));
-    Status = (DataNVram != NULL) ? EFI_SUCCESS : EFI_OUT_OF_RESOURCES;
+    DataNVram = AllocatePool (
+        sizeof (CHAR8) * (StrLen (BootArg) + 1)
+    );
+    Status = (
+        DataNVram != NULL
+    ) ? EFI_SUCCESS : EFI_OUT_OF_RESOURCES;
     if (!EFI_ERROR(Status)) {
         /* coverity[check_return: SUPPRESS] */
         GetHardwareNvramVariable (
@@ -5372,12 +5407,14 @@ EFI_STATUS EFIAPI efi_main (
                     #if REFIT_DEBUG > 0
                     if (!FoundVentoy) {
                         MsgStr = PoolPrint (
-                            L"Load EFI File:- '%s'", EntryPath
+                            L"Load EFI File:- '%s'",
+                            EntryPath
                         );
                     }
                     else {
                         MsgStr = PoolPrint (
-                            L"Load Instance: Ventoy from '%s'", EntryPath
+                            L"Load Instance: Ventoy from '%s'",
+                            EntryPath
                         );
                     }
 
@@ -5461,15 +5498,17 @@ EFI_STATUS EFIAPI efi_main (
                 else {
                     MsgStr = PoolPrint (
                         L"Load '%s-Style' Legacy Bootcode",
-                        (ChosenOption->Tag == TAG_LEGACY) ?  L"Mac" : L"UEFI"
+                        (
+                            ChosenOption->Tag == TAG_LEGACY
+                        ) ?  L"Mac" : L"UEFI"
                     );
                     ALT_LOG(1, LOG_THREE_STAR_SEP, L"%s", MsgStr);
                     LOG_MSG(
                         "%s  - %s for %s",
                         OffsetNext, MsgStr,
-                        (EntryVol)
-                            ? EntryVol->OSName
-                            : L"OS Name: 'NULL'"
+                        (
+                            EntryVol
+                        ) ? EntryVol->OSName : L"OS Name: 'NULL'"
                     );
                     MY_FREE_POOL(MsgStr);
                 }
@@ -5510,9 +5549,9 @@ EFI_STATUS EFIAPI efi_main (
 
                 #if REFIT_DEBUG > 0
                 LOG_MSG("%s:",
-                    (GlobalConfig.DirectBoot)
-                        ? L"Run DirectBoot"
-                        : L"Received User Input"
+                    (
+                        GlobalConfig.DirectBoot
+                    ) ? L"Run DirectBoot" : L"Received User Input"
                 );
                 LOG_MSG("%s  - Reboot into Firmware Loader", OffsetNext);
                 #endif
@@ -5739,7 +5778,9 @@ EFI_STATUS EFIAPI efi_main (
                 #endif
 
                 i = 0;
-                Status = (gVarsDir != NULL) ? EFI_SUCCESS : FindVarsDir();
+                Status = (
+                    gVarsDir != NULL
+                ) ? EFI_SUCCESS : FindVarsDir();
                 while (1) {
                     VarNVram = FindCommaDelimited (
                         RP_NVRAM_VARIABLES, i++
@@ -5844,7 +5885,9 @@ EFI_STATUS EFIAPI efi_main (
 
     SwitchToText (FALSE);
 
-    MsgStr = StrDuplicate (L"E N T E R I N G   D E A D   L O O P");
+    MsgStr = StrDuplicate (
+        L"E N T E R I N G   D E A D   L O O P"
+    );
 
     #if REFIT_DEBUG > 0
     ALT_LOG(1, LOG_BLANK_LINE_SEP, L"X");

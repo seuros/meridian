@@ -142,6 +142,8 @@ body:
       options:
         - 'DEBUG LOGS NOT PROVIDED - disregarding guidance given'
         - 'DEBUG LOGS ARE PROVIDED or omission clearly justified'
+    validations:
+      required: true
 
   - type: textarea
     id: extra-info

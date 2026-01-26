@@ -54,7 +54,7 @@ Some features:
 
 ## Installation
 
-A straightforward way is to make the RefindPlus efi file a `UEFI Fallback File` by naming it accordingly, `BOOTx64.efi`, and placing this in the `UEFI Fallback Path` of a disk, `/EFI/BOOT`.
+A straightforward way is to make the RefindPlus efi file a `UEFI Fallback File` by naming it accordingly, `BOOTx64.efi`, and placing this in the `UEFI Fallback Path` of a disk, `/EFI/BOOT`. The configuration file should be placed next to the RefindPlus efi file and optional `drivers`, `tools`, and/or `icons` folders for relevant items also placed next to the RefindPlus efi file.
 
 [MyBootMgr](https://www.dakanji.com/creations/index.html) is recommended to automate installing RefindPlus when running Mac OS on Intel-based Macs. Alternatively, as the RefindPlus efi file can function as a drop-in replacement for the upstream efi file, the [rEFInd package](https://www.rodsbooks.com/refind/installing.html) can be installed first and its efi file replaced with the RefindPlus efi file (rename RefindPlus file to match). This allows installing RefindPlus on other compatible operating systems supported upstream. See `UEFI Secure Boot` under the [Divergence Section](https://github.com/RefindPlusRepo/RefindPlus#divergence) for how to enable this if required.
 
@@ -142,8 +142,8 @@ unicode_collation     |Provides fine tuned support for languages that require un
 ## Modified Functionality
 
 In addition to the new functionality listed above, the following upstream tokens have been modified:
-- **"timeout":** The default is no timeout unless explicitly set.
-- **"use_nvram":** RefindPlus variables are written to the file system, not the motherboard's nvRAM chip, unless explicitly set to do so by activating this configuration token.
+- **"timeout":** The RefindPlus default is no timeout unless explicitly set via this config token.
+- **"use_nvram":** Variable storage is on the filesystem, not the nvRAM chip, unless explicitly set to do so via this config token.
 - **"use_graphics_for":** Additional options added:
   - `tools` option to _enable_ graphics mode loading for such.
   - `none` option to _disable_ graphics mode loading for everything.
@@ -159,7 +159,7 @@ In addition to the new functionality listed above, the following upstream tokens
     - `follow_symlinks OFF` : Symlinks never followed
     - `follow_symlinks OFF "Vol_1,Vol_2"`: Symlinks followed unless on list
     - `follow_symlinks ON "Vol_9,Vol_10"`: Symlinks followed only if listed
-- **"csr_values":** A value of `0` can be set as the `Enabled` value to allow `Over The Air (OTA)` updates when running Mac OS 11.x (Big Sur) or newer with SIP enabled.
+- **"csr_values":** A value of `0` can be set as the `Enabled` value to allow `Over The Air (OTA)` updates on Mac OS 11.x (Big Sur) or newer with SIP enabled.
   - This is equivalent to activating the `csr_normalise` token.
 - **"log_level":** Controls the native log format and an implementation of the upstream format.
   - Levels 0, 1, or 2 can be specified.
@@ -190,8 +190,8 @@ Significant visible implementation differences vis-a-vis the upstream base are:
   - > This stub support is only used for debug logging in RefindPlus and can be activated using the same `support_gzipped_loaders` setting as upstream.
 - **Screenshots:** These are saved in the PNG format with a significantly smaller file size.
   - > Additionally, the file naming is different and files are always saved to the same ESP as RefindPlus.
-- **UI Flags:** RefindPlus requires that any desired previously set `hideui` setting options are explicitly defined in supplementary/theme configuration files; as whenever the token is found in such files, the token setting is reset by RefindPlus to the specified option(s). The upstream implementation effectively adds new settings to any previously existing ones for this configuration token instead.
-  - > RefindPlus maintains consistency with how other configuration tokens are handled.
+- **UI Flags:** RefindPlus requires that any desired previously set `hideui` setting options are explicitly defined in supplementary/theme configuration files; as whenever the token is found in such files, the token setting is reset by RefindPlus to the specified option(s). The upstream implementation effectively adds new settings to any previously existing ones for this config token instead.
+  - > RefindPlus maintains consistency with how other config tokens are handled.
 - **UI Scaling:** WQHD monitors are correctly determined not to be HiDPI monitors and UI elements are not scaled up on such monitors when the RefindPlus-specific `scale_ui` setting is set to automatically detect the screen resolution. RefindPlus also takes vertically orientated screens into account and additionally scales UI elements down when low resolution screens (less than 1025px on the longest edge) are detected.
   - > Additionally, UI elements on extremely high resultion screens (greater than 5999px on the longest edge) receive a `4X scaling` as opposed to the `2X scaling` applied for standard HiDPI screens.
 - **Loader Icons:** RefindPlus prefers `os_windows` and `boot_windows` icon files, if present, over `os_win` and `boot_win` and the `win8` variants. Separately, RefindPlus defaults to preferring generic icons for loaders ahead of the slower to load custom icons where possible. The upstream icon search implementation involves only loading such icons after a search for custom icons has not turned anything up.

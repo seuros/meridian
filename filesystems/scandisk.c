@@ -115,11 +115,13 @@ int dsk_btrfs_scan_disks (
     UINTN       HandleCount = 0;
     UINTN       scanned = 0;
 
-    // Driver hangs if compiled with GNU-EFI unless there is a Print() statement somewhere.
-    // I'm still trying to track that down; in the meantime, work around it.
+    // DA-TAG: Investigate This (From Upstream - Likely a Memory Conflict)
+    //
+    // Driver hangs if compiled with GNU-EFI without 'Print()' statement.
 #if defined(__MAKEWITH_GNUEFI)
     Print(L" ");
 #endif
+
     FSW_MSG_LEVEL_3((
         FSW_MSG_STR(
             "SCANDISK: dsk_btrfs_scan_disks ... Scanning Disks\n"

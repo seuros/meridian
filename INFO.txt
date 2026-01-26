@@ -1,5 +1,5 @@
 RefindPlus ... A Boot Manager for Mac and PC
-Copyright 2020-2025 Dayo Akanji and Others
+Copyright 2020-2026 Dayo Akanji
 sf.net/u/dakanji/profile
 
 Portions Copyright 2012-2024 Roderick W. Smith

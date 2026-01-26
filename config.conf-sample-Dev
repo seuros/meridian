@@ -1,5 +1,5 @@
 # config.conf
-# Configuration file for the RefindPlus boot manager
+# Configuration File for the RefindPlus Boot Manager
 
 ##--------------------------------------------------------------##
 ##                        Section 1 of 4                        ##
@@ -14,7 +14,7 @@
 # This will also extend to UEFI compliant operating systems.
 # Each Start/End address must be separated by a colon (:).
 # Addresses can be determined via tools such as MemTest.
-# MemTest can be run in RefindPlus tool via showtools.
+# MemTest can be run as RefindPlus tool via showtools.
 #
 # Inactive when commented out (No addresses flagged)
 #
@@ -80,6 +80,7 @@
 # are shown, and then proceed as if a key has been pressed.
 #
 # Inactive when commented out (Does not proceed automatically)
+# NB: This token is temporarily activated by certain notices.
 #
 #continue_on_warning
 

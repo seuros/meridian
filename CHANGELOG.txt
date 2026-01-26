@@ -28,7 +28,7 @@
     - These were kept as fallback links when dynamic link search was added
   * The grandfathered dynamic link search has proved to work without fallback
     - In any case, the hardcoded links also only included a subset of links
-    - Dynamic AppleLegacyLoader search was added to rEFIt in 2009:
+    - Dynamic AppleLegacyLoader search was added to `rEFIt` in 2009:
       * sf.net/p/refit/code/438
       * sf.net/p/refit/code/440
 

@@ -1405,7 +1405,9 @@ fsw_status_t fsw_shandle_read (
             }
         }
 
-        pos_in_extent = pos - shand->extent.log_start * vol->log_blocksize;
+        pos_in_extent = pos - (
+            shand->extent.log_start * vol->log_blocksize
+        );
 
         // Dispatch by extent type
         if (shand->extent.type == FSW_EXTENT_TYPE_PHYSBLOCK) {
@@ -1457,7 +1459,9 @@ fsw_status_t fsw_shandle_read (
         }
         else {
             // FSW_EXTENT_TYPE_BUFFER/SPARSE/INVALID
-            copylen = shand->extent.log_count * vol->log_blocksize - pos_in_extent;
+            copylen = (
+                shand->extent.log_count * vol->log_blocksize
+            ) - pos_in_extent;
             if (copylen > buflen) copylen = buflen;
 
             if (shand->extent.type == FSW_EXTENT_TYPE_BUFFER) {

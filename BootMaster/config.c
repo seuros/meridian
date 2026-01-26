@@ -41,13 +41,13 @@
  * License (GPL) version 3 (GPLv3) or (at your option) any later version.
  *
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2020-2025 Dayo Akanji (sf.net/u/dakanji/profile)
- * Portions Copyright (c) 2021 Joe van Tunen (joevt@shaw.ca)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2020-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+** Portions Copyright (c) 2021 Joe van Tunen (joevt@shaw.ca)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #include "global.h"
 #include "lib.h"
@@ -311,27 +311,22 @@ BOOLEAN KeepReading (
 
 
     // Check if pointers are NULL or if the string pointed to by 'InString' is empty
-    if (IsQuoted  == NULL ||
-        InString  == NULL ||
+    if ( IsQuoted == NULL ||
+         InString == NULL ||
         *InString == L'\0'
     ) {
         return FALSE;
     }
 
-    if (*IsQuoted ||
-        (
+    MoreToRead = (
+        *IsQuoted || (
             *InString != ' '  &&
             *InString != '\t' &&
             *InString != '='  &&
             *InString != '#'  &&
             *InString != ','
         )
-    ) {
-        MoreToRead = TRUE;
-    }
-    else {
-        MoreToRead = FALSE;
-    }
+    );
 
     if (*InString == L'"') {
         if (InString[1] != L'"') {
@@ -339,10 +334,18 @@ BOOLEAN KeepReading (
             MoreToRead = FALSE;
         }
         else {
-            Temp = StrDuplicate (&InString[1]);
+            Temp = StrDuplicate (
+                &InString[1]
+            );
             if (Temp != NULL) {
-                DestSize = StrSize (InString) / sizeof (CHAR16);
-                StrCpyS (InString, DestSize, Temp);
+                DestSize = StrSize (
+                    InString
+                ) / sizeof (CHAR16);
+                StrCpyS (
+                    InString,
+                    DestSize,
+                    Temp
+                );
                 MY_FREE_POOL(Temp);
             }
             MoreToRead = TRUE;
@@ -385,10 +388,14 @@ VOID HandleString (
     IN  UINTN     TokenCount,
     OUT CHAR16  **Target
 ) {
-    if (TokenCount == 2 && Target != NULL) {
-        MY_FREE_POOL(*Target);
-        *Target = StrDuplicate (TokenList[1]);
+    if (Target == NULL || TokenCount != 2) {
+        return;
     }
+
+    MY_FREE_POOL(*Target);
+    *Target = StrDuplicate (
+        TokenList[1]
+    );
 } // static VOID HandleString()
 
 // Handle a parameter with a series of string arguments, to replace or be added
@@ -448,7 +455,11 @@ VOID HandleHexes (
     UINT32_LIST *NewEntry;
 
 
-    if (TokenCount > 2 && MyStriCmp (TokenList[1], L"+")) {
+    if (TokenCount > 2 &&
+        MyStriCmp (
+            TokenList[1], L"+"
+        )
+    ) {
         InputIndex = 2;
         EndOfList  = *Target;
         while (
@@ -469,21 +480,26 @@ VOID HandleHexes (
             continue;
         }
 
-        Value = (UINT32) StrToHex (TokenList[i], 0, 8);
+        Value = (UINT32) StrToHex (
+            TokenList[i], 0, 8
+        );
         if (Value > MaxValue) {
             continue;
         }
 
-        NewEntry = AllocatePool (sizeof (UINT32_LIST));
+        NewEntry = AllocatePool (
+            sizeof (UINT32_LIST)
+        );
         if (NewEntry == NULL) {
             return;
         }
 
         NewEntry->Value = Value;
-        NewEntry->Next = NULL;
+        NewEntry->Next  =  NULL;
+
         if (EndOfList == NULL) {
             EndOfList = NewEntry;
-            *Target = NewEntry;
+            *Target   = NewEntry;
         }
         else {
             EndOfList->Next = NewEntry;
@@ -510,6 +526,7 @@ UINTN HandleTime (
 
     TimeLength = StrLen (TimeString);
     i = Hour = Minute = 0;
+
     while (i < TimeLength) {
         if (TimeString[i] == L':') {
             Hour = Minute;
@@ -611,14 +628,18 @@ VOID SetDefaultByTime (
         }
         else {
             // Time range DOES cross midnight
-            if (Now >= StartTime || Now <= EndTime) {
+            if (Now >= StartTime ||
+                Now <= EndTime
+            ) {
                 SetIt = TRUE;
             }
         }
 
         if (SetIt) {
             MY_FREE_POOL(*Default);
-            *Default = StrDuplicate (TokenList[1]);
+            *Default = StrDuplicate (
+                TokenList[1]
+            );
         }
     } // if StartTime <= LAST_MINUTE
 } // static VOID SetDefaultByTime()
@@ -638,16 +659,18 @@ BOOLEAN GetIsDisabled (
     BOOLEAN       IsDisabled;
 
 
-    SubMenus      =      0;
-    IsExitLoop    =  FALSE;
-    IsDisabled    =  FALSE;
+    SubMenus   =     0;
+    IsExitLoop = FALSE;
+    IsDisabled = FALSE;
 
     // Store original TokenLine pointers
     FilePtr08 = File->Current8Ptr;
     FilePtr16 = File->Current16Ptr;
 
     while (1) {
-        NumToken = ReadTokenLine (File, &TokenList);
+        NumToken = ReadTokenLine (
+            File, &TokenList
+        );
         if (NumToken == 0) {
             IsExitLoop = TRUE;
         }
@@ -668,7 +691,10 @@ BOOLEAN GetIsDisabled (
             }
         }
 
-        FreeTokenLine (&TokenList, &NumToken);
+        FreeTokenLine (
+            &TokenList,
+            &NumToken
+        );
 
         if (IsExitLoop) break;
     } // while {Infinite}
@@ -721,7 +747,9 @@ REFIT_VOLUME * GetStanzaVolume (
     while (1) {
         IsContinue = FALSE;
 
-        NumToken = ReadTokenLine (File, &TokenList);
+        NumToken = ReadTokenLine (
+            File, &TokenList
+        );
         if (NumToken == 0) {
             IsExitLoop = TRUE;
         }
@@ -760,7 +788,10 @@ REFIT_VOLUME * GetStanzaVolume (
         }
 
         if (IsExitLoop || IsContinue || CheckedVolume) {
-            FreeTokenLine (&TokenList, &NumToken);
+            FreeTokenLine (
+                &TokenList,
+                &NumToken
+            );
 
             if (IsExitLoop) {
                 break;
@@ -771,7 +802,10 @@ REFIT_VOLUME * GetStanzaVolume (
 
         IsDisabled = GetIsDisabled (File);
         if (IsDisabled) {
-            FreeTokenLine (&TokenList, &NumToken);
+            FreeTokenLine (
+                &TokenList,
+                &NumToken
+            );
 
             break;
         }
@@ -784,7 +818,10 @@ REFIT_VOLUME * GetStanzaVolume (
         PreviousVolume = SubjectVolume;
 
         // Locate indicated volume object
-        CheckedVolume = FindVolume (&SubjectVolume, TokenList[1]);
+        CheckedVolume = FindVolume (
+            &SubjectVolume,
+            TokenList[1]
+        );
         if (!CheckedVolume) {
             #if REFIT_DEBUG > 0
             ALT_LOG(1, LOG_THREE_STAR_MID,
@@ -821,7 +858,10 @@ REFIT_VOLUME * GetStanzaVolume (
             }
         } // if/else !CheckedVolume
 
-        FreeTokenLine (&TokenList, &NumToken);
+        FreeTokenLine (
+            &TokenList,
+            &NumToken
+        );
     } // while {Infinite}
 
     if (IsDisabled) {
@@ -859,7 +899,9 @@ BOOLEAN AddSubmenu (
     BREAD_CRUMB(L"%a:  1 - START", __func__);
 
     // Get 'TargetVolume' and disabled status upfront
-    TargetVolume = GetStanzaVolume (File, Volume);
+    TargetVolume = GetStanzaVolume (
+        File, Volume
+    );
     if (TargetVolume == NULL) {
         // NULL only returned if disabled
         #if REFIT_DEBUG > 0
@@ -914,11 +956,16 @@ BOOLEAN AddSubmenu (
     BREAD_CRUMB(L"%a:  6", __func__);
     GraphicsTag = NULL;
     while (1) {
-        TokenCount = ReadTokenLine (File, &TokenList);
+        TokenCount = ReadTokenLine (
+            File, &TokenList
+        );
         if (TokenCount == 0 ||
             MyStriCmp (TokenList[0], L"}")
         ) {
-            FreeTokenLine (&TokenList, &TokenCount);
+            FreeTokenLine (
+                &TokenList,
+                &TokenCount
+            );
 
             break;
         }
@@ -930,23 +977,32 @@ BOOLEAN AddSubmenu (
 
             // Set the boot loader filename
             MY_FREE_POOL(SubEntry->LoaderPath);
-            SubEntry->LoaderPath = StrDuplicate (TokenList[1]);
-            SubEntry->Volume     = Volume;
+            SubEntry->LoaderPath = StrDuplicate (
+                TokenList[1]
+            );
+            SubEntry->Volume = Volume;
         }
         else if (MyStriCmp (TokenList[0], L"initrd")) {
             BREAD_CRUMB(L"%a:  6a 1d", __func__);
             MY_FREE_POOL(SubEntry->InitrdPath);
-            SubEntry->InitrdPath = StrDuplicate (TokenList[1]);
+            SubEntry->InitrdPath = StrDuplicate (
+                TokenList[1]
+            );
         }
         else if (MyStriCmp (TokenList[0], L"options")) {
             BREAD_CRUMB(L"%a:  6a 1e", __func__);
             MY_FREE_POOL(SubEntry->LoadOptions);
-            SubEntry->LoadOptions = StrDuplicate (TokenList[1]);
+            SubEntry->LoadOptions = StrDuplicate (
+                TokenList[1]
+            );
         }
         else if (MyStriCmp (TokenList[0], L"add_options")) {
             BREAD_CRUMB(L"%a:  6a 1f", __func__);
 
-            MergeStrings (&SubEntry->LoadOptions, TokenList[1], L' ');
+            MergeStrings (
+                &SubEntry->LoadOptions,
+                TokenList[1], L' '
+            );
         }
         else if (
             GraphicsTag == NULL &&
@@ -955,7 +1011,9 @@ BOOLEAN AddSubmenu (
             BREAD_CRUMB(L"%a:  6a 1g", __func__);
             // Delay actual processing
             GraphicsTag = StrDuplicate (
-                (TokenCount > 1) ? TokenList[1] : L"on"
+                (
+                    TokenCount > 1
+                ) ? TokenList[1] : L"on"
             );
         }
         else {
@@ -995,9 +1053,9 @@ BOOLEAN AddSubmenu (
     BREAD_CRUMB(L"%a:  9", __func__);
     if (GraphicsTag != NULL) {
         BREAD_CRUMB(L"%a:  9a 1", __func__);
-        if (!MyStriCmp (GraphicsTag, L"0")   &&
-            !MyStriCmp (GraphicsTag, L"off") &&
-            !MyStriCmp (GraphicsTag, L"false")
+        if (!MyStriCmp (GraphicsTag, L"false") &&
+            !MyStriCmp (GraphicsTag, L"off")   &&
+            !MyStriCmp (GraphicsTag, L"0")
         ) {
             BREAD_CRUMB(L"%a:  9a 1a 1", __func__);
             SubEntry->UseGraphicsMode = TRUE;
@@ -1006,7 +1064,10 @@ BOOLEAN AddSubmenu (
     }
 
     BREAD_CRUMB(L"%a:  10", __func__);
-    AddSubMenuEntry (SubScreen, (REFIT_MENU_ENTRY *) SubEntry);
+    AddSubMenuEntry (
+        SubScreen,
+        (REFIT_MENU_ENTRY *) SubEntry
+    );
 
     // DA-TAG: Investigate This
     //         Freeing the SubScreen below causes a hang
@@ -1066,7 +1127,9 @@ LOADER_ENTRY * InitializeStanza (
     #endif
 
     // Get 'CurrentVolume' and disabled status upfront
-    CurrentVolume = GetStanzaVolume (File, Volume);
+    CurrentVolume = GetStanzaVolume (
+        File, Volume
+    );
     if (CurrentVolume == NULL) {
         // NULL only returned if disabled
         #if REFIT_DEBUG > 0
@@ -1107,11 +1170,16 @@ LOADER_ENTRY * InitializeStanza (
     GotFirmwareTag = DefaultsSet = DoneIcon   = FALSE;
 
     while (1) {
-        TokenCount = ReadTokenLine (File, &TokenList);
+        TokenCount = ReadTokenLine (
+            File, &TokenList
+        );
         if (TokenCount == 0 ||
             MyStriCmp (TokenList[0], L"}")
         ) {
-            FreeTokenLine (&TokenList, &TokenCount);
+            FreeTokenLine (
+                &TokenList,
+                &TokenCount
+            );
 
             break;
         }
@@ -1192,22 +1260,20 @@ LOADER_ENTRY * InitializeStanza (
             if (HasPath) {
                 if (!DoneIcon) {
                     MY_FREE_POOL(LoaderToken);
-                    LoaderToken = StrDuplicate (
-                        TokenList[1]
-                    );
+                    if (!GotFirmwareTag) {
+                        LoaderToken = StrDuplicate (
+                            TokenList[1]
+                        );
+                    }
                 }
                 else {
                     // Set the boot loader filename
                     MY_FREE_POOL(StanzaEntry->LoaderPath);
-                    StanzaEntry->LoaderPath = StrDuplicate (
-                        TokenList[1]
-                    );
+                    if (!GotFirmwareTag) {
+                        StanzaEntry->LoaderPath = StrDuplicate (
+                            TokenList[1]
+                        );
 
-                    HasPath = (
-                        StanzaEntry->LoaderPath &&
-                        StrLen (StanzaEntry->LoaderPath) > 0
-                    );
-                    if (HasPath) {
                         #if REFIT_DEBUG > 0
                         ALT_LOG(1, LOG_LINE_NORMAL,
                             L"Add Loader Path:- '%s'",
@@ -1219,13 +1285,12 @@ LOADER_ENTRY * InitializeStanza (
                             StanzaEntry, TokenList[1],
                             CurrentVolume
                         );
-
-                        DefaultsSet = TRUE;
                     }
 
-                    DoneLoader = TRUE;
-                }
-            }
+                    DefaultsSet = TRUE;
+                    DoneLoader  = TRUE;
+                } // if/else DoneIcon
+            } // if HasPath
         }
         else if (MyStriCmp (TokenList[0], L"initrd")) {
             #if REFIT_DEBUG > 0
@@ -1241,7 +1306,9 @@ LOADER_ENTRY * InitializeStanza (
             #endif
 
             MY_FREE_POOL(LoadOptions);
-            LoadOptions = StrDuplicate (TokenList[1]);
+            LoadOptions = StrDuplicate (
+                TokenList[1]
+            );
         }
         else if (MyStriCmp (TokenList[0], L"firmware_bootnum")) {
             #if REFIT_DEBUG > 0
@@ -1252,7 +1319,9 @@ LOADER_ENTRY * InitializeStanza (
 
             StanzaEntry->me.Tag = TAG_FIRMWARE_LOADER;
 
-            StanzaEntry->me.BadgeImage = BuiltinIcon (BUILTIN_ICON_VOL_EFI);
+            StanzaEntry->me.BadgeImage = BuiltinIcon (
+                BUILTIN_ICON_VOL_EFI
+            );
             if (StanzaEntry->me.BadgeImage == NULL) {
                 // Set dummy image if badge was not found
                 StanzaEntry->me.BadgeImage = DummyImage (
@@ -1264,7 +1333,9 @@ LOADER_ENTRY * InitializeStanza (
             GotFirmwareTag = TRUE;
 
             MY_FREE_POOL(BootNumber);
-            BootNumber = StrDuplicate (TokenList[1]);
+            BootNumber = StrDuplicate (
+                TokenList[1]
+            );
         }
         else {
             if (MyStriCmp (TokenList[0], L"submenuentry")) {
@@ -1283,7 +1354,10 @@ LOADER_ENTRY * InitializeStanza (
             }
         } // Set options to pass to the loader program - End
 
-        FreeTokenLine (&TokenList, &TokenCount);
+        FreeTokenLine (
+            &TokenList,
+            &TokenCount
+        );
     } // while {Infinite}
 
     if (!DoneLoader && LoaderToken && StrLen (LoaderToken) > 0) {
@@ -1293,7 +1367,9 @@ LOADER_ENTRY * InitializeStanza (
 
         // Set the boot loader filename
         MY_FREE_POOL(StanzaEntry->LoaderPath);
-        StanzaEntry->LoaderPath = StrDuplicate (LoaderToken);
+        StanzaEntry->LoaderPath = StrDuplicate (
+            LoaderToken
+        );
 
         SetLoaderDefaults (
             StanzaEntry, LoaderToken,
@@ -1317,7 +1393,10 @@ LOADER_ENTRY * InitializeStanza (
     }
     else {
         if (!GotFirmwareTag) {
-            StanzaEntry->me.Title = PoolPrint (L"Load %s", StanzaEntry->Title);
+            StanzaEntry->me.Title = PoolPrint (
+                L"Load %s",
+                StanzaEntry->Title
+            );
         }
         else {
             // Clear potentially wrongly set items
@@ -1330,7 +1409,10 @@ LOADER_ENTRY * InitializeStanza (
                 StanzaEntry->Title
             );
 
-            StanzaEntry->EfiBootNum = StrToHex (BootNumber, 0, 16);
+            StanzaEntry->EfiBootNum = StrToHex (
+                BootNumber,
+                0, 16
+            );
         }
     }
 
@@ -1338,27 +1420,37 @@ LOADER_ENTRY * InitializeStanza (
     // DA-TAG: Remove any previously set values first
     MY_FREE_POOL(StanzaEntry->LoadOptions);
     if (LoadOptions != NULL && StrLen (LoadOptions) > 0) {
-        StanzaEntry->LoadOptions = StrDuplicate (LoadOptions);
+        StanzaEntry->LoadOptions = StrDuplicate (
+            LoadOptions
+        );
     }
 
     if (AddedSubmenu) {
-        RetVal = GetMenuEntryReturn (&StanzaEntry->me.SubScreen);
+        RetVal = GetMenuEntryReturn (
+            &StanzaEntry->me.SubScreen
+        );
         if (!RetVal) {
             FreeMenuScreen (&StanzaEntry->me.SubScreen);
         }
     }
 
-    if (StanzaEntry->InitrdPath != NULL   &&
+    if (StanzaEntry->InitrdPath != NULL  &&
         StrLen (StanzaEntry->InitrdPath) > 0
     ) {
-        if (StanzaEntry->LoadOptions != NULL   &&
+        if (StanzaEntry->LoadOptions != NULL  &&
             StrLen (StanzaEntry->LoadOptions) > 0
         ) {
-            MergeStrings (&StanzaEntry->LoadOptions, L"initrd=", L' ');
-            MergeStrings (&StanzaEntry->LoadOptions, StanzaEntry->InitrdPath, 0);
+            MergeStrings (
+                &StanzaEntry->LoadOptions,
+                L"initrd=", L' '
+            );
+            MergeStrings (
+                &StanzaEntry->LoadOptions,
+                StanzaEntry->InitrdPath, 0
+            );
         }
         else {
-            if (StanzaEntry->LoadOptions != NULL    &&
+            if (StanzaEntry->LoadOptions != NULL  &&
                 StrLen (StanzaEntry->LoadOptions) == 0
             ) {
                 MY_FREE_POOL(StanzaEntry->LoadOptions);
@@ -1390,9 +1482,9 @@ LOADER_ENTRY * InitializeStanza (
     }
 
     if (GraphicsTag != NULL) {
-        if (!MyStriCmp (GraphicsTag, L"0")   &&
-            !MyStriCmp (GraphicsTag, L"off") &&
-            !MyStriCmp (GraphicsTag, L"false")
+        if (!MyStriCmp (GraphicsTag, L"false") &&
+            !MyStriCmp (GraphicsTag, L"off")   &&
+            !MyStriCmp (GraphicsTag, L"0")
         ) {
             StanzaEntry->UseGraphicsMode = TRUE;
         }
@@ -1483,9 +1575,14 @@ REFIT_FILE * GenerateOptionsFromEtcFstab (
 
     BREAD_CRUMB(L"%a:  7", __func__);
     while (1) {
-        TokenCount = ReadTokenLine (Fstab, &TokenList);
+        TokenCount = ReadTokenLine (
+            Fstab, &TokenList
+        );
         if (TokenCount == 0) {
-            FreeTokenLine (&TokenList, &TokenCount);
+            FreeTokenLine (
+                &TokenList,
+                &TokenCount
+            );
 
             break;
         }
@@ -1504,7 +1601,10 @@ REFIT_FILE * GenerateOptionsFromEtcFstab (
             BREAD_CRUMB(L"%a:  7a 1a 1", __func__);
             if (StrCmp (TokenList[1], L"\\") == 0) {
                 BREAD_CRUMB(L"%a:  7a 1a 1a 1", __func__);
-                Root = PoolPrint (L"%s", TokenList[0]);
+                Root = PoolPrint (
+                    L"%s",
+                    TokenList[0]
+                );
             }
             else if (StrCmp (TokenList[2], L"\\") == 0) {
                 BREAD_CRUMB(L"%a:  7a 1a 1b 1", __func__);
@@ -1624,10 +1724,14 @@ REFIT_FILE * GenerateOptionsFromPartTypes (VOID) {
     }
 
     BREAD_CRUMB(L"%a:  2", __func__);
-    WriteStatus = (GlobalConfig.DiscoveredRoot->IsMarkedReadOnly) ? L"ro" : L"rw";
+    WriteStatus = (
+        GlobalConfig.DiscoveredRoot->IsMarkedReadOnly
+    ) ? L"ro" : L"rw";
 
     BREAD_CRUMB(L"%a:  3", __func__);
-    Options = AllocateZeroPool (sizeof (REFIT_FILE));
+    Options = AllocateZeroPool (
+        sizeof (REFIT_FILE)
+    );
     if (Options == NULL) {
         BREAD_CRUMB(L"%a:  2a 1 - END:- !Options return NULL", __func__);
         LOG_DECREMENT();
@@ -1668,7 +1772,7 @@ REFIT_FILE * GenerateOptionsFromPartTypes (VOID) {
     Options->Encoding     = ENCODING_UTF16_LE;
     Options->Current8Ptr  = (CHAR8  *) Options->Buffer;
     Options->Current16Ptr = (CHAR16 *) Options->Buffer;
-    Options->BufferSize   = sizeof (CHAR16) * (StrLen ((CHAR16 *) Options->Buffer) + 1);
+    Options->BufferSize   = StrSize ((CHAR16 *) Options->Buffer);
     Options->End16Ptr     = Options->Current16Ptr + (Options->BufferSize >> 1);
     Options->End8Ptr      = Options->Current8Ptr  +  Options->BufferSize;
 
@@ -1959,7 +2063,9 @@ EFI_STATUS RefitReadFile (
     if (FileInfo == NULL) {
         // DA-TAG: Invesigate This
         //         Print and register the error
-        REFIT_CALL_1_WRAPPER(FileHandle->Close, FileHandle);
+        REFIT_CALL_1_WRAPPER(
+            FileHandle->Close, FileHandle
+        );
 
         // Early Return
         return EFI_LOAD_ERROR;
@@ -1973,7 +2079,9 @@ EFI_STATUS RefitReadFile (
     if (File->Buffer == NULL) {
        // DA-TAG: Invesigate This
        //         Print and register the error
-       REFIT_CALL_1_WRAPPER(FileHandle->Close, FileHandle);
+       REFIT_CALL_1_WRAPPER(
+           FileHandle->Close, FileHandle
+       );
 
        // Early Return
        return EFI_OUT_OF_RESOURCES;
@@ -1990,7 +2098,9 @@ EFI_STATUS RefitReadFile (
 
         // DA-TAG: Invesigate This
         //         Print and register the error
-        REFIT_CALL_1_WRAPPER(FileHandle->Close, FileHandle);
+        REFIT_CALL_1_WRAPPER(
+            FileHandle->Close, FileHandle
+        );
 
         MY_FREE_POOL(File->Buffer);
 
@@ -2639,11 +2749,19 @@ VOID ReadConfig (
     }
     #endif
 
-    MaxLogLevel = (ForensicLogging) ? LOGLEVELMAX + 1 : LOGLEVELMAX;
+    MaxLogLevel = (
+        !ForensicLogging
+    ) ? LOGLEVELMAX : LOGLEVELMAX + 1;
+
     while (1) {
-        TokenCount = ReadTokenLine (File, &TokenList);
+        TokenCount = ReadTokenLine (
+            File, &TokenList
+        );
         if (TokenCount == 0) {
-            FreeTokenLine (&TokenList, &TokenCount);
+            FreeTokenLine (
+                &TokenList,
+                &TokenCount
+            );
 
             break;
         }
@@ -4068,8 +4186,10 @@ VOID ReadConfig (
             );
         }
         else if (
-            TokenCount == 2 &&
-            MyStriCmp (TokenList[0], L"mouse_size")
+            MyStriCmp (
+                TokenList[0],
+                L"mouse_size"
+            ) && TokenCount == 2
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -4087,8 +4207,10 @@ VOID ReadConfig (
             }
         }
         else if (
-            TokenCount == 2 &&
-            MyStriCmp (TokenList[0], L"mouse_speed")
+            MyStriCmp (
+                TokenList[0],
+                L"mouse_speed"
+            ) && TokenCount == 2
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -4102,15 +4224,10 @@ VOID ReadConfig (
                 TokenList, TokenCount, &i
             );
 
-            if (i < 1) {
-                i = 1;
-            }
-            else {
-                if (i > 32) {
-                    i = 32;
-                }
-            }
-            GlobalConfig.MouseSpeed = i;
+            if (0);
+            else if (i <  1)      i =  1;
+            else if (i > 32)      i = 32;
+            GlobalConfig.MouseSpeed =  i;
         }
         else if (MyStriCmp (TokenList[0], L"continue_on_warning")) {
             #if REFIT_DEBUG > 0
@@ -4139,8 +4256,10 @@ VOID ReadConfig (
             );
         }
         else if (
-            TokenCount == 2 &&
-            MyStriCmp (TokenList[0], L"icon_row_move")
+            MyStriCmp (
+                TokenList[0],
+                L"icon_row_move"
+            ) && TokenCount == 2
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -4157,8 +4276,10 @@ VOID ReadConfig (
             );
         }
         else if (
-            TokenCount == 2 &&
-            MyStriCmp (TokenList[0], L"icon_row_tune")
+            MyStriCmp (
+                TokenList[0],
+                L"icon_row_tune"
+            ) && TokenCount == 2
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -4178,8 +4299,10 @@ VOID ReadConfig (
             GlobalConfig.IconRowTune *= -1;
         }
         else if (
-            TokenCount == 2 &&
-            MyStriCmp (TokenList[0], L"scan_delay")
+            MyStriCmp (
+                TokenList[0],
+                L"scan_delay"
+            ) && TokenCount == 2
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -4341,8 +4464,10 @@ VOID ReadConfig (
             );
         }
         else if (
-            TokenCount == 2 &&
-            MyStriCmp (TokenList[0], L"badram_fix_type")
+            MyStriCmp (
+                TokenList[0],
+                L"badram_fix_type"
+            ) && TokenCount == 2
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -4428,8 +4553,10 @@ VOID ReadConfig (
             );
         }
         else if (
-            TokenCount == 2 &&
-            MyStriCmp (TokenList[0], L"nvram_variable_limit")
+            MyStriCmp (
+                TokenList[0],
+                L"nvram_variable_limit"
+            ) && TokenCount == 2
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -4467,11 +4594,11 @@ VOID ReadConfig (
             DoneManual = TRUE;
         }
         else {
-            if (OuterLoop                                     &&
-                TokenCount == 2                               &&
-                !MyStriCmp (TokenList[1], FileName)           &&
-                MyStriCmp (TokenList[0], L"include")          &&
-                MyStriCmp (FileName, GlobalConfig.ConfigFilename)
+            if (OuterLoop                             &&
+                TokenCount == 2                       &&
+                !MyStriCmp (TokenList[1], FileName)   &&
+                 MyStriCmp (TokenList[0], L"include") &&
+                 MyStriCmp (FileName, GlobalConfig.ConfigFilename)
             ) {
                 #if REFIT_DEBUG > 0
                 // DA-TAG: Always log this in case LogLevel is overriden
@@ -4541,13 +4668,22 @@ VOID ReadConfig (
         if (NotRunBefore) MuteLogger = FALSE;
         if (!UpdatedToken) {
             if (!DoneManual) {
-                LOG_MSG("%s  - Active Tokens *NOT* Found", OffsetNext);
+                LOG_MSG(
+                    "%s  - Active Tokens *NOT* Found",
+                    OffsetNext
+                );
             }
             else {
-                LOG_MSG("%s  - Only Got Manual Stanza(s) ... Handle Later", OffsetNext);
+                LOG_MSG(
+                    "%s  - Only Got Manual Stanza(s) ... Handle Later",
+                    OffsetNext
+                );
             }
         }
-        LOG_MSG("%s*** Handled Included File ***", OffsetNext);
+        LOG_MSG(
+            "%s*** Handled Included File ***",
+            OffsetNext
+        );
         // DA-TAG: No 'TRUE' Flag
         #endif
     }

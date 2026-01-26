@@ -4,13 +4,13 @@
  *  Created by Slice  2011-08-19
  *  Edited by apianti 2012-09-08
  */
- /**
-  * Modified for RefindPlus
-  * Copyright (c) 2020-2025 Dayo Akanji (sf.net/u/dakanji/profile)
-  *
-  * THIS PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  * WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
- **/
+/**
+** Modified for RefindPlus
+** Copyright (c) 2020-2025 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** THIS PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+** WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+**/
 
 #include "../../include/tiano_includes.h"
 #include "../../BootMaster/global.h"

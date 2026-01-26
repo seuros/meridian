@@ -17,11 +17,11 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/* Modified for RefindPlus
- * Copyright (c) 2020-2024 Dayo Akanji (sf.net/u/dakanji/profile)
- *
- * Modifications distributed under the preceding terms.
- */
+/** Modified for RefindPlus
+** Copyright (c) 2020-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 
 #include <Uefi.h>
@@ -80,7 +80,7 @@ UINT64 GetCurrentMS (VOID) {
 		CurrentTsc = AsmReadTsc();
 
 		CurrentMS = DivU64x64Remainder (
-            MultU64x32 (CurrentTsc - mMemLog->TscStart, 1000),
+            MultU64x32(CurrentTsc - mMemLog->TscStart, 1000),
             mMemLog->TscFreqSec,
             NULL
         );
@@ -104,11 +104,11 @@ CHAR8 * GetTiming (VOID) {
 		CurrentTsc = AsmReadTsc();
 
 		dTStartMs = DivU64x64Remainder (
-            MultU64x32 (CurrentTsc - mMemLog->TscStart, 10000),
+            MultU64x32(CurrentTsc - mMemLog->TscStart, 10000),
             mMemLog->TscFreqSec, NULL
         );
 		dTLastMs = DivU64x64Remainder (
-            MultU64x32 (CurrentTsc - mMemLog->TscLast, 10000),
+            MultU64x32(CurrentTsc - mMemLog->TscLast, 10000),
             mMemLog->TscFreqSec, NULL
         );
 
@@ -291,7 +291,7 @@ EFI_STATUS EFIAPI MemLogInit (VOID) {
         Tsc1 = AsmReadTsc();
 
         // Get Frequency from Tsc Difference.
-        mMemLog->TscFreqSec = MultU64x32 ((Tsc1 - Tsc0), 10);
+        mMemLog->TscFreqSec = MultU64x32((Tsc1 - Tsc0), 10);
     }
     else {
         // ACPI PM Timer seems to be working.
@@ -324,8 +324,8 @@ EFI_STATUS EFIAPI MemLogInit (VOID) {
         Tsc1 = AsmReadTsc();
 
         // Done ... Get Another TSC.
-        mMemLog->TscFreqSec = DivU64x32 (
-            MultU64x32 (
+        mMemLog->TscFreqSec = DivU64x32(
+            MultU64x32(
                 (Tsc1 - Tsc0),
                 V_ACPI_TMR_FREQUENCY
             ),
