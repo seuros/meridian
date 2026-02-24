@@ -38,11 +38,14 @@
 ** Modifications distributed under the MIT License.
 **/
 
-// Constants for Internal Routing
-#define FSW_ENC_ISO88591      0
-#define FSW_ENC_UTF8          8
-#define FSW_ENC_UTF16        16
-#define FSW_ENC_UTF16_SWAP  161
+
+// Internal Routing Constants
+#define FSW_ENC_88591_NORM   0
+#define FSW_ENC_UTF08_NORM   8
+#define FSW_ENC_UTF16_NORM  16
+#define FSW_ENC_UTF16_SWAP 161
+
+
 
 // ====================================================================
 // Internal Helpers
@@ -72,6 +75,7 @@ fsw_u32 decode_utf8_char (
             c |= ( *(*p)++ & 0x3f);
         }
     }
+
     return c;
 }
 
@@ -84,25 +88,29 @@ fsw_u32 fsw_fetch_codepoint (
     fsw_u32 c;
 
 
-    if (type == FSW_ENC_UTF8) {
-        return decode_utf8_char ((fsw_u8 **)p);
+    if (type == FSW_ENC_UTF08_NORM) {
+        return decode_utf8_char (
+            (fsw_u8 **)p
+        );
     }
 
-    if (type == FSW_ENC_UTF16 ||
+    if (type == FSW_ENC_UTF16_NORM ||
         type == FSW_ENC_UTF16_SWAP
     ) {
         c = **((fsw_u16 **)p);
         (*((fsw_u16 **)p))++;
 
-        if (type == FSW_ENC_UTF16) {
+        if (type == FSW_ENC_UTF16_NORM) {
             return c;
         }
+
         return FSW_SWAPVALUE_U16(c);
     }
 
     // Default: ISO-8859-1
     c = **((fsw_u8 **)p);
     (*((fsw_u8 **)p))++;
+
     return c;
 }
 
@@ -114,6 +122,7 @@ int fsw_utf8_size (
     if (c < 0x80   ) return 1;
     if (c < 0x800  ) return 2;
     if (c < 0x10000) return 3;
+
     return 4;
 }
 
@@ -142,9 +151,11 @@ void fsw_write_utf8_char (
     }
 }
 
-// ====================================================================
-// Unified Comparison Handler (Replaces 'fsw_streq_*' Variants)
-// ====================================================================
+
+
+// =================================================
+// Unified Comparison Handler (Ex 'fsw_streq_*')
+// =================================================
 
 static
 int fsw_streq_internal (
@@ -165,21 +176,23 @@ int fsw_streq_internal (
             return 0;
         }
     }
+
     return 1;
 }
 
 // API Interface:- Comparison
-static int fsw_streq_ISO88591_UTF8          (void *s1, void *s2, int l) { return fsw_streq_internal (s1, s2, l,  0,   8); }
-static int fsw_streq_ISO88591_UTF16         (void *s1, void *s2, int l) { return fsw_streq_internal (s1, s2, l,  0,  16); }
-static int fsw_streq_ISO88591_UTF16_SWAPPED (void *s1, void *s2, int l) { return fsw_streq_internal (s1, s2, l,  0, 161); }
-static int fsw_streq_UTF8_UTF16             (void *s1, void *s2, int l) { return fsw_streq_internal (s1, s2, l,  8,  16); }
-static int fsw_streq_UTF8_UTF16_SWAPPED     (void *s1, void *s2, int l) { return fsw_streq_internal (s1, s2, l,  8, 161); }
-static int fsw_streq_UTF16_UTF16_SWAPPED    (void *s1, void *s2, int l) { return fsw_streq_internal (s1, s2, l, 16, 161); }
+static int fsw_streq_UTF08_UTF16         (void *s1, void *s2, int l) { return fsw_streq_internal (s1, s2, l, FSW_ENC_UTF08_NORM, FSW_ENC_UTF16_NORM); }
+static int fsw_streq_ISO88591_UTF16      (void *s1, void *s2, int l) { return fsw_streq_internal (s1, s2, l, FSW_ENC_88591_NORM, FSW_ENC_UTF16_NORM); }
+static int fsw_streq_ISO88591_UTF08      (void *s1, void *s2, int l) { return fsw_streq_internal (s1, s2, l, FSW_ENC_88591_NORM, FSW_ENC_UTF08_NORM); }
+static int fsw_streq_ISO88591_UTF16_SWAP (void *s1, void *s2, int l) { return fsw_streq_internal (s1, s2, l, FSW_ENC_88591_NORM, FSW_ENC_UTF16_SWAP); }
+static int fsw_streq_UTF16_UTF16_SWAP    (void *s1, void *s2, int l) { return fsw_streq_internal (s1, s2, l, FSW_ENC_UTF16_NORM, FSW_ENC_UTF16_SWAP); }
+static int fsw_streq_UTF08_UTF16_SWAP    (void *s1, void *s2, int l) { return fsw_streq_internal (s1, s2, l, FSW_ENC_UTF08_NORM, FSW_ENC_UTF16_SWAP); }
 
 
-// ====================================================================
-// Unified Coercion Handler (Replaces 'fsw_strcoerce_*' Variants)
-// ====================================================================
+
+// =================================================
+// Unified Coercion Handler (Ex 'fsw_strcoerce_*')
+// =================================================
 
 static
 fsw_status_t fsw_strcoerce_internal (
@@ -194,7 +207,7 @@ fsw_status_t fsw_strcoerce_internal (
 
     dest->len = slen;
 
-    if (dtype == FSW_ENC_UTF8) {
+    if (dtype == FSW_ENC_UTF08_NORM) {
         int dsize = 0;
         for (int i = 0; i < slen; i++) {
             dsize += fsw_utf8_size (
@@ -204,7 +217,7 @@ fsw_status_t fsw_strcoerce_internal (
             );
         }
 
-        dest->type = FSW_STRING_TYPE_UTF8;
+        dest->type = FSW_STRING_TYPE_UTF08;
         dest->size = dsize;
 
         status = FSW_DO_ALLOC(dest->size, &dest->data);
@@ -219,7 +232,7 @@ fsw_status_t fsw_strcoerce_internal (
             );
         }
     }
-    else if (dtype == FSW_ENC_UTF16) {
+    else if (dtype == FSW_ENC_UTF16_NORM) {
         dest->type = FSW_STRING_TYPE_UTF16;
         dest->size = slen * sizeof (fsw_u16);
 
@@ -247,16 +260,17 @@ fsw_status_t fsw_strcoerce_internal (
             );
         }
     }
+
     return FSW_SUCCESS;
 }
 
 // API Interface:- Coercion
-static fsw_status_t fsw_strcoerce_ISO88591_UTF16        (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal(s, l, d, 0,   16); }
-static fsw_status_t fsw_strcoerce_UTF8_UTF16            (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal(s, l, d, 8,   16); }
-static fsw_status_t fsw_strcoerce_UTF16_SWAPPED_UTF16   (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal(s, l, d, 161, 16); }
-static fsw_status_t fsw_strcoerce_ISO88591_UTF8         (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal(s, l, d, 0,    8); }
-static fsw_status_t fsw_strcoerce_UTF16_UTF8            (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal(s, l, d, 16,   8); }
-static fsw_status_t fsw_strcoerce_UTF16_SWAPPED_UTF8    (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal(s, l, d, 161,  8); }
-static fsw_status_t fsw_strcoerce_UTF8_ISO88591         (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal(s, l, d, 8,    0); }
-static fsw_status_t fsw_strcoerce_UTF16_ISO88591        (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal(s, l, d, 16,   0); }
-static fsw_status_t fsw_strcoerce_UTF16_SWAPPED_ISO88591(void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal(s, l, d, 161,  0); }
+static fsw_status_t fsw_strcoerce_ISO88591_UTF16      (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal (s, l, d, FSW_ENC_88591_NORM, FSW_ENC_UTF16_NORM); }
+static fsw_status_t fsw_strcoerce_ISO88591_UTF08      (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal (s, l, d, FSW_ENC_88591_NORM, FSW_ENC_UTF08_NORM); }
+static fsw_status_t fsw_strcoerce_UTF08_ISO88591      (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal (s, l, d, FSW_ENC_UTF08_NORM, FSW_ENC_88591_NORM); }
+static fsw_status_t fsw_strcoerce_UTF08_UTF16         (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal (s, l, d, FSW_ENC_UTF08_NORM, FSW_ENC_UTF16_NORM); }
+static fsw_status_t fsw_strcoerce_UTF16_UTF08         (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal (s, l, d, FSW_ENC_UTF16_NORM, FSW_ENC_UTF08_NORM); }
+static fsw_status_t fsw_strcoerce_UTF16_ISO88591      (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal (s, l, d, FSW_ENC_UTF16_NORM, FSW_ENC_88591_NORM); }
+static fsw_status_t fsw_strcoerce_UTF16_SWAP_UTF08    (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal (s, l, d, FSW_ENC_UTF16_SWAP, FSW_ENC_UTF08_NORM); }
+static fsw_status_t fsw_strcoerce_UTF16_SWAP_UTF16    (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal (s, l, d, FSW_ENC_UTF16_SWAP, FSW_ENC_UTF16_NORM); }
+static fsw_status_t fsw_strcoerce_UTF16_SWAP_ISO88591 (void *s, int l, struct fsw_string *d) { return fsw_strcoerce_internal (s, l, d, FSW_ENC_UTF16_SWAP, FSW_ENC_88591_NORM); }

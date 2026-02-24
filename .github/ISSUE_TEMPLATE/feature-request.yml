@@ -37,4 +37,5 @@ body:
       placeholder: |
         You can attach files by dragging/dropping them on this field.
         You can also use screenshots to illustrate the suggested item.
-        Screenshots can be saved in RefindPlus by pressing the F10 key.
+        Screenshots are created by RefindPlus on pressing the F10 key.
+        Screenshots will be kept in the same ESP as the RefindPlus efi.

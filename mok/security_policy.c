@@ -5,12 +5,12 @@
  *
  * Install and remove a platform security2 override policy
  */
- /*
-  * Modified for RefindPlus
-  * Copyright (c) 2024-2025 Dayo Akanji (sf.net/u/dakanji/profile)
-  *
-  * Modifications distributed under the preceding terms.
-  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2024-2025 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #include <global.h>
 

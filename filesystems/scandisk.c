@@ -42,7 +42,7 @@ extern EFI_GUID gMyEfiBlockIoProtocolGuid;
 extern struct fsw_host_table   fsw_efi_host_table;
 static void dummy_volume_free (struct fsw_volume *vol) { }
 static struct fsw_fstype_table   dummy_fstype = {
-    { FSW_STRING_TYPE_UTF8, 4, 4, "dummy" },
+    { FSW_STRING_TYPE_UTF08, 4, 4, "dummy" },
     sizeof (struct fsw_volume),
     sizeof (struct fsw_dnode),
 

@@ -512,7 +512,7 @@
 # such to the nvRAM flash chip is preferred instead.
 # NB: This is only relevant for booting into MacOS.
 #
-# MacOS boot argument items are not persisted when commented out
+# Inactive when commented out (boot args are not persisted)
 #
 #persist_boot_args
 
@@ -522,7 +522,7 @@
 # it will instead always use UGA when available and will not consider GOP.
 # This may also improve RefindPlus loading speed on legacy UGA-only GPUs.
 #
-# Inactive when commented out (Does not prefer UGA over GOP for graphics)
+# Inactive when commented out (Does not prefer UGA over GOP)
 #
 #prefer_uga
 
@@ -610,7 +610,8 @@
 # Supply NVME driver. When this token is set, RefindPlus will
 # use its 'SupplyNVME' feature to load a built in NvmExpressDxe
 # driver to supply support when this is possible but unavailable.
-# NB: This functionality is only available on TianoCore builds.
+# NB: This functionality is disabled if UEFI SecureBoot is detected.
+#     This functionality is only available on TianoCore builds.
 #
 # Inactive when commented out (Does not supply NVMe support)
 #
@@ -1166,7 +1167,7 @@
 #
 # !!!*** ONLY SET ON INTEL CPUS WITH VMX SUPPORT ***!!!
 # Refer to the link below for more on this subject:
-# http://www.thomas-krenn.com/en/wiki/Activating_the_Intel_VT_Virtualization_Feature
+# www.thomas-krenn.com/en/wiki/Activating_the_Intel_VT_Virtualization_Feature
 #
 # Inactive when commented out (Does not try to enable and lock the MSR)
 #

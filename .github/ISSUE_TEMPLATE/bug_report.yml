@@ -55,6 +55,7 @@ body:
         - 'Official Older Released Version'
         - 'Official Pre-Release Code Build'
         - 'Unofficially Modified Code Build'
+      default: 3
     validations:
       required: true
 
@@ -87,7 +88,6 @@ body:
     attributes:
       label: Problem Point
       description: Where does the problem manifest itself?
-      multiple: true
       options:
         - 'Before RefindPlus Screen is Visible'
         - 'RefindPlus Screen Shows but Hangs'
@@ -95,6 +95,8 @@ body:
         - 'While Starting a Loader or Tool'
         - 'After Starting a Loader or Tool'
         - 'Another Point / Not Applicable'
+        - 'No_Idea and/or Forgotten_Details'
+      default: 6
     validations:
       required: true
 
@@ -110,6 +112,8 @@ body:
         - 'Mac OS Loader'
         - 'Win OS Loader'
         - 'Lin OS Loader'
+        - 'SDBoot Loader'
+        - 'The GRUB Loader'
         - 'OpenCore Loader'
         - 'Clover Loader'
         - 'Other Loader'
@@ -125,7 +129,8 @@ body:
       description: |
         Please run the RefindPlus 'DBG' efi and add debug logs.\
         Please attach log files and _DO NOT_ paste their contents.\
-        Attach log files by dragging/dropping on the field below.
+        Attach log files by dragging/dropping on the field below.\
+        Output log files are stored in the ESP holding RefindPlus.
       placeholder: |
         Reports that do not need log files are typically best as Discussions.
         Reports without log files will be automatically closed in most cases.
@@ -140,7 +145,7 @@ body:
           Debug logs are almost always required and produced by running the 'DBG' efi.\
           Confirm log files are provided or that you are certain this is not required.
       options:
-        - 'DEBUG LOGS NOT PROVIDED - disregarding guidance given'
+        - 'DEBUG LOGS NOT PROVIDED - disregarding_guidance_given'
         - 'DEBUG LOGS ARE PROVIDED or omission clearly justified'
     validations:
       required: true
@@ -154,4 +159,5 @@ body:
       placeholder: |
         You can attach files by dragging/dropping them on this field.
         You can also add screenshots to shed more light on the issue.
-        Screenshot files can be saved by RefindPlus with the F10 key.
+        Screenshot files can be created from RefindPlus with Key F10.
+        Screenshot files will be saved in the ESP holding RefindPlus.

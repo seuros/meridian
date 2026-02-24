@@ -24,7 +24,7 @@ jobs:
     if: github.repository == 'RefindPlusRepo/RefindPlus' && (github.event_name == 'schedule' || github.event.inputs.job_id == 'all' || github.event.inputs.job_id == 'stale')
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -38,7 +38,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Handle Cancelled/Duplicate/Invalid/Wierd/Not-Planned Issues
-        uses: actions/stale@v9
+        uses: actions/stale@v10
         with:
           ignore-updates: true
           close-issue-reason: 'completed'
@@ -57,7 +57,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Handle Incomplete Issues
-        uses: actions/stale@v9
+        uses: actions/stale@v10
         with:
           ignore-updates: false
           close-issue-reason: 'completed'
@@ -80,7 +80,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Handle No-Response Issues
-        uses: actions/stale@v9
+        uses: actions/stale@v10
         with:
           ignore-updates: false
           close-issue-reason: 'completed'
@@ -104,7 +104,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Catchall Closer
-        uses: actions/stale@v9
+        uses: actions/stale@v10
         with:
           ignore-updates: false
           close-issue-reason: 'completed'

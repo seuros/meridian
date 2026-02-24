@@ -25,7 +25,7 @@ on:
         - 'YES'
         default: 'NO'
       commit_id:
-        description: 'Commit ID (Blank for GOPFix Latest)'
+        description: 'Commit ID (Blank Means Latest GOPFix)'
         type: string
         required: false
 
@@ -35,7 +35,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: List Inputs
+      - name: List/Set Misc
         env:
           SET_REPO: ${{ github.repository }}
           SET_COMMIT_ID: ${{ github.event.inputs.commit_id }}
@@ -44,34 +44,40 @@ jobs:
         shell: bash
         run: |
           # List Misc Inputs
-          echo "ENV_REPO=${SET_REPO}" >> "${GITHUB_ENV}"
           echo "REPO       : '${SET_REPO}'"
+          echo "ENV_REPO=${SET_REPO}" >> "${GITHUB_ENV}"
 
-          USE_COMMIT_ID="${SET_COMMIT_ID:-GOPFix Latest}"
-          echo "ENV_COMMIT_ID=${USE_COMMIT_ID}" >> "${GITHUB_ENV}"
+          USE_COMMIT_ID="${SET_COMMIT_ID:-GOPFix-Latest}"
           echo "COMMIT_ID  : '${USE_COMMIT_ID}'"
+          echo "ENV_COMMIT_ID=${USE_COMMIT_ID}" >> "${GITHUB_ENV}"
 
-          echo "ENV_BUILD_TYPE=${SET_BUILD_TYPE}" >> "${GITHUB_ENV}"
           echo "BUILD_FLAG : '${SET_BUILD_TYPE}'"
+          echo "ENV_BUILD_TYPE=${SET_BUILD_TYPE}" >> "${GITHUB_ENV}"
 
           echo "SECURE_BOOT: '${SET_SIGN_OUTPUT}'"
+
+          # Set Misc Paths
+          USE_BASE="${HOME}/Documents/RefindPlus"
+          echo "ENV_BASE_DIR=${USE_BASE}" >> "${GITHUB_ENV}"
+          echo "ENV_WORK_DIR=${USE_BASE}/Working" >> "${GITHUB_ENV}"
 
       - name: Get Repositories
         shell: bash
         run: |
           # Create Directories
-          mkdir ~/Documents/RefindPlus || exit 1
-          cd ~/Documents/RefindPlus || exit 1
+          mkdir -p "${ENV_BASE_DIR}" || exit 1
+          cd "${ENV_BASE_DIR}" || exit 1
 
-          # Clone RefindPlusUDK
+          # Clone Repos
+          git clone "https://github.com/${ENV_REPO}.git" Working
           git clone https://github.com/RefindPlusRepo/RefindPlusUDK.git edk2
 
-          # Clone RefindPlus
-          git clone "https://github.com/${ENV_REPO}.git" Working
-          cd Working || exit 1
-
-          # Find Target Branch
-          if [[ "${ENV_COMMIT_ID}" == 'GOPFix Latest' ]] ; then
+      - name: Determine Target Branch
+        shell: bash
+        run: |
+          # Set Target Branch/Commit
+          cd "${ENV_WORK_DIR}" || exit 1
+          if [[ "${ENV_COMMIT_ID}" == 'GOPFix-Latest' ]] ; then
             echo "Blank Commit ID Input ... Use Defaults"
             BRANCH=GOPFix
           else
@@ -84,8 +90,10 @@ jobs:
               exit 1
             fi
 
+            # Fetch valid remote branches
+            git fetch origin --prune
+
             # Get Candidate Branches
-            git fetch --all
             BranchList=$(git branch -r --contains "${ENV_COMMIT_ID}" | grep 'origin/' | sed 's|origin/||')
             if [[ -z "${BranchList}" ]]; then
               echo "Error: Not Located on Any Branch: '${ENV_COMMIT_ID}'"
@@ -106,6 +114,7 @@ jobs:
             git checkout "${BRANCH}"
             git reset --hard "${ENV_COMMIT_ID}"
           fi
+
           echo "BRANCH=${BRANCH}" >> "${GITHUB_ENV}"
           echo "Branch     : '${BRANCH}'"
 
@@ -117,7 +126,9 @@ jobs:
             "$(git log -1 --pretty='%an <%ae>')" \
             "$(git log -1 --pretty='%ad' --date=iso-strict)"
 
-      - name: Set Type Target
+      - name: Apply Misc Prep
+        env:
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
         shell: bash
         run: |
           # Set Build Type(s)
@@ -128,16 +139,33 @@ jobs:
             "NPT Only")    BUILD_FLAG="NPT" ;;
             *)             BUILD_FLAG="ALL" ;;
           esac
+
           echo "BUILD_FLAG=${BUILD_FLAG}" >> "${GITHUB_ENV}"
           echo "Build Type : '${BUILD_FLAG}'"
 
-      - name: Install Prerequisites
-        env:
-          HOMEBREW_NO_INSTALL_CLEANUP: 1
-        shell: bash
-        run: |
+          # Set Type Flag
+          FlagFind=0
+          ADD_TAG="${ENV_WORK_DIR}/Main/main.c"
+          if [[ -f "${ADD_TAG}" ]]; then
+            FlagFind=1
+          else
+            ADD_TAG="${ENV_WORK_DIR}/BootMaster/main.c"
+            if [[ -f "${ADD_TAG}" ]]; then
+              FlagFind=1
+            fi
+          fi
+
+          if (( FlagFind )) ; then
+            /usr/bin/perl -i -p -e 's~\(Local\)~(Outer)~' "${ADD_TAG}" || {
+              echo "[WARN] Tag Replacement Failed: '${ADD_TAG}'"
+            }
+          fi
+
           # Install Additional Build Tools
-          brew install nasm acpica ocmtoc
+          PKGS="nasm acpica ocmtoc"
+          brew install ${PKGS} || (
+            brew update && brew install ${PKGS}
+          )
 
           # Install Final Python 2 Version
           PYTHON_VER='2.7.18'
@@ -161,54 +189,38 @@ jobs:
           printf "\nVerified ... Installing Python %s\n" "${PYTHON_VER}"
           sudo installer -pkg "${PYTHON_PKG}" -target /
 
-      - name: Misc Prep
-        shell: bash
-        run: |
-          # Tag Build
-          ADD_TAG="${HOME}/Documents/RefindPlus/Working/BootMaster/main.c"
-
-          if [[ ! -f "${ADD_TAG}" ]]; then
-            echo "ERROR: Main Program File Not Found: '${ADD_TAG}'"
-            echo "       Exiting Now"
-            exit 1
-          fi
-
-          /usr/bin/perl -i -p -e 's~\(Local\)~(Outer)~' "${ADD_TAG}" || {
-            echo "[WARN] Tag Replacement Failed: '${ADD_TAG}'"
-          }
-
-      - name: Main Script
+      - name: Run Main Script
         env:
           TERM: xterm
         shell: bash
         run: |
           # Main Build Script
-          cd ~/Documents/RefindPlus/edk2/000-BuildScript || exit 1
+          cd "${ENV_BASE_DIR}/edk2/000-BuildScript" || exit 1
           chmod +x RefindPlusBuilder.sh
           ./RefindPlusBuilder.sh "${BRANCH}" "${BUILD_FLAG}"
 
 
         ##
         # If signing is active, prefix with 'NOT_SIGNED---' for the
-        # signing job to handle without collision with final outputs
+        # signing job to handle the final outputs without collision
         ##
-      - name: Upload Artefact (RELEASE)
+      - name: Upload Artefact (REL)
         if: success() && contains(github.event.inputs.build_type, 'REL')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: "${{ github.event.inputs.sign_output == 'NO' && 'x64_RefindPlus-Artefacts_REL' || 'NOT_SIGNED---x64_RefindPlus-Artefacts_REL' }}"
           path: ~/Documents/RefindPlus/edk2/Build/RefindPlus/RELEASE_XCODE5/x64/*.efi
 
-      - name: Upload Artefact (DEBUG)
+      - name: Upload Artefact (DBG)
         if: success() && contains(github.event.inputs.build_type, 'DBG')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: "${{ github.event.inputs.sign_output == 'NO' && 'x64_RefindPlus-Artefacts_DBG' || 'NOT_SIGNED---x64_RefindPlus-Artefacts_DBG' }}"
           path: ~/Documents/RefindPlus/edk2/Build/RefindPlus/DEBUG_XCODE5/x64/*.efi
 
-      - name: Upload Artefact (NOOPT)
+      - name: Upload Artefact (NPT)
         if: success() && contains(github.event.inputs.build_type, 'NPT')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: "${{ github.event.inputs.sign_output == 'NO' && 'x64_RefindPlus-Artefacts_NPT' || 'NOT_SIGNED---x64_RefindPlus-Artefacts_NPT' }}"
           path: ~/Documents/RefindPlus/edk2/Build/RefindPlus/NOOPT_XCODE5/x64/*.efi
@@ -219,23 +231,23 @@ jobs:
     if: ${{ github.event.inputs.sign_output == 'YES' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch Interim Artefact (RELEASE)
+      - name: Fetch Interim Artefact (REL)
         if: contains(github.event.inputs.build_type, 'REL')
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: NOT_SIGNED---x64_RefindPlus-Artefacts_REL
           path: Unsigned_REL
 
-      - name: Fetch Interim Artefact (DEBUG)
+      - name: Fetch Interim Artefact (DBG)
         if: contains(github.event.inputs.build_type, 'DBG')
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: NOT_SIGNED---x64_RefindPlus-Artefacts_DBG
           path: Unsigned_DBG
 
-      - name: Fetch Interim Artefact (NOOPT)
+      - name: Fetch Interim Artefact (NPT)
         if: contains(github.event.inputs.build_type, 'NPT')
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: NOT_SIGNED---x64_RefindPlus-Artefacts_NPT
           path: Unsigned_NPT
@@ -302,6 +314,7 @@ jobs:
             done
 
             # Sign Filesystem Drivers
+            echo ''
             echo "Sign Filesystem Drivers..."
             for fs in btrfs ext2 ext4 hfs iso9660 ntfs reiserfs; do
               base="DRIVER_${target}---x64_${fs}"
@@ -387,9 +400,9 @@ jobs:
         # Always include the certificate files along with the
         # signed binaries for users to enroll for Secure Boot
         ##
-      - name: Upload Signed Binaries (RELEASE)
+      - name: Upload Signed Binaries (REL)
         if: contains(github.event.inputs.build_type, 'REL')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: x64_RefindPlus-Artefacts_REL
           path: |
@@ -397,9 +410,9 @@ jobs:
               ${{ env.CRT_PATH }}
               REL_signed_DIR/*.efi
 
-      - name: Upload Signed Binaries (DEBUG)
+      - name: Upload Signed Binaries (DBG)
         if: contains(github.event.inputs.build_type, 'DBG')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: x64_RefindPlus-Artefacts_DBG
           path: |
@@ -407,9 +420,9 @@ jobs:
               ${{ env.CRT_PATH }}
               DBG_signed_DIR/*.efi
 
-      - name: Upload Signed Binaries (NOOPT)
+      - name: Upload Signed Binaries (NPT)
         if: contains(github.event.inputs.build_type, 'NPT')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: x64_RefindPlus-Artefacts_NPT
           path: |

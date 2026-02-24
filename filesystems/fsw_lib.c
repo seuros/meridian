@@ -111,18 +111,16 @@ int fsw_streq (
     struct fsw_string temp_s;
 
     // Handle empty strings
-    if (s1->type == FSW_STRING_TYPE_EMPTY) {
+    if (s1->type == FSW_STRING_TYPE_EMPTY ||
+        s2->type == FSW_STRING_TYPE_EMPTY
+    ) {
         temp_s.type = FSW_STRING_TYPE_ISO88591;
-        temp_s.size = temp_s.len = 0;
-        temp_s.data = NULL;
+        temp_s.size =           temp_s.len = 0;
+        temp_s.data =                     NULL;
 
-        return fsw_streq(&temp_s, s2);
-    }
-
-    if (s2->type == FSW_STRING_TYPE_EMPTY) {
-        temp_s.type = FSW_STRING_TYPE_ISO88591;
-        temp_s.size = temp_s.len = 0;
-        temp_s.data = NULL;
+        if (s1->type == FSW_STRING_TYPE_EMPTY) {
+            return fsw_streq(&temp_s, s2);
+        }
 
         return fsw_streq(s1, &temp_s);
     }
@@ -133,7 +131,7 @@ int fsw_streq (
 
 
     if (s1->type == s2->type) {
-        // same type, do a dumb memory compare
+        // Same type, do a dumb memory compare
         if (s1->size != s2->size) return 0;
 
         return FSW_DO_MEMEQ(
@@ -143,18 +141,18 @@ int fsw_streq (
         );
     }
 
-    // dispatch to type-specific functions
-    #define STREQ_DISPATCH(type1, type2) \
+    // Dispatch to type-specific functions
+    #define STREQ_DISPATCH(type1, type2)                                              \
       if (s1->type == FSW_STRING_TYPE_##type1 && s2->type == FSW_STRING_TYPE_##type2) \
-        return fsw_streq_##type1##_##type2(s1->data, s2->data, s1->len); \
+        return fsw_streq_##type1##_##type2(s1->data, s2->data, s1->len);              \
       if (s2->type == FSW_STRING_TYPE_##type1 && s1->type == FSW_STRING_TYPE_##type2) \
         return fsw_streq_##type1##_##type2(s2->data, s1->data, s1->len);
-    STREQ_DISPATCH(ISO88591, UTF8);
-    STREQ_DISPATCH(ISO88591, UTF16);
-    STREQ_DISPATCH(ISO88591, UTF16_SWAPPED);
-    STREQ_DISPATCH(UTF8, UTF16);
-    STREQ_DISPATCH(UTF8, UTF16_SWAPPED);
-    STREQ_DISPATCH(UTF16, UTF16_SWAPPED);
+    STREQ_DISPATCH(UTF08,         UTF16);
+    STREQ_DISPATCH(ISO88591,      UTF16);
+    STREQ_DISPATCH(ISO88591,      UTF08);
+    STREQ_DISPATCH(ISO88591, UTF16_SWAP);
+    STREQ_DISPATCH(UTF16,    UTF16_SWAP);
+    STREQ_DISPATCH(UTF08,    UTF16_SWAP);
 
     // final fallback
     return 0;
@@ -177,8 +175,8 @@ int fsw_streq_cstr (
     for (i = 0; s2[i]; i++);
 
     temp_s.type = FSW_STRING_TYPE_ISO88591;
-    temp_s.size = temp_s.len = i;
-    temp_s.data = (char *) s2;
+    temp_s.size =           temp_s.len = i;
+    temp_s.data =              (char *) s2;
 
     return fsw_streq (s1, &temp_s);
 }
@@ -197,9 +195,9 @@ fsw_status_t fsw_strdup_coerce (
     fsw_status_t    status;
 
     if (src->type == FSW_STRING_TYPE_EMPTY || src->len == 0) {
-        dest->type = type;
+        dest->type =          type;
         dest->size = dest->len = 0;
-        dest->data = NULL;
+        dest->data =          NULL;
 
         return FSW_SUCCESS;
     }
@@ -208,6 +206,7 @@ fsw_status_t fsw_strdup_coerce (
         dest->type = type;
         dest->len  = src->len;
         dest->size = src->size;
+
         status = FSW_DO_ALLOC(dest->size, &dest->data);
         if (status) return status;
 
@@ -216,18 +215,18 @@ fsw_status_t fsw_strdup_coerce (
     }
 
     // Dispatch to type-specific functions
-    #define STRCOERCE_DISPATCH(type1, type2) \
+    #define STRCOERCE_DISPATCH(type1, type2)                                       \
       if (src->type == FSW_STRING_TYPE_##type1 && type == FSW_STRING_TYPE_##type2) \
         return fsw_strcoerce_##type1##_##type2(src->data, src->len, dest);
-    STRCOERCE_DISPATCH(UTF8, ISO88591);
-    STRCOERCE_DISPATCH(UTF16, ISO88591);
-    STRCOERCE_DISPATCH(UTF16_SWAPPED, ISO88591);
-    STRCOERCE_DISPATCH(ISO88591, UTF8);
-    STRCOERCE_DISPATCH(UTF16, UTF8);
-    STRCOERCE_DISPATCH(UTF16_SWAPPED, UTF8);
-    STRCOERCE_DISPATCH(ISO88591, UTF16);
-    STRCOERCE_DISPATCH(UTF8, UTF16);
-    STRCOERCE_DISPATCH(UTF16_SWAPPED, UTF16);
+    STRCOERCE_DISPATCH(ISO88591,      UTF16);
+    STRCOERCE_DISPATCH(ISO88591,      UTF08);
+    STRCOERCE_DISPATCH(UTF08,      ISO88591);
+    STRCOERCE_DISPATCH(UTF08,         UTF16);
+    STRCOERCE_DISPATCH(UTF16,         UTF08);
+    STRCOERCE_DISPATCH(UTF16,      ISO88591);
+    STRCOERCE_DISPATCH(UTF16_SWAP, ISO88591);
+    STRCOERCE_DISPATCH(UTF16_SWAP,    UTF08);
+    STRCOERCE_DISPATCH(UTF16_SWAP,    UTF16);
 
     return FSW_UNSUPPORTED;
 }
@@ -314,7 +313,7 @@ void fsw_strsplit (
         buffer->type = FSW_STRING_TYPE_EMPTY;
     }
 
-    // TODO: support UTF8 and UTF16_SWAPPED
+    // TODO: support UTF-8 and UTF-16_SWAP
 }
 
 /**

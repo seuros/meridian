@@ -3,12 +3,12 @@
  *
  * see COPYING file
  */
- /*
-  * Modified for RefindPlus
-  * Copyright (c) 2024-2025 Dayo Akanji (sf.net/u/dakanji/profile)
-  *
-  * Modifications distributed under the preceding terms.
-  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2024-2025 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #include <global.h>
 #include "../BootMaster/mystrings.h"

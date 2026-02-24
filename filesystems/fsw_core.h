@@ -179,7 +179,7 @@ enum {
 **/
 
 struct fsw_string {
-    int         type;               //!< Encoding of the string - empty, ISO-8859-1, UTF8, UTF16
+    int         type;               //!< Encoding of the string - empty, ISO-8859-1, UTF-8, UTF-16
     int         len;                //!< Length in characters
     int         size;               //!< Total data size in bytes
     void        *data;              //!< Data pointer (may be NULL if type is EMPTY or len is zero)
@@ -192,16 +192,16 @@ struct fsw_string {
 enum {
     FSW_STRING_TYPE_EMPTY,
     FSW_STRING_TYPE_ISO88591,
-    FSW_STRING_TYPE_UTF8,
+    FSW_STRING_TYPE_UTF08,
     FSW_STRING_TYPE_UTF16,
-    FSW_STRING_TYPE_UTF16_SWAPPED
+    FSW_STRING_TYPE_UTF16_SWAP
 };
 
 #ifdef FSW_LITTLE_ENDIAN
 #define FSW_STRING_TYPE_UTF16_LE FSW_STRING_TYPE_UTF16
-#define FSW_STRING_TYPE_UTF16_BE FSW_STRING_TYPE_UTF16_SWAPPED
+#define FSW_STRING_TYPE_UTF16_BE FSW_STRING_TYPE_UTF16_SWAP
 #else
-#define FSW_STRING_TYPE_UTF16_LE FSW_STRING_TYPE_UTF16_SWAPPED
+#define FSW_STRING_TYPE_UTF16_LE FSW_STRING_TYPE_UTF16_SWAP
 #define FSW_STRING_TYPE_UTF16_BE FSW_STRING_TYPE_UTF16
 #endif
 
@@ -228,21 +228,17 @@ struct fsw_blockcache {
 **/
 
 struct fsw_volume {
-    fsw_u32     phys_blocksize;     //!< Block size for disk access / file system structures
-    fsw_u32     log_blocksize;      //!< Block size for logical file data
-
-    struct DNODESTRUCTNAME *root;   //!< Root directory dnode
-    struct fsw_string label;        //!< Volume label
-
-    struct fsw_dnode *dnode_head;   //!< List of all dnodes allocated for this volume
-
-    struct fsw_blockcache *bcache;  //!< Array of block cache entries
-    fsw_u32     bcache_size;        //!< Number of entries in the block cache array
-
-    void        *host_data;         //!< Hook for a host-specific data structure
-    struct fsw_host_table *host_table;      //!< Dispatch table for host-specific functions
-    struct fsw_fstype_table *fstype_table;  //!< Dispatch table for file system specific functions
-    int         host_string_type;   //!< String type used by the host environment
+    fsw_u32                   phys_blocksize;    //!< Block size for disk access / file system structures
+    fsw_u32                   log_blocksize;     //!< Block size for logical file data
+    struct DNODESTRUCTNAME   *root;              //!< Root directory dnode
+    struct fsw_string         label;             //!< Volume label
+    struct fsw_dnode         *dnode_head;        //!< List of all dnodes allocated for this volume
+    struct fsw_blockcache    *bcache;            //!< Array of block cache entries
+    fsw_u32                   bcache_size;       //!< Number of entries in the block cache array
+    void                     *host_data;         //!< Hook for a host-specific data structure
+    struct fsw_host_table    *host_table;        //!< Dispatch table for host-specific functions
+    struct fsw_fstype_table  *fstype_table;      //!< Dispatch table for file system specific functions
+    int                       host_string_type;  //!< String type used by the host environment
 };
 
 /**
@@ -250,19 +246,16 @@ struct fsw_volume {
 **/
 
 struct fsw_dnode {
-    fsw_u32     refcount;           //!< Reference count
-
-    struct VOLSTRUCTNAME *vol;      //!< The volume this dnode belongs to
-    struct DNODESTRUCTNAME *parent; //!< Parent directory dnode
-    struct fsw_string name;         //!< Name of this item in the parent directory
-
-    fsw_u64     tree_id;            //!< Unique id number (usually the btrfs subvolume)
-    fsw_u64     dnode_id;           //!< Unique id number (usually the inode number)
-    int         type;               //!< Type of the dnode - file, dir, symlink, special
-    fsw_u64     size;               //!< Data size in bytes
-
-    struct fsw_dnode *next;         //!< Doubly-linked list of all dnodes: previous dnode
-    struct fsw_dnode *prev;         //!< Doubly-linked list of all dnodes: next dnode
+    fsw_u32                 refcount;           //!< Reference count
+    struct VOLSTRUCTNAME   *vol;                //!< The volume this dnode belongs to
+    struct DNODESTRUCTNAME *parent;             //!< Parent directory dnode
+    struct fsw_string       name;               //!< Name of this item in the parent directory
+    fsw_u64                 tree_id;            //!< Unique id number (usually the btrfs subvolume)
+    fsw_u64                 dnode_id;           //!< Unique id number (usually the inode number)
+    int                     type;               //!< Type of the dnode - file, dir, symlink, special
+    fsw_u64                 size;               //!< Data size in bytes
+    struct fsw_dnode       *next;               //!< Doubly-linked list of all dnodes: previous dnode
+    struct fsw_dnode       *prev;               //!< Doubly-linked list of all dnodes: next dnode
 };
 
 /**

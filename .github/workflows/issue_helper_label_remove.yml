@@ -45,7 +45,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Abandoned'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -64,7 +64,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Cancelled'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -83,7 +83,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Cannot-Replicate'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -102,7 +102,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Duplicate'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -121,7 +121,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Duplicate'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -140,7 +140,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Incomplete'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -159,7 +159,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Invalid'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -178,7 +178,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - NoLog'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -197,7 +197,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Triage'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -216,7 +216,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Parked'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -235,7 +235,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Prorogued'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -254,7 +254,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Resolved'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -273,7 +273,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Tagged'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -292,7 +292,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Queries'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -311,7 +311,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Upstream'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -330,7 +330,7 @@ jobs:
     if: github.event.inputs.operation == 'Label - Remove - Not-Planned'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}

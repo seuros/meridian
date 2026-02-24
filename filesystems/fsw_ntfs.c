@@ -1035,12 +1035,6 @@ fsw_status_t fsw_ntfs_volume_mount (
         s.data = u16get (ptr, 0x14) + ptr; // ATTRIBUTE_RECORD_HEADER.Form.Resident.ValueOffset
         s.len  = s.size / 2;
 
-        FSW_MSG_LEVEL_3((
-            FSW_MSG_STR(
-                "FSW_NTFS: fsw_ntfs_volume_mount ... Volume Name [%.*ls]\n"
-            ), s.len, s.data
-        ));
-
         fsw_strdup_coerce (&volg->label, volg->host_string_type, &s);
     }
     free_mft (&mft0);
@@ -2004,8 +1998,8 @@ static fsw_status_t fsw_ntfs_dir_lookup (
                 );
                 FSW_MSG_LEVEL_3((
                     FSW_MSG_STR(
-                        "FSW_NTFS: fsw_ntfs_dir_lookup ... depth==%d len==%x off==%x flag==%x next==%x cmp==%d name==%d[%.*ls]\n"
-                    ), depth, len, off, flag, next, cmp, nlen, nlen, name
+                        "FSW_NTFS: fsw_ntfs_dir_lookup ... depth==%d len==%x off==%x flag==%x next==%x cmp==%d\n"
+                    ), depth, len, off, flag, next, cmp
                 ));
             }
 
@@ -2017,27 +2011,28 @@ static fsw_status_t fsw_ntfs_dir_lookup (
             }
             else if (cmp < 0) {
                 if (!(flag & 1) || !dno->has_idxtree) goto notfound;
+
                 block = FSW_U64_DIV(u64get (buf, next - 8), cpb) + 1;
                 break;
             }
-            else { /* cmp > 0 */
+            else {
+                // cmp > 0
                 off = next;
             }
         }
         if (!block) break;
 
-        if (buf != fsw_ntfs_read_index_block (
-                vol, dno, block
-            )
-        ) {
-            break;
-        }
+        buf = fsw_ntfs_read_index_block (
+            vol, dno, block
+        );
+        if (buf == NULL) break;
+
         buf += 24;
         len  = dno->idxsz - 24;
         depth++;
     }
 
-    notfound:
+notfound:
     fsw_strfree (&s);
     return FSW_NOT_FOUND;
 }
@@ -2128,10 +2123,8 @@ static fsw_status_t fsw_ntfs_dir_read (
 
             FSW_MSG_LEVEL_3((
                 FSW_MSG_STR(
-                    "FSW_NTFS: fsw_ntfs_dir_lookup ... flag==%x next==%x nt==%x [%.*ls]\n"
-                ),
-                flag, next, u08get (buf, off + 0x51),
-                u08get (buf, off + 0x50), buf + off + 0x52
+                    "FSW_NTFS: fsw_ntfs_dir_lookup ... flag==%x next==%x nt==%x\n"
+                ), flag, next, u08get (buf, off + 0x51)
             ));
 
             if ((u08get (buf, off + 0x51) != 2)) {
@@ -2211,7 +2204,7 @@ static fsw_status_t fsw_ntfs_readlink (
 //
 
 struct fsw_fstype_table   FSW_FSTYPE_TABLE_NAME(ntfs) = {
-    { FSW_STRING_TYPE_UTF8, 4, 4, "ntfs" },
+    { FSW_STRING_TYPE_UTF08, 4, 4, "ntfs" },
     sizeof (struct fsw_ntfs_volume),
     sizeof (struct fsw_ntfs_dnode),
 

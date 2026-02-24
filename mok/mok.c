@@ -42,13 +42,13 @@
  * Significant portions of this code are derived from Tianocore
  * (http://tianocore.sf.net) and are Copyright 2009-2012 The Intel Corporation.
  */
- /*
-  * Modified for RefindPlus
-  * Copyright (c) 2021-2024 Dayo Akanji (sf.net/u/dakanji/profile)
-  * Portions Copyright (c) 2021 Joe van Tunen (joevt@shaw.ca)
-  *
-  * Modifications distributed under the preceding terms.
-  */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2021-2024 Dayo Akanji (sf.net/u/dakanji/profile)
+** Portions Copyright (c) 2021 Joe van Tunen (joevt@shaw.ca)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #include "global.h"
 #include "mok.h"

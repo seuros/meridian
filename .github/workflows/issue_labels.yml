@@ -22,7 +22,7 @@ jobs:
       status: ${{ steps.add_label_user_close_check_main.outputs.status }}
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -46,7 +46,7 @@ jobs:
     if: github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && needs.add_label_user_close_check.outputs.status == 'success'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -65,7 +65,7 @@ jobs:
     if: github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && contains(github.event.issue.body, 'Suggested Feature') && contains(github.event.issue.body, 'Background Information') && contains(github.event.issue.body, 'Additional Context')
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -86,16 +86,15 @@ jobs:
     if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && contains(github.event.issue.body, 'Unofficially Modified Code Build') }}
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       # Set NodeJS Up - https://github.com/actions/setup-node
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          # Using range for flexibility
-          node-version: '>=20 <22'
+          node-version: '>=24 <=28'
 
       # Add Comment
       - uses: actions-cool/issues-helper@v3
@@ -144,7 +143,7 @@ jobs:
         shell: bash
         run: |
           # Tag as 'Unknown Provenance'
-          NewTitle="RefindPlus of Unknown Provenance: Exhibits Issues"
+          NewTitle="RefindPlus of Unknown Provenance: Has Issues"
           curl -f -X PATCH \
             -H "Authorization: token ${ENV_TOKEN}" \
             -H "Accept: application/vnd.github.v3+json" \
@@ -157,10 +156,10 @@ jobs:
     needs: [add_label_user_open_drop1]
     runs-on: ubuntu-latest
 
-    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED') }}
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED - disregarding guidance given') }}
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -208,7 +207,7 @@ jobs:
     if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') }}
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -247,15 +246,63 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           issue-number: ${{ github.event.issue.number }}
 
-  add_label_user_outdated:
-    name: Handle Outdated Version
+  # Add Labels - https://github.com/actions-cool/issues-helper
+  add_label_user_open_drop4:
+    name: Drop for Forgotten Details
     needs: [add_label_user_open_drop3]
     runs-on: ubuntu-latest
 
-    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && contains(github.event.issue.body, 'Official Older Released Version') }}
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED - disregarding guidance given') && contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') }}
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      # Add Comment
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'create-comment'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |-
+            Kindly only raise issues after properly noting key details.
+
+            Thank you.
+
+      # Add 'Dropped' Label
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'add-labels'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.issue.number }}
+          labels: 'Dropped'
+
+      # Close Issue
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'close-issue'
+          close-reason: 'not planned'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.issue.number }}
+
+      # Lock Issue
+      - uses: actions-cool/issues-helper@v3
+        with:
+          actions: 'lock-issue'
+          token: ${{ steps.app-token.outputs.token }}
+          issue-number: ${{ github.event.issue.number }}
+
+  add_label_user_outdated:
+    name: Handle Outdated Version
+    needs: [add_label_user_open_drop4]
+    runs-on: ubuntu-latest
+
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED - disregarding guidance given') && !contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') && contains(github.event.issue.body, 'Official Older Released Version') }}
+    steps:
+      - id: app-token
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -301,10 +348,10 @@ jobs:
     needs: [add_label_user_outdated]
     runs-on: ubuntu-latest
 
-    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED') }}
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED - disregarding guidance given') && !contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') }}
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -323,15 +370,15 @@ jobs:
     needs: [add_label_user_open1]
     runs-on: ubuntu-latest
 
-    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED') && !contains(github.event.issue.body, 'Suggested Feature') && !contains(github.event.issue.body, 'Background Information') && !contains(github.event.issue.body, 'Additional Context') }}
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED - disregarding guidance given') && !contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') && !contains(github.event.issue.body, 'Suggested Feature') && !contains(github.event.issue.body, 'Background Information') && !contains(github.event.issue.body, 'Additional Context') }}
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v8
         with:
             github-token: ${{ steps.app-token.outputs.token }}
             script: |
@@ -362,10 +409,10 @@ jobs:
     needs: [add_label_user_open2]
     runs-on: ubuntu-latest
 
-    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED') }}
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED - disregarding guidance given') && !contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') }}
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -386,7 +433,7 @@ jobs:
     if: github.actor == 'dakanji' && github.event.action == 'reopened'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -405,7 +452,7 @@ jobs:
     if: github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'reopened'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -425,7 +472,7 @@ jobs:
     if: github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'reopened'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -444,7 +491,7 @@ jobs:
     if: github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'closed'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -466,7 +513,7 @@ jobs:
       status: ${{ steps.bounce_bug_check1_main.outputs.status }}
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -490,7 +537,7 @@ jobs:
     if: needs.bounce_bug_check1.outputs.status == 'success'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -510,7 +557,7 @@ jobs:
     if: github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'closed'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -534,7 +581,7 @@ jobs:
       status: ${{ steps.bounce_enhance_check1_main.outputs.status }}
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -558,7 +605,7 @@ jobs:
     if: needs.bounce_enhance_check1.outputs.status == 'success'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -580,7 +627,7 @@ jobs:
     if: github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'closed'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -600,7 +647,7 @@ jobs:
     if: github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'closed'
     steps:
       - id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}

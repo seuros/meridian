@@ -62,7 +62,7 @@ decompressor_t fsw_btrfs_decompressor_func[GRUB_BTRFS_COMPRESSION_MAX] = {
 //
 
 struct fsw_fstype_table   FSW_FSTYPE_TABLE_NAME(btrfs) = {
-    { FSW_STRING_TYPE_UTF8, 5, 5, "btrfs" },
+    { FSW_STRING_TYPE_UTF08, 5, 5, "btrfs" },
     sizeof (struct fsw_btrfs_volume),
     sizeof (struct fsw_btrfs_dnode),
 
@@ -1511,7 +1511,7 @@ fsw_status_t fsw_btrfs_volume_mount (
     if (vol->is_master == 0) {
         // Already mounted via other device
 #define FAKE_LABEL "btrfs.multi.device"
-        s.type = FSW_STRING_TYPE_UTF8;
+        s.type = FSW_STRING_TYPE_UTF08;
         s.size = s.len = sizeof (FAKE_LABEL) - 1;
         s.data = FAKE_LABEL;
         err = fsw_strdup_coerce (
@@ -1552,7 +1552,7 @@ fsw_status_t fsw_btrfs_volume_mount (
         if (sblock.label[i] == 0) break;
     }
 
-    s.type = FSW_STRING_TYPE_UTF8;
+    s.type = FSW_STRING_TYPE_UTF08;
     s.size = s.len = i;
     s.data = sblock.label;
 
@@ -2613,7 +2613,7 @@ fsw_status_t fsw_btrfs_readlink (
     } while ((i << vol->sectorshift) < dno->g.size);
 
     link_str.data = tmp;
-    link_str.type = FSW_STRING_TYPE_UTF8;
+    link_str.type = FSW_STRING_TYPE_UTF08;
     link_str.size = link_str.len = (int)dno->g.size;
 
     fsw_strdup_coerce (
@@ -2900,7 +2900,7 @@ fsw_status_t fsw_btrfs_dir_lookup (
     }
 
     err = fsw_strdup_coerce (
-        &s, FSW_STRING_TYPE_UTF8,
+        &s, FSW_STRING_TYPE_UTF08,
         lookup_name
     );
     if (err) return err;
@@ -2964,7 +2964,7 @@ fsw_status_t fsw_btrfs_get_default_root (
 
     uint64_t default_tree_id = vol->top_tree;
 
-    s.type = FSW_STRING_TYPE_UTF8;
+    s.type = FSW_STRING_TYPE_UTF08;
     s.data = "default";
     s.size = 7;
 
@@ -3207,7 +3207,7 @@ fsw_status_t fsw_btrfs_dir_read (
             }
 
             struct fsw_string s;
-            s.type = FSW_STRING_TYPE_UTF8;
+            s.type = FSW_STRING_TYPE_UTF08;
             s.size = s.len = FSW_U16_LE_SWAP(cdirel->n);
             s.data = cdirel->name;
 
