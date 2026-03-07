@@ -18,12 +18,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2020 - 2025 Dayo Akanji (sf.net/u/dakanji/profile)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2020 - 2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #ifndef __REFINDPLUS_POINTERDEVICE_H_
 #define __REFINDPLUS_POINTERDEVICE_H_
@@ -46,29 +46,22 @@ typedef struct PointerStateStruct {
     BOOLEAN Holding;
 } POINTER_STATE;
 
-#ifdef  INT32_MIN
-#undef  INT32_MIN
-#endif
+
+#ifndef INT32_MIN
 #define INT32_MIN    ((INT32) 0x80000000)         // -2,147,483,648
-
-#ifdef  INT32_MAX
-#undef  INT32_MAX
 #endif
+
+#ifndef INT32_MAX
 #define INT32_MAX    ((INT32) 0x7FFFFFFF)         //  2,147,483,647
-
-#ifdef  UINTN_MIN
-#undef  UINTN_MIN
 #endif
+
+#ifndef UINTN_MIN
 #define UINTN_MIN    ((UINTN) 0)                  //  Always 0
+#endif
 
-#ifdef  UINTN_MAX
-#undef  UINTN_MAX
-#endif
-#if defined(EFI32)
-#define UINTN_MAX    ((UINTN) 0xFFFFFFFF)         //  4,294,967,295
-#else
-#define UINTN_MAX    ((UINTN) 0xFFFFFFFFFFFFFFFF) //  18,446,744,073,709,551,615
-#endif
+#ifndef UINTN_MAX
+#define UINTN_MAX    ((UINTN)~0)                  //  32-bit == 4,294,967,295 (32-bit)
+#endif                                            //  64-bit == 18,446,744,073,709,551,615
 
 
 VOID pdInitialize (VOID);

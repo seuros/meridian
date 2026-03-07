@@ -42,12 +42,12 @@
  * with this source code or binaries made from it.
  *
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2024 Dayo Akanji (sf.net/u/dakanji/profile)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2024 - 2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #ifndef __CONFIG_H_
 #define __CONFIG_H_
@@ -60,11 +60,11 @@
 #include "global.h"
 
 typedef struct {
-    UINT8   *Buffer;
+    UINT8   *BufferData;
     UINTN    BufferSize;
     UINTN    Encoding;
-    CHAR8   *Current8Ptr;
-    CHAR8   *End8Ptr;
+    CHAR8   *End08Ptr;
+    CHAR8   *Current08Ptr;
     CHAR16  *Current16Ptr;
     CHAR16  *End16Ptr;
 } REFIT_FILE;
@@ -90,8 +90,8 @@ L"shim.efi,shim-fedora.efi,shim-centos.efi,PreLoader.efi,fb.efi"
 VOID ReadConfig (CHAR16 *FileName);
 VOID ScanUserConfigured (CHAR16 *FileName);
 VOID FreeTokenLine (
-    IN OUT CHAR16 ***TokenList,
-    IN OUT UINTN    *TokenCount
+    IN OUT CHAR16        ***TokenList,
+    IN OUT UINTN           *TokenCount
 );
 
 EFI_STATUS RefitReadFile (
@@ -102,23 +102,21 @@ EFI_STATUS RefitReadFile (
 );
 
 UINTN ReadTokenLine (
-    IN  REFIT_FILE   *File,
-    OUT CHAR16     ***TokenList
+    IN  REFIT_FILE         *File,
+    OUT CHAR16           ***TokenList
 );
 
 REFIT_FILE * ReadLinuxOptionsFile (
-    IN CHAR16       *LoaderPath,
-    IN REFIT_VOLUME *Volume
+    IN CHAR16              *LoaderPath,
+    IN REFIT_VOLUME        *Volume
 );
 
 CHAR16 * GetFirstOptionsFromFile (
-    IN CHAR16       *LoaderPath,
-    IN REFIT_VOLUME *Volume
+    IN CHAR16              *LoaderPath,
+    IN REFIT_VOLUME        *Volume
 );
 CHAR16 * ReadLine (
-    REFIT_FILE *File
+    IN  REFIT_FILE         *File
 );
 
 #endif
-
-/* EOF */

@@ -54,13 +54,13 @@ Some features:
 
 ## Installation
 
-A simple and direct way is to manually make the RefindPlus efi file a `UEFI Fallback File` by naming it accordingly, `BOOTx64.efi`, and placing this in the `UEFI Fallback Path` of a disk, `/EFI/BOOT`. The configuration file should be placed next to the RefindPlus efi file along with optional `drivers`, `tools`, and/or `icons` folders as/if required.
+A simple and direct way is to manually make the RefindPlus efi file a `UEFI Fallback File` by naming it accordingly, `BOOTx64.efi`, and placing this in the `UEFI Fallback Path` of a disk, `/EFI/BOOT`. The configuration file should be placed next to the RefindPlus efi file along with optional `drivers`, `tools`, and/or `icons` folders as required.
 
 > [!IMPORTANT]
 >
-> Only `X86_64` builds of RefindPlus are currently distributed and supported. Users may be able to build `AARCH64` versions out of the box by passing appropriate build flags.
+> Only `X86_64` builds of RefindPlus are currently distributed and supported
 
-[MyBootMgr](https://www.dakanji.com/creations/index.html) is recommended to automate installing RefindPlus when running Mac OS on Intel-based Macs. Alternatively, as the RefindPlus efi file can function as a drop-in replacement for the upstream efi file, the [rEFInd package](https://www.rodsbooks.com/refind/installing.html) can be installed first and its efi file replaced with the RefindPlus efi file (rename RefindPlus file to match). This allows installing RefindPlus on other compatible operating systems supported upstream. See the [Divergence Section](https://github.com/RefindPlusRepo/RefindPlus#divergence) for how to enable `UEFI Secure Boot` as/if required.
+[MyBootMgr](https://www.dakanji.com/creations/index.html) is recommended to automate installing RefindPlus when running Mac OS on Intel-based Macs. Alternatively, as the RefindPlus efi file can function as a drop-in replacement for the upstream efi file, the [rEFInd package](https://www.rodsbooks.com/refind/installing.html) can be installed first and its efi file replaced with the RefindPlus efi file (rename RefindPlus file to match). This allows installing RefindPlus on other compatible operating systems supported upstream. See the [Divergence Section](https://github.com/RefindPlusRepo/RefindPlus#divergence) for how to enable `UEFI Secure Boot` (if required).
 
 > [!NOTE]
 >
@@ -86,9 +86,9 @@ When run without activating RefindPlus-specific configuration options, as will b
 
 ## Additional Functionality
 
-RefindPlus-specific funtionality can be configured using the tokens below.\
+RefindPlus-specific functionality can be configured by using the options below.\
 Additional information is provided in the sample RefindPlus configuration file.\
-These tokens are included in `Section 1` of the sample RefindPlus configuration file.
+These settings make up `Section 1` of the sample RefindPlus configuration file.
 
 Token | Functionality
 ----- | -----
@@ -97,7 +97,7 @@ badram_fix_type       |Controls whether and how faulty memory regions are manage
 badram_fix_wide       |Allows lifting program limits on types of faulty memory regions managed
 continue_on_warning   |Proceed as if a key was pressed after screen warnings (for unattended boot)
 csr_dynamic           |Actively sets or unsets Apple's `Configurable Security Restrictions (CSR)`
-csr_normalise         |Removes the `APPLE_INTERNAL` bit, when present, to permit OTA updates
+csr_normalise         |Removes the `APPLE_INTERNAL` CSR bit, when present, to permit OTA updates
 decline_help_icon     |Disables feature that may improve loading speed by preferring generic icons
 decline_help_size     |Disables feature that sets additional UI scaling for very high DPI screens
 decline_help_text     |Disables feature that sets screen text to complementary colours
@@ -139,13 +139,13 @@ set_boot_args         |Allows setting arbitrary Mac OS boot arguments
 supply_nvme           |Enables an inbuilt NvmExpress driver
 supply_uefi           |Enables feature that emulates UEFI 2.x support on EFI 1.x units
 sync_nvram            |Resets nvRAM settings, such as BlueTooth, on some boot types if required
-sync_trust            |Works around some `Boot Chain of Trust` problems on T2/TPM chipped units
+sync_trust            |Works around some `Boot Chain of Trust` issues with T2/TPM chipped units
 transient_boot        |Disables feature that selects the last booted loader by default
 unicode_collation     |Provides fine tuned support for languages that require unicode text
 
 ## Modified Functionality
 
-In addition to the new functionality listed above, the following upstream tokens have been modified:
+In addition to the new functionality listed above, the following upstream config tokens have been modified:
 - **"timeout":** The RefindPlus default is no timeout unless explicitly set via this config token.
 - **"use_nvram":** Variable storage is on the filesystem, not the nvRAM chip, unless explicitly set to do so via this config token.
 - **"use_graphics_for":** Additional options added:
@@ -158,9 +158,10 @@ In addition to the new functionality listed above, the following upstream tokens
     - When run on Apple firmware, RefindPlus will additionally trigger nvRAM garbage collection
 - **menuentry:** Additional `OSType` options added for manual stanzas:
   - `RefitVariant`, `SystemD`, `OpenCore`, and `Clover` can be additionally defined
-- **"follow_symlinks":** Accepts optional additional parameters
-    - `follow_symlinks ON` : Symlinks always followed
-    - `follow_symlinks OFF` : Symlinks never followed
+- **"follow_symlinks":** Accepts optional additional parameters:
+    - `follow_symlinks`: Symlinks always followed
+    - `follow_symlinks ON`: Symlinks always followed
+    - `follow_symlinks OFF`: Symlinks always followed
     - `follow_symlinks OFF "Vol_1,Vol_2"`: Symlinks followed unless on list
     - `follow_symlinks ON "Vol_9,Vol_10"`: Symlinks followed only if listed
 - **"csr_values":** A value of `0` can be set as the `Enabled` value to allow `Over The Air (OTA)` updates on Mac OS 11.x (Big Sur) or newer with SIP enabled.
@@ -171,11 +172,11 @@ In addition to the new functionality listed above, the following upstream tokens
     - Level 1 is broadly equivalent to the verbose upstream Level 4 format
       - Upstream Levels 1 to 3 were dispensed with
     - Level 2 is only exposed on `NOOPT` builds and outputs logs at a very detailed level
-      - The RefindPlus build script will create `NOOPT` builds when passed `ALL` or `NPT` as a second parameter
+      - The RefindPlus build script will create `NOOPT` builds when passed `ALL` or `NPT` via the `--build-type=XYZ` parameter
         - Setting `ALL` adds an `NPT` build to the standard `REL` and `DBG` builds created
         - Setting `NPT` creates only that build type
-          - Applies to setting `REL` or `DBG`
-      - The first parameter is the build branch, which also needs to be specified in such instances
+          - Applies to only setting `REL` or `DBG`
+        - Pass `--help` to the build script for guidance on options
     - When Level 2 is not exposed, selected levels above `1` will be capped at Level 1
     - When exposed, selected levels above `2` will be capped at Level 2
   - Logging is never active on `RELEASE` builds (day-to-day use).
@@ -186,11 +187,11 @@ In addition to the new functionality listed above, the following upstream tokens
 ## Divergence
 
 Significant visible implementation differences vis-a-vis the upstream base are:
-- **UEFI Secure Boot:** RefindPlus binaries as from v0.14.2.AD now include the `Secure Boot Advanced Targeting (SBAT)` section required by Shim v15.3/newer for secure boot support but require users to self-sign the binaries and to self-enroll the certificate.
+- **UEFI Secure Boot:** RefindPlus binaries as from v0.14.2.AD now include the `Secure Boot Advanced Targeting (SBAT)` section required by Shim v15.3/newer for secure boot support but require users to self-sign the binaries and to self-enrol the associated certificate.
   - > The process [outlined upstream](https://www.rodsbooks.com/refind/secureboot.html#installation) for self-signing can be followed to enable support.
   - > An adaptation of the process for RefindPlus is [provided here](https://github.com/RefindPlusRepo/RefindPlus/discussions/190#discussioncomment-10130431). Modify for newer releases as required.
   - > Refer to [this summation](https://forum.manjaro.org/t/howto-enable-secure-boot-with-refind/121403/6) for futher insight.
-- **GZipped Loaders:** RefindPlus only provides stub support for handling GZipped loaders as this is largely only relevant for units on the ARM architecture.
+- **GZipped Loaders:** RefindPlus only provides stub support for handling GZipped loaders as this is largely only relevant for units with ARM chips.
   - > This stub support is only used for debug logging in RefindPlus and can be activated using the same `support_gzipped_loaders` setting as upstream.
 - **Screenshots:** These are saved in the PNG format with a significantly smaller file size.
   - > Additionally, the file naming is different and files are always saved to the same ESP as RefindPlus.
@@ -198,9 +199,9 @@ Significant visible implementation differences vis-a-vis the upstream base are:
   - > RefindPlus maintains consistency with how other config tokens are handled.
 - **UI Scaling:** WQHD monitors are correctly determined not to be HiDPI monitors and UI elements are not scaled up on such monitors when the RefindPlus-specific `scale_ui` setting is set to automatically detect the screen resolution. RefindPlus also scales UI elements down when low resolution screens (less than 1025px on the longest edge) are detected.
   - > Additionally, UI elements on extremely high resultion screens (greater than 5999px on the longest edge) receive a `4X scaling` as opposed to the `2X scaling` applied for standard HiDPI screens.
-- **Loader Icons:** RefindPlus prefers `os_windows` and `boot_windows` icon files, if present, over `os_win`  `boot_win` files (and `win8` variants). Separately, RefindPlus prefers generic OS icons by default over slower to load custom icons where possible. The upstream icon search implementation involves loading generic OS icons only if a search for custom icons has returned empty.
+- **Loader Icons:** RefindPlus prefers `os_windows`/`boot_windows` icon files, if present, over `os_win`/`boot_win` files (and `win8` variants). Separately, RefindPlus prefers generic OS icons over custom icons by default (improves load speed). The upstream icon search implementation involves loading generic OS icons only if a search for custom icons has returned empty.
   - > Activate the RefindPlus-specific `decline_help_icon` setting to keep the upstream implementation.
-- **GOP OptionROM Provision:** RefindPlus attempts to ensure that GOP is available, to permit using modern GPUs on on EFI 1.x units, by amending the `UEFI System Table` and loading the UEFI 2.x GOP OptionROM. This is done using an inbuilt `ReloadGOP` feature.
+- **GOP OptionROM Provision:** RefindPlus attempts to ensure that GOP is available, to permit using modern GPUs on on EFI 1.x units, by amending the `UEFI System Table` and attempting to reloading the GOP OptionROM. This is done using an inbuilt `ReloadGOP` feature.
   - > Activate the RefindPlus-specific `disable_reload_gop` setting to switch this feature off.
 - **Apple Framebuffer Provision:** RefindPlus defaults to always providing Apple framebuffers on Macs, when not available under certain circumstances. This is done using an inbuilt `SetAppleFB` feature.
   - > Activate the RefindPlus-specific `disable_set_applefb` setting to switch this feature off.

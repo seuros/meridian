@@ -882,7 +882,7 @@ VOID EFIAPI BdsLibConnectAllDriversToAllControllers (
             ReLoaded = TRUE;
 
             #if REFIT_DEBUG > 0
-            // DA-TAG: Delibrate for Codacy
+            // DA-TAG: Deliberate for Codacy
             Status =
             #endif
             ApplyGOPFix();

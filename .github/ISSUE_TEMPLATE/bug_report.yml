@@ -40,8 +40,9 @@ body:
       description: |
           Confirm the items above have been read and applied as required.
       options:
-        - 'SUGGESTED TESTS IGNORED despite applicable item'
-        - 'SUGGESTED TESTS EXECUTED or no applicable item'
+        - 'SUGGESTED_TESTS_EXECUTED or no_applicable_item'
+        - 'SUGGESTED_TESTS_IGNORED despite applicable_item'
+      default: 1
     validations:
       required: true
 
@@ -128,7 +129,7 @@ body:
       label: Debug Log
       description: |
         Please run the RefindPlus 'DBG' efi and add debug logs.\
-        Please attach log files and _DO NOT_ paste their contents.\
+        Do attach the log files and _DO NOT_ paste their contents.\
         Attach log files by dragging/dropping on the field below.\
         Output log files are stored in the ESP holding RefindPlus.
       placeholder: |
@@ -145,8 +146,9 @@ body:
           Debug logs are almost always required and produced by running the 'DBG' efi.\
           Confirm log files are provided or that you are certain this is not required.
       options:
-        - 'DEBUG LOGS NOT PROVIDED - disregarding_guidance_given'
-        - 'DEBUG LOGS ARE PROVIDED or omission clearly justified'
+        - 'DEBUG_LOGS_ARE_PROVIDED or omission_clearly_justified'
+        - 'DEBUG_LOGS_NOT_PROVIDED - disregarding_guidance_given'
+      default: 1
     validations:
       required: true
 

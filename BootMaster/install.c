@@ -9,12 +9,12 @@
  * code or binaries made from it.
  *
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2020-2025 Dayo Akanji (sf.net/u/dakanji/profile)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2020-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #include "screenmgt.h"
 #include "install.h"
@@ -221,7 +221,9 @@ REFIT_VOLUME * PickOneESP (
         }
 
         DefaultEntry = 9999; // Use the Max Index
-        Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
+        Style = (
+            AllowGraphicsMode
+        ) ? GraphicsMenuStyle : TextMenuStyle;
         MenuExit = DrawMenuScreen (
             InstallMenu, Style,
             &DefaultEntry, &ChosenOption
@@ -354,9 +356,11 @@ EFI_STATUS BackupOldFile (
 
     NewName = PoolPrint (L"%s-old", FileName);
 
-    Status = (FileExists (BaseDir, NewName))
-        ? EFI_SUCCESS
-        : RenameFile (BaseDir, FileName, NewName);
+    Status = (
+        FileExists (BaseDir, NewName)
+    ) ? EFI_SUCCESS : RenameFile (
+        BaseDir, FileName, NewName
+    );
 
     MY_FREE_POOL(NewName);
 
@@ -1443,8 +1447,10 @@ UINTN ConfirmBootOptionOperation (
     if (Operation == EFI_BOOT_OPTION_MAKE_DEFAULT) {
         CheckString = L"Set This Boot Option as Default?";
     }
-    else if (Operation == EFI_BOOT_OPTION_DELETE) {
-        CheckString = L"Delete This Boot Option?";
+    else {
+        if (Operation == EFI_BOOT_OPTION_DELETE) {
+            CheckString = L"Delete This Boot Option?";
+        }
     }
     AddMenuInfoLine (ConfirmBootOptionMenu, CheckString, FALSE);
 
@@ -1457,8 +1463,13 @@ UINTN ConfirmBootOptionOperation (
     }
 
     DefaultEntry = 9999; // Use the Max Index
-    Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
-    MenuExit = DrawMenuScreen (ConfirmBootOptionMenu, Style, &DefaultEntry, &ChosenOption);
+    Style = (
+        AllowGraphicsMode
+    ) ? GraphicsMenuStyle : TextMenuStyle;
+    MenuExit = DrawMenuScreen (
+        ConfirmBootOptionMenu, Style,
+        &DefaultEntry, &ChosenOption
+    );
 
     #if REFIT_DEBUG > 0
     LogExit (MenuExit, __func__, ChosenOption->Title);
@@ -1575,8 +1586,13 @@ UINTN PickOneBootOption (
         }
 
         DefaultEntry = 9999; // Use the Max Index
-        Style = (AllowGraphicsMode) ? GraphicsMenuStyle : TextMenuStyle;
-        MenuExit = DrawMenuScreen (PickBootOptionMenu, Style, &DefaultEntry, &ChosenOption);
+        Style = (
+            AllowGraphicsMode
+        ) ? GraphicsMenuStyle : TextMenuStyle;
+        MenuExit = DrawMenuScreen (
+            PickBootOptionMenu, Style,
+            &DefaultEntry, &ChosenOption
+        );
 
         #if REFIT_DEBUG > 0
         LogExit (MenuExit, __func__, ChosenOption->Title);
@@ -1590,9 +1606,11 @@ UINTN PickOneBootOption (
             Operation = EFI_BOOT_OPTION_MAKE_DEFAULT;
             *BootOrderNum = ChosenOption->Row;
         }
-        else if (MenuExit == MENU_EXIT_HIDE) {
-            Operation = EFI_BOOT_OPTION_DELETE;
-            *BootOrderNum = ChosenOption->Row;
+        else {
+            if (MenuExit == MENU_EXIT_HIDE) {
+                Operation = EFI_BOOT_OPTION_DELETE;
+                *BootOrderNum = ChosenOption->Row;
+            }
         }
 
         Operation = ConfirmBootOptionOperation (Operation, ChosenOption->Title);

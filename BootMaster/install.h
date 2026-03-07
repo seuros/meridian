@@ -8,12 +8,12 @@
  * version 3 (GPLv3), a copy of which must be distributed with this source
  * code or binaries made from it.
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2020-2021 Dayo Akanji (sf.net/u/dakanji/profile)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2020-2021 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #ifndef __INSTALL_H_
 #define __INSTALL_H_

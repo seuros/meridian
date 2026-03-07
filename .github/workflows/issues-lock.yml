@@ -17,7 +17,7 @@ permissions:
 concurrency:
   group: lock
 
-# Lock Threads - https://github.com/dakanji/lock-threads
+# Lock Threads - https://github.com/dessant/lock-threads
 jobs:
   lock-threads-01:
     name: Lock Misc Issues
@@ -40,7 +40,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Handle Thread Lock1
-        uses: dakanji/lock-threads@v6
+        uses: dessant/lock-threads@v6
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           issue-lock-reason: ''
@@ -60,7 +60,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Handle Thread Lock2
-        uses: dakanji/lock-threads@v6
+        uses: dessant/lock-threads@v6
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           issue-lock-reason: ''
@@ -80,7 +80,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Handle Thread Lock3
-        uses: dakanji/lock-threads@v6
+        uses: dessant/lock-threads@v6
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           issue-lock-reason: ''
@@ -100,7 +100,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Handle Thread Lock4
-        uses: dakanji/lock-threads@v6
+        uses: dessant/lock-threads@v6
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           issue-lock-reason: ''
@@ -120,7 +120,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Handle Thread Lock5
-        uses: dakanji/lock-threads@v6
+        uses: dessant/lock-threads@v6
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           issue-lock-reason: ''
@@ -141,7 +141,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Handle Thread Lock6
-        uses: dakanji/lock-threads@v6
+        uses: dessant/lock-threads@v6
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           issue-lock-reason: ''

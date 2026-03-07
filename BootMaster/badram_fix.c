@@ -223,7 +223,7 @@ VOID GetBadRamInfo (
         MY_FREE_POOL(*BadRamData);
     }
 
-    // DA-TAG: Delibrate ... BadRamData is NULL
+    // DA-TAG: Deliberate ... BadRamData is NULL
     /* coverity[var_deref_op: SUPPRESS] */
     *BadRamData = BadRamTemp;
 } // static VOID GetBadRamInfo()

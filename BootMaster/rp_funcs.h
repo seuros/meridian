@@ -123,9 +123,9 @@ extern VOID RefitStall (
     do {                                                \
         if (!gKernelStarted) {                          \
             if (File != NULL) {                         \
-                if (File->Buffer != NULL) {             \
-                    FreePool (File->Buffer);            \
-                    File->Buffer = NULL;                \
+                if (File->BufferData != NULL) {         \
+                    FreePool (File->BufferData);        \
+                    File->BufferData = NULL;            \
                 }                                       \
                 FreePool (File);                        \
                 File = NULL;                            \

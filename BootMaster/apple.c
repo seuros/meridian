@@ -1023,7 +1023,7 @@ VOID RefitAppleFbInfoInstallProtocol (VOID) {
 
         UninitRefitLib();
         #if REFIT_DEBUG > 0
-        // DA-TAG: Delibrate for Codacy
+        // DA-TAG: Deliberate for Codacy
         Status =
         #endif
         REFIT_CALL_4_WRAPPER(

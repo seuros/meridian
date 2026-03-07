@@ -159,7 +159,9 @@ VOID SyncLinuxPrefixes (VOID) {
         );
     }
 
-    SetLinuxMatchPatterns (GlobalConfig.LinuxPrefixes);
+    SetLinuxMatchPatterns (
+        GlobalConfig.LinuxPrefixes
+    );
 } // static VOID SyncLinuxPrefixes()
 
 static
@@ -202,11 +204,17 @@ VOID SyncDontScanDirs (VOID) {
         return;
     }
 
-    if (GuidsAreEqual (&(SelfVolume->PartGuid), &GuidNull)) {
+    if (GuidsAreEqual (
+            &(SelfVolume->PartGuid),
+            &GuidNull
+        )
+    ) {
         return;
     }
 
-    GuidString = GuidAsString (&(SelfVolume->PartGuid));
+    GuidString = GuidAsString (
+        &(SelfVolume->PartGuid)
+    );
     if (GuidString == NULL) {
         return;
     }
@@ -222,11 +230,12 @@ VOID SyncDontScanDirs (VOID) {
             GuidString, L','
         );
     }
+    MY_FREE_POOL(GuidString);
+
     MergeStrings (
         &GlobalConfig.DontScanDirs,
         SelfDirPath, L':'
     );
-    MY_FREE_POOL(GuidString);
 } // static VOID SyncDontScanDirs()
 
 static
@@ -388,6 +397,8 @@ VOID HandleString (
     IN  UINTN     TokenCount,
     OUT CHAR16  **Target
 ) {
+    // 'Target' cannot be NULL
+    // '*Target' can be NULL
     if (Target == NULL || TokenCount != 2) {
         return;
     }
@@ -413,11 +424,17 @@ VOID HandleStrings (
     BOOLEAN AddMode;
 
 
+    // 'Target' cannot be NULL
+    // '*Target' can be NULL
     if (Target == NULL) {
         return;
     }
 
-    if (TokenCount > 2 && MyStriCmp (TokenList[1], L"+")) {
+    if (TokenCount > 2 &&
+        MyStriCmp (
+            TokenList[1], L"+"
+        )
+    ) {
         AddMode = TRUE;
     }
     else {
@@ -470,8 +487,8 @@ VOID HandleHexes (
         }
     }
     else {
-        InputIndex =    1;
-        EndOfList  = NULL;
+        InputIndex =           1;
+        EndOfList  =        NULL;
         EraseUint32List (Target);
     }
 
@@ -533,7 +550,9 @@ UINTN HandleTime (
             Minute = 0;
         }
 
-        if ((TimeString[i] >= L'0') && (TimeString[i] <= '9')) {
+        if (TimeString[i] >= L'0' &&
+            TimeString[i] <= L'9'
+        ) {
             Minute *= 10;
             Minute += (TimeString[i] - L'0');
         }
@@ -577,9 +596,9 @@ VOID SetDefaultByTime (
     OUT CHAR16 **Default
 ) {
     EFI_STATUS            Status;
-    UINTN                 Now;
-    UINTN                 EndTime;
     UINTN                 StartTime;
+    UINTN                 EndTime;
+    UINTN                 Now;
     CHAR16               *MsgStr;
     EFI_TIME              CurrentTime;
     BOOLEAN               SetIt;
@@ -622,7 +641,9 @@ VOID SetDefaultByTime (
         SetIt = FALSE;
         if (StartTime < EndTime) {
             // Time range does NOT cross midnight
-            if (Now >= StartTime && Now <= EndTime) {
+            if (Now >= StartTime &&
+                Now <= EndTime
+            ) {
                 SetIt = TRUE;
             }
         }
@@ -664,7 +685,7 @@ BOOLEAN GetIsDisabled (
     IsDisabled = FALSE;
 
     // Store original TokenLine pointers
-    FilePtr08 = File->Current8Ptr;
+    FilePtr08 = File->Current08Ptr;
     FilePtr16 = File->Current16Ptr;
 
     while (1) {
@@ -703,7 +724,7 @@ BOOLEAN GetIsDisabled (
         // Restore original TokenLine pointers
         // Continues in Caller with original line
         // Continues from current line if disabled
-        File->Current8Ptr  = FilePtr08;
+        File->Current08Ptr = FilePtr08;
         File->Current16Ptr = FilePtr16;
     }
 
@@ -741,7 +762,7 @@ REFIT_VOLUME * GetStanzaVolume (
     SubjectVolume = Volume;
 
     // Store original TokenLine pointers
-    FilePtr08 = File->Current8Ptr;
+    FilePtr08 = File->Current08Ptr;
     FilePtr16 = File->Current16Ptr;
 
     while (1) {
@@ -872,7 +893,7 @@ REFIT_VOLUME * GetStanzaVolume (
 
     // Restore original TokenLine pointers
     // Continues in Caller with original line
-    File->Current8Ptr  = FilePtr08;
+    File->Current08Ptr = FilePtr08;
     File->Current16Ptr = FilePtr16;
 
     return SubjectVolume;
@@ -1298,7 +1319,11 @@ LOADER_ENTRY * InitializeStanza (
             #endif
 
             MY_FREE_POOL(StanzaEntry->InitrdPath);
-            StanzaEntry->InitrdPath = StrDuplicate (TokenList[1]);
+            if (!GotFirmwareTag) {
+                StanzaEntry->InitrdPath = StrDuplicate (
+                    TokenList[1]
+                );
+            }
         }
         else if (MyStriCmp (TokenList[0], L"options")) {
             #if REFIT_DEBUG > 0
@@ -1608,7 +1633,11 @@ REFIT_FILE * GenerateOptionsFromEtcFstab (
             }
             else if (StrCmp (TokenList[2], L"\\") == 0) {
                 BREAD_CRUMB(L"%a:  7a 1a 1b 1", __func__);
-                Root = PoolPrint (L"%s=%s", TokenList[0], TokenList[1]);
+                Root = PoolPrint (
+                    L"%s=%s",
+                    TokenList[0],
+                    TokenList[1]
+                );
             }
             else {
                 BREAD_CRUMB(L"%a:  7a 1a 1c 1", __func__);
@@ -1638,7 +1667,10 @@ REFIT_FILE * GenerateOptionsFromEtcFstab (
                 );
 
                 BREAD_CRUMB(L"%a:  7a 1a 2a 3", __func__);
-                MergeStrings ((CHAR16 **) &(Options->Buffer), Line, 0);
+                MergeStrings (
+                    (CHAR16 **) &(Options->BufferData),
+                    Line, 0
+                );
 
                 BREAD_CRUMB(L"%a:  7a 1a 2a 4", __func__);
                 MY_FREE_POOL(Line);
@@ -1650,14 +1682,16 @@ REFIT_FILE * GenerateOptionsFromEtcFstab (
                 );
 
                 BREAD_CRUMB(L"%a:  7a 1a 2a 6", __func__);
-                MergeStrings ((CHAR16**) &(Options->Buffer), Line, 0);
+                MergeStrings (
+                    (CHAR16**) &(Options->BufferData), Line, 0
+                );
 
                 BREAD_CRUMB(L"%a:  7a 1a 2a 7", __func__);
                 MY_FREE_POOL(Line);
 
                 BREAD_CRUMB(L"%a:  7a 1a 2a 8", __func__);
-                Options->BufferSize = sizeof (CHAR16) * (
-                    StrLen ((CHAR16 *) Options->Buffer) + 1
+                Options->BufferSize = StrSize (
+                    (CHAR16 *) Options->BufferData
                 );
             } // if
 
@@ -1673,15 +1707,15 @@ REFIT_FILE * GenerateOptionsFromEtcFstab (
     } // while {Infinite}
 
     BREAD_CRUMB(L"%a:  8", __func__);
-    if (Options->Buffer == NULL) {
+    if (Options->BufferData == NULL) {
         BREAD_CRUMB(L"%a:  8a 1", __func__);
         MY_FREE_POOL(Options);
     }
     else {
         BREAD_CRUMB(L"%a:  8b 1", __func__);
-        Options->Current8Ptr  = (CHAR8  *) Options->Buffer;
-        Options->Current16Ptr = (CHAR16 *) Options->Buffer;
-        Options->End8Ptr      = Options->Current8Ptr + Options->BufferSize;
+        Options->Current08Ptr = (CHAR8  *) Options->BufferData;
+        Options->Current16Ptr = (CHAR16 *) Options->BufferData;
+        Options->End08Ptr     = Options->Current08Ptr + Options->BufferSize;
         Options->End16Ptr     = Options->Current16Ptr + (Options->BufferSize >> 1);
     }
 
@@ -1741,7 +1775,9 @@ REFIT_FILE * GenerateOptionsFromPartTypes (VOID) {
     }
 
     BREAD_CRUMB(L"%a:  4", __func__);
-    GuidString = GuidAsString (&(GlobalConfig.DiscoveredRoot->PartGuid));
+    GuidString = GuidAsString (
+        &(GlobalConfig.DiscoveredRoot->PartGuid)
+    );
     if (GuidString != NULL) {
         BREAD_CRUMB(L"%a:  4a 1", __func__);
         ToLower (GuidString);
@@ -1751,7 +1787,9 @@ REFIT_FILE * GenerateOptionsFromPartTypes (VOID) {
             L"\"Boot with Default Options\"    \"%s root=/dev/disk/by-partuuid/%s\"\n",
             WriteStatus, GuidString
         );
-        MergeStrings ((CHAR16 **) &(Options->Buffer), Line, 0);
+        MergeStrings (
+            (CHAR16 **) &(Options->BufferData), Line, 0
+        );
         MY_FREE_POOL(Line);
 
         BREAD_CRUMB(L"%a:  4a 3", __func__);
@@ -1761,7 +1799,9 @@ REFIT_FILE * GenerateOptionsFromPartTypes (VOID) {
         );
 
         BREAD_CRUMB(L"%a:  4a 4", __func__);
-        MergeStrings ((CHAR16 **) &(Options->Buffer), Line, 0);
+        MergeStrings (
+            (CHAR16 **) &(Options->BufferData), Line, 0
+        );
 
         BREAD_CRUMB(L"%a:  4a 5", __func__);
         MY_FREE_POOL(Line);
@@ -1770,11 +1810,11 @@ REFIT_FILE * GenerateOptionsFromPartTypes (VOID) {
 
     BREAD_CRUMB(L"%a:  5", __func__);
     Options->Encoding     = ENCODING_UTF16_LE;
-    Options->Current8Ptr  = (CHAR8  *) Options->Buffer;
-    Options->Current16Ptr = (CHAR16 *) Options->Buffer;
-    Options->BufferSize   = StrSize ((CHAR16 *) Options->Buffer);
+    Options->Current08Ptr = (CHAR8  *) Options->BufferData;
+    Options->Current16Ptr = (CHAR16 *) Options->BufferData;
+    Options->BufferSize   = StrSize ((CHAR16 *) Options->BufferData);
+    Options->End08Ptr     = Options->Current08Ptr +  Options->BufferSize;
     Options->End16Ptr     = Options->Current16Ptr + (Options->BufferSize >> 1);
-    Options->End8Ptr      = Options->Current8Ptr  +  Options->BufferSize;
 
     BREAD_CRUMB(L"%a:  6 - END:- return REFIT_FILE *Options", __func__);
     LOG_DECREMENT();
@@ -1815,7 +1855,9 @@ VOID ExitOuter (
         );
     }
     if (GlobalConfig.DefaultSelection == NULL) {
-        GlobalConfig.DefaultSelection = StrDuplicate (L"+");
+        GlobalConfig.DefaultSelection = StrDuplicate (
+            L"+"
+        );
     }
 
     SyncShowTools();
@@ -1914,20 +1956,20 @@ VOID BadFlag (
 
 // Get a single line of text from a file
 CHAR16 * ReadLine (
-    REFIT_FILE *File
+    IN  REFIT_FILE         *File
 ) {
-    CHAR16  *Line;
-    CHAR16  *qChar16;
-    CHAR16  *pChar16;
-    CHAR16  *LineEndChar16;
-    CHAR16  *LineStartChar16;
-    CHAR8   *pChar08;
-    CHAR8   *LineEndChar08;
-    CHAR8   *LineStartChar08;
-    UINTN    LineLength;
+    CHAR16                 *Line;
+    CHAR16                 *qChar16;
+    CHAR16                 *pChar16;
+    CHAR16                 *LineEndChar16;
+    CHAR16                 *LineStartChar16;
+    CHAR8                  *pChar08;
+    CHAR8                  *LineEndChar08;
+    CHAR8                  *LineStartChar08;
+    UINTN                   LineLength;
 
 
-    if (File->Buffer == NULL) {
+    if (File->BufferData == NULL) {
         // Early Return
         return NULL;
     }
@@ -1943,28 +1985,30 @@ CHAR16 * ReadLine (
     if (File->Encoding == ENCODING_UTF8 ||
         File->Encoding == ENCODING_ISO8859_1
     ) {
-        pChar08 = File->Current8Ptr;
-        if (pChar08 >= File->End8Ptr) {
+        pChar08 = File->Current08Ptr;
+        if (pChar08 >= File->End08Ptr) {
             // Early Return
             return NULL;
         }
 
         LineStartChar08 = pChar08;
-        for (; pChar08 < File->End8Ptr; pChar08++) {
+        for (; pChar08 < File->End08Ptr; pChar08++) {
             if (*pChar08 == 13 || *pChar08 == 10) {
                 break;
             }
         }
         LineEndChar08 = pChar08;
-        for (; pChar08 < File->End8Ptr; pChar08++) {
+        for (; pChar08 < File->End08Ptr; pChar08++) {
             if (*pChar08 != 13 && *pChar08 != 10) {
                 break;
             }
         }
-        File->Current8Ptr = pChar08;
+        File->Current08Ptr = pChar08;
 
         LineLength = (UINTN) (LineEndChar08 - LineStartChar08) + 1;
-        Line = AllocatePool (sizeof (CHAR16) * LineLength);
+        Line = AllocatePool (
+            sizeof (CHAR16) * LineLength
+        );
         if (Line == NULL) {
             // Early Return
             return NULL;
@@ -1972,7 +2016,10 @@ CHAR16 * ReadLine (
 
         qChar16 = Line;
         if (File->Encoding == ENCODING_ISO8859_1) {
-            for (pChar08 = LineStartChar08; pChar08 < LineEndChar08; ) {
+            for (
+                pChar08 = LineStartChar08;
+                pChar08 < LineEndChar08;
+            ) {
                 *qChar16++ = *pChar08++;
             }
         }
@@ -1981,7 +2028,10 @@ CHAR16 * ReadLine (
                 // DA-TAG: Investigate This
                 //         Actually handle UTF-8
                 //         Currently just duplicates previous block
-                for (pChar08 = LineStartChar08; pChar08 < LineEndChar08; ) {
+                for (
+                    pChar08 = LineStartChar08;
+                    pChar08 < LineEndChar08;
+                ) {
                     *qChar16++ = *pChar08++;
                 }
             }
@@ -2013,13 +2063,18 @@ CHAR16 * ReadLine (
     File->Current16Ptr = pChar16;
 
     LineLength = (UINTN) (LineEndChar16 - LineStartChar16) + 1;
-    Line = AllocatePool (sizeof (CHAR16) * LineLength);
+    Line = AllocatePool (
+        sizeof (CHAR16) * LineLength
+    );
     if (Line == NULL) {
         // Early Return
         return NULL;
     }
 
-    for (pChar16 = LineStartChar16, qChar16 = Line; pChar16 < LineEndChar16; ) {
+    for (
+        pChar16 = LineStartChar16,
+        qChar16 = Line; pChar16 < LineEndChar16;
+    ) {
         *qChar16++ = *pChar16++;
     }
     *qChar16 = 0;
@@ -2033,14 +2088,14 @@ EFI_STATUS RefitReadFile (
     IN OUT REFIT_FILE      *File,
     OUT    UINTN           *size
 ) {
-    EFI_STATUS       Status;
-    EFI_FILE_HANDLE  FileHandle;
-    EFI_FILE_INFO   *FileInfo;
-    CHAR16          *Message;
-    UINT64           ReadSize;
+    EFI_STATUS              Status;
+    EFI_FILE_HANDLE         FileHandle;
+    EFI_FILE_INFO          *FileInfo;
+    CHAR16                 *Message;
+    UINT64                  ReadSize;
 
 
-    File->Buffer     = NULL;
+    File->BufferData = NULL;
     File->BufferSize =    0;
     *size            =    0;
 
@@ -2051,8 +2106,13 @@ EFI_STATUS RefitReadFile (
         RefitReadOnly, 0
     );
     if (EFI_ERROR(Status)) {
-        Message = PoolPrint (L"While Loading File:- '%s'", FileName);
-        CheckError (Status, Message);
+        Message = PoolPrint (
+            L"While Loading File:- '%s'",
+            FileName
+        );
+        CheckError (
+            Status, Message
+        );
         MY_FREE_POOL(Message);
 
         // Early Return
@@ -2075,8 +2135,10 @@ EFI_STATUS RefitReadFile (
 
     File->BufferSize = (UINTN) ReadSize;
 
-    File->Buffer = AllocatePool (File->BufferSize);
-    if (File->Buffer == NULL) {
+    File->BufferData = AllocatePool (
+        File->BufferSize
+    );
+    if (File->BufferData == NULL) {
        // DA-TAG: Invesigate This
        //         Print and register the error
        REFIT_CALL_1_WRAPPER(
@@ -2089,10 +2151,13 @@ EFI_STATUS RefitReadFile (
 
     Status = REFIT_CALL_3_WRAPPER(
         FileHandle->Read, FileHandle,
-        &File->BufferSize, File->Buffer
+        &File->BufferSize, File->BufferData
     );
     if (EFI_ERROR(Status)) {
-        Message = PoolPrint (L"While Loading File:- '%s'", FileName);
+        Message = PoolPrint (
+            L"While Loading File:- '%s'",
+            FileName
+        );
         CheckError (Status, Message);
         MY_FREE_POOL(Message);
 
@@ -2102,7 +2167,7 @@ EFI_STATUS RefitReadFile (
             FileHandle->Close, FileHandle
         );
 
-        MY_FREE_POOL(File->Buffer);
+        MY_FREE_POOL(File->BufferData);
 
         // Early Return
         return Status;
@@ -2110,40 +2175,42 @@ EFI_STATUS RefitReadFile (
 
     *size = File->BufferSize;
 
-    REFIT_CALL_1_WRAPPER(FileHandle->Close, FileHandle);
+    REFIT_CALL_1_WRAPPER(
+        FileHandle->Close, FileHandle
+    );
 
     // Setup for reading
-    File->Current8Ptr  = (CHAR8  *) File->Buffer;
-    File->Current16Ptr = (CHAR16 *) File->Buffer;
-    File->End8Ptr      = File->Current8Ptr  + File->BufferSize;
+    File->Current08Ptr = (CHAR8  *) File->BufferData;
+    File->Current16Ptr = (CHAR16 *) File->BufferData;
+    File->End08Ptr     = File->Current08Ptr +  File->BufferSize;
     File->End16Ptr     = File->Current16Ptr + (File->BufferSize >> 1);
 
     // DA_TAG: Investigate This
     //        Detect other encodings
     //        Some are also implemented
     //
-    // Detect Encoding
-    File->Encoding = ENCODING_ISO8859_1; // Default: Translate CHAR8 to CHAR16 1:1
+    // Detect Encoding ... Default: Translate CHAR8 to CHAR16 1:1
+    File->Encoding = ENCODING_ISO8859_1;
     if (File->BufferSize >= 4) {
-        if (File->Buffer[0] == 0xFF &&
-            File->Buffer[1] == 0xFE
+        if (File->BufferData[0] == 0xFF &&
+            File->BufferData[1] == 0xFE
         ) {
             // BOM in UTF-16 little endian (or UTF-32 little endian)
             File->Encoding = ENCODING_UTF16_LE; // Use CHAR16 as is
             File->Current16Ptr++;
         }
         else if (
-            File->Buffer[0] == 0xEF &&
-            File->Buffer[1] == 0xBB &&
-            File->Buffer[2] == 0xBF
+            File->BufferData[0] == 0xEF &&
+            File->BufferData[1] == 0xBB &&
+            File->BufferData[2] == 0xBF
         ) {
             // BOM in UTF-8
             File->Encoding = ENCODING_UTF8; // Translate from UTF-8 to UTF-16
-            File->Current8Ptr += 3;
+            File->Current08Ptr += 3;
         }
         else {
-            if (File->Buffer[1] == 0 &&
-                File->Buffer[3] == 0
+            if (File->BufferData[1] == 0 &&
+                File->BufferData[3] == 0
             ) {
                 File->Encoding = ENCODING_UTF16_LE; // Use CHAR16 as is
             }
@@ -2157,13 +2224,15 @@ EFI_STATUS RefitReadFile (
 // Get a line of tokens from a file
 //
 UINTN ReadTokenLine (
-    IN  REFIT_FILE   *File,
-    OUT CHAR16     ***TokenList
+    IN  REFIT_FILE         *File,
+    OUT CHAR16           ***TokenList
 ) {
-    BOOLEAN  LineFinished;
-    BOOLEAN  IsQuoted;
-    CHAR16  *Line, *Token, *p;
-    UINTN    TokenCount;
+    BOOLEAN                 LineFinished;
+    BOOLEAN                 IsQuoted;
+    CHAR16                 *Token;
+    CHAR16                 *Line;
+    CHAR16                 *p;
+    UINTN                   TokenCount;
 
 
     *TokenList = NULL;
@@ -2230,12 +2299,15 @@ UINTN ReadTokenLine (
 } // UINTN ReadTokenLine()
 
 VOID FreeTokenLine (
-    IN OUT CHAR16 ***TokenList,
-    IN OUT UINTN    *TokenCount
+    IN OUT CHAR16        ***TokenList,
+    IN OUT UINTN           *TokenCount
 ) {
     // DA-TAG: Investigate this
     //         Also free the items
-    FreeList ((VOID ***) TokenList, TokenCount);
+    FreeList (
+        (VOID ***) TokenList,
+        TokenCount
+    );
 } // VOID FreeTokenLine()
 
 // Read the user-configured menu entries from config.conf
@@ -2244,17 +2316,17 @@ VOID ScanUserConfigured (
     CHAR16 *FileName
 ) {
     #if REFIT_DEBUG > 0
-    CHAR16             *TmpName;
-    CHAR16             *CountStr;
-    UINTN               LogLineType;
+    CHAR16                 *TmpName;
+    CHAR16                 *CountStr;
+    UINTN                   LogLineType;
     #endif
 
-    EFI_STATUS         Status;
-    REFIT_FILE        *File;
-    CHAR16           **TokenList;
-    UINTN              size;
-    UINTN              TokenCount;
-    LOADER_ENTRY      *Entry;
+    EFI_STATUS             Status;
+    REFIT_FILE            *File;
+    CHAR16               **TokenList;
+    UINTN                  size;
+    UINTN                  TokenCount;
+    LOADER_ENTRY          *Entry;
 
 
     if (!ManualInclude) {
@@ -2278,9 +2350,14 @@ VOID ScanUserConfigured (
         Status = RefitReadFile (SelfDir, FileName, File, &size);
         if (!EFI_ERROR(Status)) {
             while (1) {
-                TokenCount = ReadTokenLine (File, &TokenList);
+                TokenCount = ReadTokenLine (
+                    File, &TokenList
+                );
                 if (TokenCount == 0) {
-                    FreeTokenLine (&TokenList, &TokenCount);
+                    FreeTokenLine (
+                        &TokenList,
+                        &TokenCount
+                    );
 
                     break;
                 }
@@ -2294,7 +2371,10 @@ VOID ScanUserConfigured (
                         File, SelfVolume, TokenList[1]
                     );
                     if (Entry == NULL) {
-                        FreeTokenLine (&TokenList, &TokenCount);
+                        FreeTokenLine (
+                            &TokenList,
+                            &TokenCount
+                        );
                         continue;
                     }
 
@@ -2314,17 +2394,23 @@ VOID ScanUserConfigured (
                     #endif
 
                     if (Entry->me.SubScreen == NULL) {
-                        GenerateSubScreen (Entry, SelfVolume, TRUE);
+                        GenerateSubScreen (
+                            Entry,
+                            SelfVolume, TRUE
+                        );
                     }
 
-                    AddMenuEntry (MainMenu, (REFIT_MENU_ENTRY *) Entry);
+                    AddMenuEntry (
+                        MainMenu,
+                        (REFIT_MENU_ENTRY *) Entry
+                    );
                 }
                 else {
-                    if (!ManualInclude &&
-                        TokenCount == 2 &&
-                        !MyStriCmp (TokenList[1], FileName) &&
-                        MyStriCmp (TokenList[0], L"include") &&
-                        MyStriCmp (FileName, GlobalConfig.ConfigFilename)
+                    if (!ManualInclude                        &&
+                        TokenCount == 2                       &&
+                        !MyStriCmp (TokenList[1], FileName)   &&
+                        MyStriCmp  (TokenList[0], L"include") &&
+                        MyStriCmp  (FileName, GlobalConfig.ConfigFilename)
 
                     ) {
                         // Scan manual stanza include file
@@ -2336,12 +2422,16 @@ VOID ScanUserConfigured (
                         );
                         #   else
                         LOG_SEP(L"X");
-                        BREAD_CRUMB(L"%a:  A1 - INCLUDE FILE (%s): START", __func__, TokenList[1]);
+                        BREAD_CRUMB(L"%a:  A1 - INCLUDE FILE (%s): START", __func__,
+                            TokenList[1]
+                        );
                         #   endif
                         #endif
 
                         ManualInclude =  TRUE;
-                        ScanUserConfigured (TokenList[1]);
+                        ScanUserConfigured (
+                            TokenList[1]
+                        );
                         ManualInclude = FALSE;
 
                         #if REFIT_DEBUG > 0
@@ -2350,7 +2440,9 @@ VOID ScanUserConfigured (
                             L"Scanned Include File for Manual Stanzas"
                         );
                         #   else
-                        BREAD_CRUMB(L"%a:  A2 - INCLUDE FILE (%s): END", __func__, TokenList[1]);
+                        BREAD_CRUMB(L"%a:  A2 - INCLUDE FILE (%s): END", __func__,
+                            TokenList[1]
+                        );
                         LOG_SEP(L"X");
                         #   endif
                         #endif
@@ -2405,25 +2497,23 @@ VOID ScanUserConfigured (
 // initial RAM disk, or other file in the target directory, and this function
 // finds the file with a name in the comma-delimited list of names specified by
 // LINUX_OPTIONS_FILENAMES within that directory and loads it. If a RefindPlus
-// options file can't be found, try to generate minimal options from /etc/fstab
-// on the same volume as the kernel. This typically works only if the kernel is
-// being read from the Linux root filesystem.
+// options file cannot be found, try to generate minimal options from the
+// /etc/fstab file on the same volume as the kernel. This typically only
+// works if the kernel is being read from the Linux root filesystem.
 //
 // The return value is a pointer to the REFIT_FILE handle for the file,
 // or NULL if it was not found.
 REFIT_FILE * ReadLinuxOptionsFile (
-    IN CHAR16       *LoaderPath,
-    IN REFIT_VOLUME *Volume
+    IN CHAR16              *LoaderPath,
+    IN REFIT_VOLUME        *Volume
 ) {
-    EFI_STATUS   Status;
-    CHAR16      *OptionsFilename;
-    CHAR16      *FullFilename;
-    CHAR16      *BaseFilename;
-    UINTN        size;
-    UINTN        i;
-    BOOLEAN      GoOn;
-    BOOLEAN      FileFound;
-    REFIT_FILE  *File;
+    EFI_STATUS              Status;
+    CHAR16                 *OptionsFilename;
+    CHAR16                 *FullFilename;
+    CHAR16                 *BaseFilename;
+    UINTN                   size, i;
+    BOOLEAN                 FileFound;
+    REFIT_FILE             *File;
 
 
     LOG_SEP(L"X");
@@ -2432,32 +2522,42 @@ REFIT_FILE * ReadLinuxOptionsFile (
 
     BREAD_CRUMB(L"%a:  2", __func__);
     File         =  NULL;
-    GoOn         =  TRUE;
     FileFound    = FALSE;
     BaseFilename =  NULL;
     FullFilename = FindPath (LoaderPath);
 
     i = 0;
-    while (GoOn && FullFilename != NULL) {
+    while (!FileFound && FullFilename != NULL) {
         OptionsFilename = FindCommaDelimited (
             LINUX_OPTIONS_FILENAMES, i++
         );
         if (OptionsFilename == NULL) break;
 
         LOG_SEP(L"X");
-        BaseFilename = StrDuplicate (FullFilename);
+        BaseFilename = StrDuplicate (
+            FullFilename
+        );
 
         BREAD_CRUMB(L"%a:  2a 1 - WHILE LOOP:- START", __func__);
-        MergeStrings (&BaseFilename, OptionsFilename, '\\');
+        MergeStrings (
+            &BaseFilename,
+            OptionsFilename, '\\'
+        );
 
         BREAD_CRUMB(L"%a:  2a 2", __func__);
         if (!FileExists (Volume->RootDir, BaseFilename)) {
-            BREAD_CRUMB(L"%a:  2a 2a 1 - OptionsFile *NOT* Found", __func__);
+            BREAD_CRUMB(L"%a:  2a 2a 1 - Seek OptionsFile:- Not Found ... '%s'", __func__,
+                BaseFilename
+            );
         }
         else {
-            BREAD_CRUMB(L"%a:  2a 2b 1 - Seek OptionsFile ... Success", __func__);
+            BREAD_CRUMB(L"%a:  2a 2b 1 - Seek OptionsFile:- Success ... '%s'", __func__,
+                BaseFilename
+            );
             MY_FREE_FILE(File);
-            File = AllocateZeroPool (sizeof (REFIT_FILE));
+            File = AllocateZeroPool (
+                sizeof (REFIT_FILE)
+            );
             if (File == NULL) {
                 MY_FREE_POOL(OptionsFilename);
                 MY_FREE_POOL(FullFilename);
@@ -2476,14 +2576,16 @@ REFIT_FILE * ReadLinuxOptionsFile (
                 BaseFilename, File, &size
             );
             BREAD_CRUMB(L"%a:  2a 2b 3", __func__);
-            if (EFI_ERROR(Status)) {
+            if (!EFI_ERROR(Status)) {
                 BREAD_CRUMB(L"%a:  2a 2b 3a 1", __func__);
-                CheckError (Status, L"While Loading the Linux Options File");
+                FileFound = TRUE;
             }
             else {
                 BREAD_CRUMB(L"%a:  2a 2b 3b 1", __func__);
-                GoOn      = FALSE;
-                FileFound =  TRUE;
+                CheckError (
+                    Status,
+                    L"While Loading the Linux Options File"
+                );
             }
             BREAD_CRUMB(L"%a:  2a 2b 4", __func__);
         }
@@ -2503,7 +2605,9 @@ REFIT_FILE * ReadLinuxOptionsFile (
         // No refindplus_linux.conf or refind_linux.conf file,
         // try to pull values from /etc/fstab
         MY_FREE_FILE(File);
-        File = GenerateOptionsFromEtcFstab (Volume);
+        File = GenerateOptionsFromEtcFstab (
+            Volume
+        );
 
         BREAD_CRUMB(L"%a:  3a 2", __func__);
         // If still NULL, try Freedesktop.org Discoverable Partitions Spec
@@ -2522,34 +2626,43 @@ REFIT_FILE * ReadLinuxOptionsFile (
 
 // Retrieve a single line of options from a Linux kernel options file
 CHAR16 * GetFirstOptionsFromFile (
-    IN CHAR16       *LoaderPath,
-    IN REFIT_VOLUME *Volume
+    IN CHAR16              *LoaderPath,
+    IN REFIT_VOLUME        *Volume
 ) {
-    UINTN         TokenCount;
-    CHAR16      **TokenList;
-    CHAR16       *Options;
-    REFIT_FILE   *File;
+    UINTN                   TokenCount;
+    CHAR16                **TokenList;
+    CHAR16                 *Options;
+    REFIT_FILE             *File;
 
 
     LOG_SEP(L"X");
     LOG_INCREMENT();
     BREAD_CRUMB(L"%a:  1 - START", __func__);
-    File = ReadLinuxOptionsFile (LoaderPath, Volume);
+    File = ReadLinuxOptionsFile (
+        LoaderPath, Volume
+    );
 
     BREAD_CRUMB(L"%a:  2", __func__);
     Options = NULL;
     if (File != NULL) {
         BREAD_CRUMB(L"%a:  2a 1", __func__);
-        TokenCount = ReadTokenLine(File, &TokenList);
+        TokenCount = ReadTokenLine (
+            File, &TokenList
+        );
 
         BREAD_CRUMB(L"%a:  2a 2", __func__);
         if (TokenCount > 1) {
             BREAD_CRUMB(L"%a:  2a 2a 1", __func__);
-            Options = StrDuplicate (TokenList[1]);
+            Options = StrDuplicate (
+                TokenList[1]
+            );
         }
 
         BREAD_CRUMB(L"%a:  2a 3", __func__);
-        FreeTokenLine (&TokenList, &TokenCount);
+        FreeTokenLine (
+            &TokenList,
+            &TokenCount
+        );
 
         BREAD_CRUMB(L"%a:  2a 4", __func__);
         MY_FREE_FILE(File);
@@ -2569,41 +2682,41 @@ VOID ReadConfig (
     CHAR16 *FileName
 ) {
     #if REFIT_DEBUG > 0
-    INTN             RealLogLevel;
-    INTN             HighLogLevel;
-    BOOLEAN          UpdatedToken;
+    INTN                    RealLogLevel;
+    INTN                    HighLogLevel;
+    BOOLEAN                 UpdatedToken;
 
-    static BOOLEAN    ValidInclude = TRUE;
-    static BOOLEAN    FirstInclude = TRUE;
+    static BOOLEAN          ValidInclude = TRUE;
+    static BOOLEAN          FirstInclude = TRUE;
     #endif
 
-    EFI_STATUS        Status;
-    REFIT_FILE       *File;
-    BOOLEAN           DoneTool;
-    BOOLEAN           DoneManual;
-    BOOLEAN           CheckManual;
-    BOOLEAN           GotHideuiAll;
-    BOOLEAN           GotNoneHideui;
-    BOOLEAN           OutLoopHideui;
-    BOOLEAN           GotSyncTrustAll;
-    BOOLEAN           GotNoneSyncTrust;
-    BOOLEAN           OutLoopSyncTrust;
-    BOOLEAN           GotNoBootLogoAll;
-    BOOLEAN           GotNoneNoBootLogo;
-    BOOLEAN           OutLoopNoBootLogo;
-    BOOLEAN           GotGraphicsForAll;
-    BOOLEAN           GotNoneGraphicsFor;
-    BOOLEAN           OutLoopGraphicsFor;
-    BOOLEAN           DeclineSetting;
-    CHAR16          **TokenList;
-    CHAR16           *Flag; // Do *NOT* Free
-    UINTN             i, j;
-    UINTN             TokenCount;
-    UINTN             InvalidEntries;
-    INTN              MaxLogLevel;
+    EFI_STATUS              Status;
+    REFIT_FILE             *File;
+    BOOLEAN                 DoneTool;
+    BOOLEAN                 DoneManual;
+    BOOLEAN                 CheckManual;
+    BOOLEAN                 GotHideuiAll;
+    BOOLEAN                 GotNoneHideui;
+    BOOLEAN                 OutLoopHideui;
+    BOOLEAN                 GotSyncTrustAll;
+    BOOLEAN                 GotNoneSyncTrust;
+    BOOLEAN                 OutLoopSyncTrust;
+    BOOLEAN                 GotNoBootLogoAll;
+    BOOLEAN                 GotNoneNoBootLogo;
+    BOOLEAN                 OutLoopNoBootLogo;
+    BOOLEAN                 GotGraphicsForAll;
+    BOOLEAN                 GotNoneGraphicsFor;
+    BOOLEAN                 OutLoopGraphicsFor;
+    BOOLEAN                 DeclineSetting;
+    CHAR16                **TokenList;
+    CHAR16                 *Flag; // Do *NOT* Free
+    UINTN                   i, j;
+    UINTN                   TokenCount;
+    UINTN                   InvalidEntries;
+    INTN                    MaxLogLevel;
 
-    static UINTN      ReadLoops = 0;
-    static BOOLEAN    NotRunBefore = TRUE;
+    static UINTN            ReadLoops = 0;
+    static BOOLEAN          NotRunBefore = TRUE;
 
 
 // Macros to update some static variables
@@ -2707,7 +2820,9 @@ VOID ReadConfig (
         return;
     }
 
-    File = AllocateZeroPool (sizeof (REFIT_FILE));
+    File = AllocateZeroPool (
+        sizeof (REFIT_FILE)
+    );
     if (File == NULL) {
         return;
     }
@@ -2781,8 +2896,9 @@ VOID ReadConfig (
                 &(GlobalConfig.Timeout)
             );
 
-            GlobalConfig.DirectBoot = (GlobalConfig.Timeout < 0)
-                ? TRUE : FALSE;
+            GlobalConfig.DirectBoot = (
+                GlobalConfig.Timeout < 0
+            ) ? TRUE : FALSE;
         }
         else if (
             !GotNoneHideui &&
@@ -2801,6 +2917,7 @@ VOID ReadConfig (
             }
 
             GotHideuiAll = FALSE;
+
             for (i = 1; i < TokenCount; i++) {
                 Flag = TokenList[i];
                 if (MyStriCmp (Flag, L"none")) {
@@ -2834,7 +2951,10 @@ VOID ReadConfig (
         }
         else if (
             !GotNoneGraphicsFor &&
-            MyStriCmp (TokenList[0], L"use_graphics_for")
+            MyStriCmp (
+                TokenList[0],
+                L"use_graphics_for"
+            )
         ) {
             if (!OutLoopGraphicsFor) {
                 // DA-TAG: Reset Current Setting
@@ -2873,7 +2993,7 @@ VOID ReadConfig (
                 if (MyStriCmp (Flag, L"none")) {
                     // DA-TAG: Required despite earlier resets
                     //         Takes precedence if in token list
-                    GotNoneGraphicsFor        = TRUE;
+                    GotNoneGraphicsFor       = TRUE;
                     GlobalConfig.GraphicsFor = GRAPHICS_FOR_NONE;
                     break;
                 }
@@ -2901,7 +3021,10 @@ VOID ReadConfig (
         }
         else if (
             !GotNoneSyncTrust &&
-            MyStriCmp (TokenList[0], L"sync_trust")
+            MyStriCmp (
+                TokenList[0],
+                L"sync_trust"
+            )
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop && !OutLoopSyncTrust) {
@@ -2972,13 +3095,16 @@ VOID ReadConfig (
             #endif
 
             for (i = 0; i < NUM_SCAN_OPTIONS; i++) {
-                GlobalConfig.ScanFor[i] = (i < TokenCount)
-                    ? TokenList[i][0] : ' ';
+                GlobalConfig.ScanFor[i] = (
+                    i < TokenCount
+                ) ? TokenList[i][0] : ' ';
             } // for
         }
         else if (
-            TokenCount == 2 &&
-            MyStriCmp (TokenList[0], L"log_level")
+            MyStriCmp (
+                TokenList[0],
+                L"log_level"
+            ) && TokenCount == 2
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3150,8 +3276,10 @@ VOID ReadConfig (
             }
         }
         else if (
-            TokenCount == 2 &&
-            MyStriCmp (TokenList[0], L"sync_nvram")
+            MyStriCmp (
+                TokenList[0],
+                L"sync_nvram"
+            ) && TokenCount == 2
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3255,10 +3383,12 @@ VOID ReadConfig (
                     #endif
 
                     // Handle Showtools Index
-                    j = (DoneTool) ? j - 1 : 0;
+                    j = (
+                        DoneTool
+                    ) ? j - 1 : 0;
 
                     // Increment Invalid Entry Count
-                    ++InvalidEntries;
+                    InvalidEntries += 1;
 
                     // Skip 'DoneTool' Update
                     // In case this is the first entry
@@ -3274,7 +3404,7 @@ VOID ReadConfig (
                 if (!SetShowTools) {
                     SetShowTools = TRUE;
                 }
-            } // while {Infinite}
+            } // while {Infinite} ... OUTER
         }
         else if (MyStriCmp (TokenList[0], L"banner")) {
             #if REFIT_DEBUG > 0
@@ -3291,8 +3421,10 @@ VOID ReadConfig (
             );
         }
         else if (
-            TokenCount == 2 &&
-            MyStriCmp (TokenList[0], L"banner_scale")
+            MyStriCmp (
+                TokenList[0],
+                L"banner_scale"
+            ) && TokenCount == 2
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3317,8 +3449,10 @@ VOID ReadConfig (
             }
         }
         else if (
-            TokenCount == 2 &&
-            MyStriCmp (TokenList[0], L"small_icon_size")
+            MyStriCmp (
+                TokenList[0],
+                L"small_icon_size"
+            ) && TokenCount == 2
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3336,8 +3470,10 @@ VOID ReadConfig (
             }
         }
         else if (
-            TokenCount == 2 &&
-            MyStriCmp (TokenList[0], L"big_icon_size")
+            MyStriCmp (
+                TokenList[0],
+                L"big_icon_size"
+            ) && TokenCount == 2
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3406,8 +3542,13 @@ VOID ReadConfig (
             }
         }
         else if (
-            MyStriCmp (TokenList[0], L"resolution") &&
-            (TokenCount == 2 || TokenCount == 3)
+            MyStriCmp (
+                TokenList[0],
+                L"resolution"
+            ) && (
+                TokenCount == 2 ||
+                TokenCount == 3
+            )
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3449,8 +3590,10 @@ VOID ReadConfig (
             );
         }
         else if (
-            TokenCount == 2 &&
-            MyStriCmp (TokenList[0], L"font")
+            MyStriCmp (
+                TokenList[0],
+                L"font"
+            ) && TokenCount == 2
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3544,8 +3687,8 @@ VOID ReadConfig (
             );
         }
         else if (
-            TokenCount == 4 &&
-            MyStriCmp (TokenList[0], L"screen_rgb")
+            MyStriCmp (TokenList[0], L"screen_rgb") &&
+            TokenCount == 4
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {

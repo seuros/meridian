@@ -561,19 +561,19 @@ REFIT_MENU_SCREEN * InitializeSubScreen (
                         }
                         else if (Entry->OSType == 'G') {
                             DisplayName = PoolPrint (
-                                L"Instance: Linux - %s via Grub",
+                                L"Instance: Linux via Grub - %s",
                                 ShowName
                             );
                         }
                         else if (Entry->OSType == 'S') {
                             DisplayName = PoolPrint (
-                                L"Instance: Linux - %s via SD-Boot",
+                                L"Instance: Linux via SDBoot - %s",
                                 ShowName
                             );
                         }
                         else {
                             DisplayName = PoolPrint (
-                                L"Instance: Linux - %s via Elilo",
+                                L"Instance: Linux via Elilo - %s",
                                 ShowName
                             );
                         }
@@ -1182,14 +1182,9 @@ VOID SetLoaderDefaults (
                 }
                 else {
                     BREAD_CRUMB(L"%a:  3a 1b 2a 3b 1", __func__);
-                    if (NameClues == NULL) {
-                        BREAD_CRUMB(L"%a:  3a 1b 2a 3b 1a 1", __func__);
-                        NoExtension = NULL;
-                    }
-                    else {
-                        BREAD_CRUMB(L"%a:  3a 1b 2a 3b 1b 1", __func__);
-                        NoExtension = StripEfiExtension (NameClues);
-                    }
+                    NoExtension = (
+                        NameClues != NULL
+                    ) ? StripEfiExtension (NameClues) : NULL;
 
                     BREAD_CRUMB(L"%a:  3a 1b 2a 3b 2", __func__);
                     if (NoExtension != NULL) {
@@ -2152,13 +2147,18 @@ LOADER_ENTRY * AddEfiLoaderEntry (
     LOADER_ENTRY  *MenuEntry;
 
 
-    MenuEntry = InitializeLoaderEntry (NULL);
+    MenuEntry = InitializeLoaderEntry (
+        NULL
+    );
     if (MenuEntry == NULL) {
         return NULL;
     }
 
-    FullTitle = (LoaderTitle != NULL)
-        ? PoolPrint (L"Reboot to %s", LoaderTitle) : NULL;
+    FullTitle = (
+        LoaderTitle == NULL
+    ) ? NULL : PoolPrint (
+        L"Reboot to %s", LoaderTitle
+    );
 
     MenuEntry->DiscoveryType = DISCOVERY_TYPE_AUTO;
     MenuEntry->me.Title      = StrDuplicate ((FullTitle   != NULL) ? FullTitle   : L"Instance: Unknown");
@@ -2183,14 +2183,23 @@ LOADER_ENTRY * AddEfiLoaderEntry (
     MenuEntry->EfiBootNum = EfiBootNum;
 
     OSIconName = NULL;
-    MergeUniqueWords (&OSIconName, MenuEntry->me.Title, L',');
-    MergeUniqueStrings (&OSIconName, LABEL_UNKNOWN, L',');
+    MergeUniqueWords   (&OSIconName, MenuEntry->me.Title, L',');
+    MergeUniqueStrings (&OSIconName, LABEL_UNKNOWN,       L',');
 
-    MenuEntry->me.Image = (Icon != NULL)
-        ? egCopyImage (Icon) : LoadOSIcon (OSIconName, NULL, FALSE);
+    MenuEntry->me.Image = (
+        Icon != NULL
+    ) ? egCopyImage (
+        Icon
+    ) : LoadOSIcon (
+        OSIconName,
+        NULL, FALSE
+    );
 
-    MenuEntry->me.BadgeImage = (Row == 0)
-        ? BuiltinIcon (BUILTIN_ICON_VOL_EFI) : NULL;
+    MenuEntry->me.BadgeImage = (
+        Row != 0
+    ) ? NULL : BuiltinIcon (
+        BUILTIN_ICON_VOL_EFI
+    );
 
     MY_FREE_POOL(OSIconName);
 
@@ -2308,7 +2317,11 @@ LOADER_ENTRY * AddLoaderEntry (
                     );
                     if (SearchName == NULL) break;
 
-                    if (FindSubStr (LoaderPath, SearchName)) {
+                    if (FindSubStr (
+                            LoaderPath,
+                            SearchName
+                        )
+                    ) {
                         IsStub = TRUE;
                         LoaderEntry->OSType  = 'L';
                     }
@@ -2324,11 +2337,14 @@ LOADER_ENTRY * AddLoaderEntry (
                 if (LinuxName == NULL) break;
 
                 if (!IsStub) {
-                    SearchName = PoolPrint (L"\\%s", LinuxName);
+                    SearchName = PoolPrint (
+                        L"\\%s", LinuxName
+                    );
                     if (FindSubStr (LoaderPath, SearchName)) {
                         Found = TRUE;
-
-                        ShowName = GetShowName (LinuxName);
+                        ShowName = GetShowName (
+                            LinuxName
+                        );
 
                         LoaderEntry->Title = (!GotGrub && !GotSysD && !GotElilo)
                             ? PoolPrint (
@@ -2337,16 +2353,16 @@ LOADER_ENTRY * AddLoaderEntry (
                             )
                             : (GotGrub)
                                 ? PoolPrint (
-                                    L"Instance: Linux - %s via Grub",
+                                    L"Instance: Linux via Grub - %s",
                                     ShowName
                                 )
                                 : (GotSysD)
                                     ? PoolPrint (
-                                        L"Instance: Linux - %s via SD Boot",
+                                        L"Instance: Linux via SD-Boot - %s",
                                         ShowName
                                     )
                                     : PoolPrint (
-                                        L"Instance: Linux - %s via Elilo",
+                                        L"Instance: Linux via Elilo - %s",
                                         ShowName
                                     );
                     } // if FindSubStr
@@ -2368,7 +2384,9 @@ LOADER_ENTRY * AddLoaderEntry (
 
                     if (LinuxName != NULL) {
                         if (!GlobalConfig.FoldLinuxKernels) {
-                            KernFile = Basename (LoaderPath);
+                            KernFile = Basename (
+                                LoaderPath
+                            );
                             if (!MyStrStr (KernFile, L".")) {
                                 TmpName = KernFile;
                             }
@@ -2378,7 +2396,9 @@ LOADER_ENTRY * AddLoaderEntry (
                                 );
 
                                 MY_FREE_POOL(KernFile);
-                                KernFile = StripEfiExtension (NameClues);
+                                KernFile = StripEfiExtension (
+                                    NameClues
+                                );
 
                                 TmpName = StripSetExtension (
                                     L".signed", KernFile
@@ -2408,7 +2428,7 @@ LOADER_ENTRY * AddLoaderEntry (
                                         TmpName = KernFile;
                                     }
 
-                                    // DA-TAG: Delibrate
+                                    // DA-TAG: Deliberate
                                     if (MyStrBegins (L"linux-", TmpName)) {
                                         MY_FREE_POOL(NameClues);
                                         NameClues = GetSubStrAfter (
@@ -2417,7 +2437,11 @@ LOADER_ENTRY * AddLoaderEntry (
                                         if (MyStrStr (NameClues, L"-")) {
                                             TmpName = NameClues;
                                         }
-                                        MY_SOFT_FREE(NameClues); // Important!
+
+                                        // DA-TAG: Important!
+                                        //         Deref to maintain TmpName
+                                        //         Bypasses NameClues free below
+                                        MY_SOFT_FREE(NameClues);
                                     }
                                 }
 
@@ -2427,16 +2451,18 @@ LOADER_ENTRY * AddLoaderEntry (
                         } // if !GlobalConfig.FoldLinuxKernels
 
                         Found = TRUE;  // Final Actual Setting
-                        ShowName = GetShowName (LinuxName);
+                        ShowName = GetShowName (
+                            LinuxName
+                        );
 
                         LoaderEntry->Title = (IsStub)
                             ? (KernFile == NULL)
                                 ? PoolPrint (
-                                    L"Instance: Linux - %s via Stub Loader",
+                                    L"Instance: Linux via Stub - %s",
                                     ShowName
                                 )
                                 : PoolPrint (
-                                    L"Instance: Linux - %s via Stub Loader ::: %s",
+                                    L"Instance: Linux via Stub - %s ::: %s",
                                     ShowName, TmpName
                                 )
                             : (!GotGrub && !GotSysD && !GotElilo)
@@ -2446,16 +2472,16 @@ LOADER_ENTRY * AddLoaderEntry (
                                 )
                                 : (GotGrub)
                                     ? PoolPrint (
-                                        L"Instance: Linux - %s via Grub",
+                                        L"Instance: Linux via Grub - %s",
                                         ShowName
                                     )
                                     : (GotSysD)
                                         ? PoolPrint (
-                                            L"Instance: Linux - %s via SD Boot",
+                                            L"Instance: Linux via SDBoot - %s",
                                             ShowName
                                         )
                                         : PoolPrint (
-                                            L"Instance: Linux - %s via Elilo",
+                                            L"Instance: Linux via Elilo - %s",
                                             ShowName
                                         );
                     } // if LinuxName != NULL
@@ -2497,6 +2523,34 @@ LOADER_ENTRY * AddLoaderEntry (
                         LoaderPath
                     );
                 }
+                else if (IsStriStr (NameClues, L"Grub")) {
+                    LoaderEntry->OSType = 'G';
+                    LoaderEntry->Title = PoolPrint (
+                        L"Instance: Grub - %s",
+                        LoaderPath
+                    );
+                }
+                else if (IsStriStr (NameClues, L"SystemD")) {
+                    LoaderEntry->OSType = 'S';
+                    LoaderEntry->Title = PoolPrint (
+                        L"Instance: SDBoot - %s",
+                        LoaderPath
+                    );
+                }
+                else if (MyStriCmp (NameClues, L"OpenCore.efi")) {
+                    LoaderEntry->OSType = 'O';
+                    LoaderEntry->Title = PoolPrint (
+                        L"Instance: OpenCore - %s",
+                        LoaderPath
+                    );
+                }
+                else if (MyStriCmp (NameClues, L"Clover.efi")) {
+                    LoaderEntry->OSType = 'C';
+                    LoaderEntry->Title = PoolPrint (
+                        L"Instance: Clover - %s",
+                        LoaderPath
+                    );
+                }
                 else {
                     LoaderEntry->Title = StrDuplicate (
                         LoaderPath
@@ -2513,23 +2567,32 @@ LOADER_ENTRY * AddLoaderEntry (
     #ifdef __MAKEWITH_TIANO
     if (Volume->FSType == FS_TYPE_APFS && GlobalConfig.SyncAPFS) {
         if (Volume->VolRole == APFS_VOLUME_ROLE_PREBOOT) {
-            DisplayName = GetVolumeGroupName (LoaderPath, Volume);
+            DisplayName = GetVolumeGroupName (
+                LoaderPath, Volume
+            );
             if (DisplayName == NULL) {
                 return NULL;
             }
 
-            GotPreBoot = FindSubStr (DisplayName, L"PreBoot");
+            GotPreBoot = FindSubStr (
+                DisplayName, L"PreBoot"
+            );
             if (GotPreBoot) {
                 MY_FREE_POOL(DisplayName);
             }
             else {
-                GotPreBoot = FindSubStr (DisplayName, L"PreBoot");
+                GotPreBoot = FindSubStr (
+                    DisplayName, L"PreBoot"
+                );
                 if (GotPreBoot) {
                     MY_FREE_POOL(DisplayName);
                 }
                 else {
                     if (!SingleAPFS &&
-                        IsListItem (DisplayName, GlobalConfig.DontScanVolumes)
+                        IsListItem (
+                            DisplayName,
+                            GlobalConfig.DontScanVolumes
+                        )
                     ) {
                         MY_FREE_POOL(DisplayName);
 
@@ -2538,7 +2601,10 @@ LOADER_ENTRY * AddLoaderEntry (
                     }
 
                     MY_FREE_POOL(Volume->VolName);
-                    Volume->VolName = PoolPrint (L"PreBoot - %s", DisplayName);
+                    Volume->VolName = PoolPrint (
+                        L"PreBoot - %s",
+                        DisplayName
+                    );
                 }
             }
         }
@@ -2573,11 +2639,13 @@ LOADER_ENTRY * AddLoaderEntry (
     LoaderEntry->me.Row = 0;
     LoaderEntry->me.BadgeImage = egCopyImage (Volume->VolBadgeImage);
     LoaderEntry->DiscoveryType = DISCOVERY_TYPE_AUTO;
+    LoaderEntry->LoaderPath = (
+        LoaderPath != NULL && (LoaderPath[0] != L'\\')
+    ) ? StrDuplicate (L"\\") : NULL;
 
-    LoaderEntry->LoaderPath = (LoaderPath != NULL && (LoaderPath[0] != L'\\'))
-        ? StrDuplicate (L"\\") : NULL;
     MergeUniqueStrings (
-        &(LoaderEntry->LoaderPath), LoaderPath, 0
+        &(LoaderEntry->LoaderPath),
+        LoaderPath, 0
     );
 
     LoaderEntry->Volume = Volume;
@@ -2598,9 +2666,9 @@ LOADER_ENTRY * AddLoaderEntry (
     #if REFIT_DEBUG > 0
     TmpName = (DisplayName != NULL)
         ? DisplayName
-        : (Volume->VolName != NULL)
-            ? Volume->VolName
-            : LoaderEntry->LoaderPath;
+        : (
+            Volume->VolName != NULL
+        ) ? Volume->VolName : LoaderEntry->LoaderPath;
     LOG_MSG(
         "%s  - Found %s%s%s%s%s",
         OffsetNext,
@@ -2781,7 +2849,7 @@ CHAR16 * SetVolJoin (
     //         Do not trivially change this
     if (0);
     else if (IsStriStr (OurItem, L" Stanza:"   )) RetVal = L""      ;
-    else if (IsStriStr (OurItem, L"Stub Loader")) RetVal = L" | "   ;
+    else if (IsStriStr (OurItem, L" via Stub"  )) RetVal = L" | "   ;
     else if (MyStrEnds (L"' Dir", OurItem      )) RetVal = L" on "  ;
     else if (IsStriStr (OurItem, L" via "      )) RetVal = L" on "  ;
     else if (MyStriCmp (OurItem, L"Legacy Boot")) RetVal = L" for " ;
@@ -2819,14 +2887,15 @@ CHAR16 * SetVolType (
     // DA-TAG: Order of Appearance is Important
     //         Do not trivially change this
     if (0);
-    else if (IsStriStr (OurItem, L" Stanza:"   )) RetVal = L""                 ;
-    else if (IsStriStr (VolName, L"Partition"  )) RetVal = L""                 ;
-    else if (IsStriStr (VolName, L"Volume"     )) RetVal = L""                 ;
-    else if (MyStriCmp (VolName, L"ESP"        )) RetVal = L""                 ;
-    else if (MyStriCmp (VolName, L"EFI"        )) RetVal = L" System Partition";
-    else if (IsStriStr (OurItem, L"Stub Loader")) {
-        RetVal = (IsStriStr (VolName, L"Linux"))
-            ? L" Partition" : L" Linux Partition";
+    else if (IsStriStr (OurItem, L" Stanza:" )) RetVal = L""                 ;
+    else if (IsStriStr (VolName, L"Partition")) RetVal = L""                 ;
+    else if (IsStriStr (VolName, L"Volume"   )) RetVal = L""                 ;
+    else if (MyStriCmp (VolName, L"ESP"      )) RetVal = L""                 ;
+    else if (MyStriCmp (VolName, L"EFI"      )) RetVal = L" System Partition";
+    else if (IsStriStr (OurItem, L" via Stub")) {
+        RetVal = (
+            IsStriStr (VolName, L"Linux")
+        ) ? L" Partition" : L" Linux Partition";
     }
     else if (IsStriStr (OurItem, L"Instance:")) RetVal = L"";
     else if (IsStriStr (OurItem, L"(Legacy"  )) RetVal = L"";
@@ -2836,8 +2905,9 @@ CHAR16 * SetVolType (
         IsStriStr (OurItem, L"Kernel-" ) ||
         IsStriStr (OurItem, L"Image-"  )
     ) {
-        RetVal = (IsStriStr (VolName, L"Linux"))
-            ? L" Partition" : L" Linux Partition";
+        RetVal = (
+            IsStriStr (VolName, L"Linux")
+        ) ? L" Partition" : L" Linux Partition";
     }
     else if (MyStriCmp (OurItem, L"Legacy Boot")) RetVal = L" Partition";
     else if (MyStriCmp (VolName, L"BOOTCAMP"   )) RetVal = L" Partition";
@@ -2945,16 +3015,23 @@ BOOLEAN ShouldScan (
         );
         if (DontScanDir == NULL) break;
 
-        SplitVolumeAndFilename (&DontScanDir, &VolName);
-        CleanUpPathNameSlashes (DontScanDir);
+        SplitVolumeAndFilename (
+            &DontScanDir,
+            &VolName
+        );
+        CleanUpPathNameSlashes (
+            DontScanDir
+        );
         if (VolName == NULL) {
             if (MyStriCmp (DontScanDir, Path)) {
                 ScanIt = FALSE;
             }
         }
         else {
-            if (MyStriCmp (DontScanDir, Path)          &&
-                VolumeMatchesDescription (Volume, VolName)
+            if (MyStriCmp (DontScanDir, Path) &&
+                VolumeMatchesDescription (
+                    Volume, VolName
+                )
             ) {
                 ScanIt = FALSE;
             }
@@ -3023,11 +3100,15 @@ BOOLEAN DuplicatesFallback (
         RefitReadOnly, 0
     );
     if (EFI_ERROR(Status)) {
-        REFIT_CALL_1_WRAPPER(FileHandle->Close, FileHandle);
+        REFIT_CALL_1_WRAPPER(
+            FileHandle->Close, FileHandle
+        );
         return FALSE;
     }
 
-    FallbackInfo = LibFileInfo (FallbackHandle);
+    FallbackInfo = LibFileInfo (
+        FallbackHandle
+    );
     FallbackSize = FallbackInfo->FileSize;
     MY_FREE_POOL(FallbackInfo);
 
@@ -3048,11 +3129,13 @@ BOOLEAN DuplicatesFallback (
                 );
             }
             if (!EFI_ERROR(Status)) {
-                AreIdentical = (CompareMem (
-                    FileContents,
-                    FallbackContents,
-                    FileSize
-                ) == 0);
+                AreIdentical = (
+                    CompareMem (
+                        FileContents,
+                        FallbackContents,
+                        FileSize
+                    ) == 0
+                );
             }
         }
 
@@ -3099,7 +3182,9 @@ BOOLEAN IsSymbolicLink (
         RefitReadOnly, 0
     );
     if (!EFI_ERROR(Status)) {
-        FileInfo = LibFileInfo (FileHandle);
+        FileInfo = LibFileInfo (
+            FileHandle
+        );
         if (FileInfo != NULL) {
             FileSize2 = FileInfo->FileSize;
         }
@@ -3146,7 +3231,9 @@ BOOLEAN ScanLoaderDir (
     #if REFIT_DEBUG > 0
     MY_MUTELOGGER_SET;
     #endif
-    ShouldScanThis = ShouldScan (Volume, Path);
+    ShouldScanThis = ShouldScan (
+        Volume, Path
+    );
     #if REFIT_DEBUG > 0
     MY_MUTELOGGER_OFF;
     #endif
@@ -3230,7 +3317,10 @@ BOOLEAN ScanLoaderDir (
             #if REFIT_DEBUG > 0
             MY_MUTELOGGER_SET;
             #endif
-            ShouldScanThis = IsValidLoader (Volume->RootDir, FullName);
+            ShouldScanThis = IsValidLoader (
+                Volume->RootDir,
+                FullName
+            );
             #if REFIT_DEBUG > 0
             MY_MUTELOGGER_OFF;
             #endif
@@ -3268,7 +3358,9 @@ BOOLEAN ScanLoaderDir (
                     )
                 ) || (
                     // TRUE == "SameName" + ".efi.signed" file present
-                    HasSignedCounterpart (Volume, FullName)
+                    HasSignedCounterpart (
+                        Volume, FullName
+                    )
                 )
             ) {
                 BREAD_CRUMB(L"%a:  4a 1a 7a 1 - Skip Entry:- '%s'", __func__,
@@ -3307,18 +3399,18 @@ BOOLEAN ScanLoaderDir (
                     //BREAD_CRUMB(L"%a:  4a 1a 10a 1a 2", __func__);
                 }
                 else {
-                    //BREAD_CRUMB(L"%a:  4a 1a 10a 1b 1", __func__);
+                    //BREAD_CRUMB(L"%a:  4a 1a 13a 1b 1", __func__);
                     MergeUniqueStrings (
                         &GlobalConfig.ToolLocationsExtra, Path, L','
                     );
-                    //BREAD_CRUMB(L"%a:  4a 1a 10a 1b 2", __func__);
+                    //BREAD_CRUMB(L"%a:  4a 1a 13a 1b 2", __func__);
                 }
-                //BREAD_CRUMB(L"%a:  4a 1a 10a 2", __func__);
+                //BREAD_CRUMB(L"%a:  4a 1a 13a 2", __func__);
             }
-            //BREAD_CRUMB(L"%a:  4a 1a 11", __func__);
+            //BREAD_CRUMB(L"%a:  4a 1a 14", __func__);
         } while (0); // This 'loop' only runs once
 
-        //BREAD_CRUMB(L"%a:  4a 1a 12", __func__);
+        //BREAD_CRUMB(L"%a:  4a 1a 15", __func__);
         MY_FREE_POOL(FullName);
         MY_FREE_POOL(DirEntry);
 
@@ -3358,7 +3450,9 @@ BOOLEAN ScanLoaderDir (
             ) {
                 //BREAD_CRUMB(L"%a:  5a 1a 2a 1", __func__);
                 AddKernelToSubmenu (
-                    FirstKernel, NewLoader->FileName, Volume
+                    FirstKernel,
+                    NewLoader->FileName,
+                    Volume
                 );
             }
             else {
@@ -3390,7 +3484,9 @@ BOOLEAN ScanLoaderDir (
             GlobalConfig.FoldLinuxKernels
         ) {
             //BREAD_CRUMB(L"%a:  5a 2a 1", __func__);
-            GetMenuEntryReturn (&FirstKernel->me.SubScreen);
+            GetMenuEntryReturn (
+                &FirstKernel->me.SubScreen
+            );
             //BREAD_CRUMB(L"%a:  5a 2a 2", __func__);
         }
 
@@ -3435,7 +3531,7 @@ BOOLEAN ScanLoaderDir (
     }
 
     BREAD_CRUMB(L"%a:  8 - END:- return BOOLEAN FallbackDuplicate = '%s'", __func__,
-        FallbackDuplicate ? L"TRUE" : L"FALSE"
+        (FallbackDuplicate) ? L"TRUE" : L"FALSE"
     );
     LOG_DECREMENT();
     LOG_SEP(L"X");
@@ -3462,7 +3558,10 @@ CHAR16 * RuniPXEDiscover (
     UINTN                      boot_info_size;
 
 
-    FilePath = FileDevicePath (Volume, IPXE_DISCOVER_NAME);
+    FilePath = FileDevicePath (
+        Volume,
+        IPXE_DISCOVER_NAME
+    );
     Status = REFIT_CALL_6_WRAPPER(
         gBS->LoadImage, FALSE,
         SelfImageHandle, FilePath,
@@ -3501,11 +3600,18 @@ VOID ScanNetboot (VOID) {
         IsValidLoader (SelfVolume->RootDir, IPXE_DISCOVER_NAME) &&
         IsValidLoader (SelfVolume->RootDir, IPXE_NAME)
     ) {
-        Location = RuniPXEDiscover (SelfVolume->DeviceHandle);
+        Location = RuniPXEDiscover (
+            SelfVolume->DeviceHandle
+        );
         if (Location != NULL &&
-            FileExists (SelfVolume->RootDir, IPXE_NAME)
+            FileExists (
+                SelfVolume->RootDir,
+                IPXE_NAME
+            )
         ) {
-            NetVolume = CopyVolume (SelfVolume);
+            NetVolume = CopyVolume (
+                SelfVolume
+            );
             if (NetVolume != NULL) {
                 NetVolume->DiskKind = DISK_KIND_NET;
 
@@ -3526,7 +3632,9 @@ VOID ScanNetboot (VOID) {
                 );
                 MY_FREE_POOL(Temp);
 
-                FreeVolume (&NetVolume);
+                FreeVolume (
+                    &NetVolume
+                );
             }
         }
     }
@@ -3777,13 +3885,16 @@ VOID ScanEfiFiles (
     //BREAD_CRUMB(L"%a:  5", __func__);
     if (MatchPatterns == NULL) {
         //BREAD_CRUMB(L"%a:  5a 1", __func__);
-        MatchPatterns = StrDuplicate (LOADER_MATCH_PATTERNS);
+        MatchPatterns = StrDuplicate (
+            LOADER_MATCH_PATTERNS
+        );
         if (GlobalConfig.ScanAllLinux &&
             GlobalConfig.LinuxMatchPatterns != NULL
         ) {
             //BREAD_CRUMB(L"%a:  5a 1a 1", __func__);
             MergeUniqueStrings (
-                &MatchPatterns, GlobalConfig.LinuxMatchPatterns, L','
+                &MatchPatterns,
+                GlobalConfig.LinuxMatchPatterns, L','
             );
             //BREAD_CRUMB(L"%a:  5a 1a 2", __func__);
         }
@@ -3799,7 +3910,9 @@ VOID ScanEfiFiles (
         FileName = StrDuplicate (MACOSX_LOADER_PATH);
 
         //BREAD_CRUMB(L"%a:  6a 2", __func__);
-        ScanFallbackLoader &= ScanMacOsLoader (Volume, FileName);
+        ScanFallbackLoader &= ScanMacOsLoader (
+            Volume, FileName
+        );
         MY_FREE_POOL(FileName);
 
         //BREAD_CRUMB(L"%a:  6a 3", __func__);
@@ -3826,7 +3939,9 @@ VOID ScanEfiFiles (
                 );
 
                 //BREAD_CRUMB(L"%a:  6a 4a 1a 2", __func__);
-                ScanFallbackLoader &= ScanMacOsLoader (Volume, FileName);
+                ScanFallbackLoader &= ScanMacOsLoader (
+                    Volume, FileName
+                );
 
                 //BREAD_CRUMB(L"%a:  6a 4a 1a 3", __func__);
                 MY_FREE_POOL(FileName);
@@ -3929,7 +4044,9 @@ VOID ScanEfiFiles (
         MY_FREE_POOL(FileName);
 
         //BREAD_CRUMB(L"%a:  7a 3", __func__);
-        FileName = StrDuplicate (L"EFI\\Microsoft\\Boot\\bootmgfw.efi");
+        FileName = StrDuplicate (
+            L"EFI\\Microsoft\\Boot\\bootmgfw.efi"
+        );
         if (FileExists (Volume->RootDir, FileName) &&
             !FilenameIn (
                 Volume, L"EFI\\Microsoft\\Boot",
@@ -3980,7 +4097,9 @@ VOID ScanEfiFiles (
         do {
             //BREAD_CRUMB(L"%a:  10a 1a 1", __func__);
             if (EfiDirEntry->FileName[0] == '.' ||
-                MyStriCmp  (EfiDirEntry->FileName, L"tools")
+                MyStriCmp  (
+                    EfiDirEntry->FileName, L"tools"
+                )
             ) {
                 //BREAD_CRUMB(L"%a:  10a 1a 1a 1", __func__);
                 // Skip ... Not boot loader or scanned later
@@ -3988,7 +4107,9 @@ VOID ScanEfiFiles (
             }
 
             //BREAD_CRUMB(L"%a:  10a 1a 2", __func__);
-            Extension = FindExtension (EfiDirEntry->FileName);
+            Extension = FindExtension (
+                EfiDirEntry->FileName
+            );
             if (Extension != NULL &&
                 !MyStriCmp (Extension, L".efi")
             ) {
@@ -3998,7 +4119,10 @@ VOID ScanEfiFiles (
             }
 
             //BREAD_CRUMB(L"%a:  10a 1a 3", __func__);
-            FileName = PoolPrint (L"EFI\\%s", EfiDirEntry->FileName);
+            FileName = PoolPrint (
+                L"EFI\\%s",
+                EfiDirEntry->FileName
+            );
 
             //BREAD_CRUMB(L"%a:  10a 1a 4", __func__);
             if (ScanLoaderDir (Volume, FileName, MatchPatterns)) {
@@ -4018,7 +4142,9 @@ VOID ScanEfiFiles (
     } // while {Infinite}
 
     //BREAD_CRUMB(L"%a:  11", __func__);
-    Status = DirIterClose (&EfiDirIter);
+    Status = DirIterClose (
+        &EfiDirIter
+    );
 
     //BREAD_CRUMB(L"%a:  12", __func__);
     if (EFI_ERROR(Status)       &&
@@ -4040,7 +4166,9 @@ VOID ScanEfiFiles (
     // Do not scan fallback loader if on the same volume and a duplicate of RefindPlus.
     if (ScanFallbackLoader) {
         //BREAD_CRUMB(L"%a:  13a 1", __func__);
-        SelfPath = DevicePathToStr (SelfLoadedImage->FilePath);
+        SelfPath = DevicePathToStr (
+            SelfLoadedImage->FilePath
+        );
 
         //BREAD_CRUMB(L"%a:  13a 2", __func__);
         CleanUpPathNameSlashes (SelfPath);
@@ -4071,7 +4199,10 @@ VOID ScanEfiFiles (
         //BREAD_CRUMB(L"%a:  14a 1 - WHILE LOOP:- START", __func__);
         if (ShouldScan (Volume, Directory)) {
             //BREAD_CRUMB(L"%a:  14a 1a 1", __func__);
-            SplitVolumeAndFilename (&Directory, &VolName);
+            SplitVolumeAndFilename (
+                &Directory,
+                &VolName
+            );
 
             //BREAD_CRUMB(L"%a:  14a 1a 2", __func__);
             CleanUpPathNameSlashes (Directory);
@@ -6338,7 +6469,10 @@ VOID ScanForTools (VOID) {
                         BUILTIN_ICON_TOOL_WINDOWS_RESCUE
                     );
 
-                    AddMenuEntry (MainMenu, MenuEntryPreRecoveryWin);
+                    AddMenuEntry (
+                        MainMenu,
+                        MenuEntryPreRecoveryWin
+                    );
 
                     #if REFIT_DEBUG > 0
                     ToolStr = PoolPrint (L"Added Tool:- '%s'", ToolName);
@@ -6366,7 +6500,9 @@ VOID ScanForTools (VOID) {
                     VetCSR();
 
                     MY_FREE_POOL(gCsrStatus);
-                    gCsrStatus = StrDuplicate (L"Incompatible Setup");
+                    gCsrStatus = StrDuplicate (
+                        L"Incompatible Setup"
+                    );
                     Status = EFI_UNSUPPORTED;
                 }
                 else if (GlobalConfig.CsrValues != NULL) {
@@ -6375,7 +6511,9 @@ VOID ScanForTools (VOID) {
                     #endif
                     // Only attempt to enable if CSR Values are set
                     // Sets 'gCsrStatus' and returns a Status Code based on outcome
-                    Status = GetCsrStatus (&CsrValue);
+                    Status = GetCsrStatus (
+                        &CsrValue
+                    );
                     if (!EFI_ERROR(Status)) {
                         if (GlobalConfig.DynamicCSR == -1) {
                             MY_FREE_POOL(gCsrStatus);
@@ -6436,7 +6574,10 @@ VOID ScanForTools (VOID) {
                     BUILTIN_ICON_FUNC_CSR_ROTATE
                 );
 
-                AddMenuEntry (MainMenu, MenuEntryRotateCSR);
+                AddMenuEntry (
+                    MainMenu,
+                    MenuEntryRotateCSR
+                );
 
                 #if REFIT_DEBUG > 0
                 ToolStr = PoolPrint (L"Added Tool:- '%s'", ToolName);

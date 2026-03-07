@@ -40,13 +40,13 @@
  * License (GPL) version 3 (GPLv3), or (at your option) any later version.
  *
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2020-2025 Dayo Akanji (sf.net/u/dakanji/profile)
- * Portions Copyright (c) 2021 Joe van Tunen (joevt@shaw.ca)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2020-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+** Portions Copyright (c) 2021 Joe van Tunen (joevt@shaw.ca)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #include "global.h"
 #include "config.h"
@@ -133,7 +133,10 @@ CHAR16 * FindInitrd (
     // on anything else apart from the root directory may result in issues.
     if (StrLen (Path) == 0) {
         BREAD_CRUMB(L"%a:  4a 1", __func__);
-        MergeStrings (&Path, L"\\", 0);
+        MergeStrings (
+            &Path,
+            L"\\", 0
+        );
     }
 
     BREAD_CRUMB(L"%a:  5", __func__);
@@ -146,17 +149,25 @@ CHAR16 * FindInitrd (
     #endif
 
     BREAD_CRUMB(L"%a:  6", __func__);
-    DirIterOpen (Volume->RootDir, Path, &DirIter);
+    DirIterOpen (
+        Volume->RootDir,
+        Path, &DirIter
+    );
 
     // Add trailing backslash now if not added earlier.
     // For consistency in building 'InitrdName' later.
     BREAD_CRUMB(L"%a:  7", __func__);
-    TempCount = StrLen (Path);
+    TempCount = StrLen (
+        Path
+    );
     if (TempCount > 0) {
         BREAD_CRUMB(L"%a:  7a 1", __func__);
         if (Path[TempCount - 1] != L'\\') {
             BREAD_CRUMB(L"%a:  7a 1a 1", __func__);
-            MergeStrings(&Path, L"\\", 0);
+            MergeStrings (
+                &Path,
+                L"\\", 0
+            );
         }
     }
 
@@ -186,11 +197,18 @@ CHAR16 * FindInitrd (
         BREAD_CRUMB(L"%a:  8a 1 - WHILE LOOP:- START", __func__);
 
         BREAD_CRUMB(L"%a:  8a 2", __func__);
-        if (((KernelVersion != NULL) && (MyStriCmp (InitrdVersion, KernelVersion))) ||
-            ((KernelVersion == NULL) && (InitrdVersion == NULL))
+        if ((
+                KernelVersion != NULL &&
+                MyStriCmp (InitrdVersion, KernelVersion)
+            ) || (
+                KernelVersion == NULL &&
+                InitrdVersion == NULL
+            )
         ) {
             BREAD_CRUMB(L"%a:  8a 2a 1", __func__);
-            CurrentInitrdName = AllocateZeroPool (sizeof (STRING_LIST));
+            CurrentInitrdName = AllocateZeroPool (
+                sizeof (STRING_LIST)
+            );
 
             BREAD_CRUMB(L"%a:  8a 2a 2", __func__);
             if (InitrdNames == NULL) {
@@ -201,10 +219,14 @@ CHAR16 * FindInitrd (
             BREAD_CRUMB(L"%a:  8a 2a 3", __func__);
             if (CurrentInitrdName != NULL) {
                 BREAD_CRUMB(L"%a:  8a 2a 3a 1", __func__);
-                CurrentInitrdName->Value = PoolPrint (L"%s%s", Path, DirEntry->FileName);
+                CurrentInitrdName->Value = PoolPrint (
+                    L"%s%s",
+                    Path,
+                    DirEntry->FileName
+                );
 
                 BREAD_CRUMB(L"%a:  8a 2a 3a 2 - CurrentInitrdName = '%s'", __func__,
-                    CurrentInitrdName->Value ? CurrentInitrdName->Value : L"NULL"
+                    (CurrentInitrdName->Value) ? CurrentInitrdName->Value : L"NULL"
                 );
                 if (CurrentInitrdName != FinalInitrdName) {
                     BREAD_CRUMB(L"%a:  8a 2a 3a 2a 1", __func__);
@@ -229,7 +251,9 @@ CHAR16 * FindInitrd (
         BREAD_CRUMB(L"%a:  9a 1", __func__);
         if (InitrdNames->Next == NULL) {
             BREAD_CRUMB(L"%a:  9a 1a 1", __func__);
-            InitrdName = StrDuplicate (InitrdNames->Value);
+            InitrdName = StrDuplicate (
+                InitrdNames->Value
+            );
         }
         else {
             BREAD_CRUMB(L"%a:  9a 1b 1", __func__);
@@ -247,10 +271,16 @@ CHAR16 * FindInitrd (
                 );
 
                 BREAD_CRUMB(L"%a:  9a 1b 2a 3", __func__);
-                InitrdPostNum = MyStrStr (CurrentInitrdName->Value, KernelVersion);
+                InitrdPostNum = MyStrStr (
+                    CurrentInitrdName->Value,
+                    KernelVersion
+                );
 
                 BREAD_CRUMB(L"%a:  9a 1b 2a 4", __func__);
-                SharedChars = NumCharsInCommon (KernelPostNum, InitrdPostNum);
+                SharedChars = NumCharsInCommon (
+                    KernelPostNum,
+                    InitrdPostNum
+                );
 
                 BREAD_CRUMB(L"%a:  9a 1b 2a 5", __func__);
                 if ((SharedChars > MaxSharedChars) ||
@@ -273,7 +303,9 @@ CHAR16 * FindInitrd (
             BREAD_CRUMB(L"%a:  9a 1b 3", __func__);
             if (MaxSharedInitrd != NULL) {
                 BREAD_CRUMB(L"%a:  9a 1b 3a 1", __func__);
-                InitrdName = StrDuplicate (MaxSharedInitrd->Value);
+                InitrdName = StrDuplicate (
+                    MaxSharedInitrd->Value
+                );
                 BREAD_CRUMB(L"%a:  9a 1b 3a 2", __func__);
             }
             BREAD_CRUMB(L"%a:  9a 1b 4", __func__);
@@ -283,7 +315,9 @@ CHAR16 * FindInitrd (
     } // if
 
     BREAD_CRUMB(L"%a:  10", __func__);
-    DeleteStringList(InitrdNames);
+    DeleteStringList (
+        InitrdNames
+    );
 
     BREAD_CRUMB(L"%a:  11", __func__);
     MY_FREE_POOL(Path);
@@ -358,7 +392,9 @@ CHAR16 * AddInitrdToOptions (
     }
     else {
         BREAD_CRUMB(L"%a:  1b 1", __func__);
-        NewOptions = StrDuplicate (Options);
+        NewOptions = StrDuplicate (
+            Options
+        );
     }
 
     BREAD_CRUMB(L"%a:  2", __func__);
@@ -375,9 +411,7 @@ CHAR16 * AddInitrdToOptions (
     BREAD_CRUMB(L"%a:  3", __func__);
     if (NewOptions != NULL && FindSubStr (NewOptions, L"%v")) {
         BREAD_CRUMB(L"%a:  3a 1", __func__);
-        InitrdVersion = FindNumbers (
-            InitrdPath
-        );
+        InitrdVersion = FindNumbers (InitrdPath);
 
         BREAD_CRUMB(L"%a:  3a 2", __func__);
         ReplaceSubstring (
@@ -435,13 +469,17 @@ CHAR16 * GetMainLinuxOptions (
     LOG_SEP(L"X");
     LOG_INCREMENT();
     BREAD_CRUMB(L"%a:  1 - START", __func__);
-    Options = GetFirstOptionsFromFile (LoaderPath, Volume);
+    Options = GetFirstOptionsFromFile (
+        LoaderPath, Volume
+    );
 
     BREAD_CRUMB(L"%a:  2", __func__);
     #if REFIT_DEBUG > 0
     MY_MUTELOGGER_SET;
     #endif
-    InitrdName = FindInitrd (LoaderPath, Volume);
+    InitrdName = FindInitrd (
+        LoaderPath, Volume
+    );
     #if REFIT_DEBUG > 0
     MY_MUTELOGGER_OFF;
     #endif
@@ -454,7 +492,11 @@ CHAR16 * GetMainLinuxOptions (
         BREAD_CRUMB(L"%a:  3a 2", __func__);
         if (Options != NULL) {
             BREAD_CRUMB(L"%a:  3a 2a 1", __func__);
-            ReplaceSubstring (&Options, KERNEL_VERSION, KernelVersion);
+            ReplaceSubstring (
+                &Options,
+                KERNEL_VERSION,
+                KernelVersion
+            );
             BREAD_CRUMB(L"%a:  3a 2a 2", __func__);
         }
         MY_FREE_POOL(KernelVersion);
@@ -464,7 +506,9 @@ CHAR16 * GetMainLinuxOptions (
     FullOptions = NULL;
     if (InitrdName != NULL || Options != NULL) {
         BREAD_CRUMB(L"%a:  4a 1", __func__);
-        FullOptions = AddInitrdToOptions (Options, InitrdName);
+        FullOptions = AddInitrdToOptions (
+            Options, InitrdName
+        );
         BREAD_CRUMB(L"%a:  4a 2", __func__);
     }
 
@@ -473,7 +517,7 @@ CHAR16 * GetMainLinuxOptions (
     MY_FREE_POOL(InitrdName);
 
     BREAD_CRUMB(L"%a:  6 - END:- return CHAR16 *FullOptions = '%s'", __func__,
-        FullOptions ? FullOptions : L"NULL"
+        (FullOptions != NULL) ? FullOptions : L"NULL"
     );
     LOG_DECREMENT();
     LOG_SEP(L"X");
@@ -500,14 +544,16 @@ VOID ParseReleaseFile (
     REFIT_FILE   *File;
 
 
-    if (Volume == NULL ||
+    if (Volume   == NULL ||
         FileName == NULL ||
         !FileExists (Volume->RootDir, FileName)
     ) {
         return;
     }
 
-    File = AllocateZeroPool (sizeof (REFIT_FILE));
+    File = AllocateZeroPool (
+        sizeof (REFIT_FILE)
+    );
     if (File == NULL) {
         return;
     }
@@ -522,7 +568,9 @@ VOID ParseReleaseFile (
     );
     if (!EFI_ERROR(Status)) {
         while (1) {
-            TokenCount = ReadTokenLine (File, &TokenList);
+            TokenCount = ReadTokenLine (
+                File, &TokenList
+            );
             if (TokenCount == 0) {
                 // Flag to exit loop
                 Depart = TRUE;
@@ -546,12 +594,20 @@ VOID ParseReleaseFile (
                     }
 
                     MY_FREE_POOL(TempName);
-                    TempName = StrDuplicate (TokenList[1]);
-                    MergeUniqueWords (OSIconName, TempName, L',');
+                    TempName = StrDuplicate (
+                        TokenList[1]
+                    );
+                    MergeUniqueWords (
+                        OSIconName,
+                        TempName, L','
+                    );
                 }
             }
 
-            FreeTokenLine (&TokenList, &TokenCount);
+            FreeTokenLine (
+                &TokenList,
+                &TokenCount
+            );
 
             if (Depart) break;
         } // while {Infinite}
@@ -571,7 +627,9 @@ VOID ParseReleaseFile (
     }
 
     // Capitalise First Letter
-    if ((TempName[0] >= L'a') && (TempName[0] <= L'z')) {
+    if (TempName[0] >= L'a' &&
+        TempName[0] <= L'z'
+    ) {
         TempName[0] = TempName[0] - L'a' + L'A';
     }
 
@@ -601,12 +659,20 @@ VOID GuessLinuxDistribution (
 
     // /etc/os-release or /etc/lsb-release on Linux root fs may have clues
     BREAD_CRUMB(L"%a:  3", __func__);
-    ParseReleaseFile (OSIconName, Volume, L"etc\\os-release", FirstOnly);
+    ParseReleaseFile (
+        OSIconName, Volume,
+        L"etc\\os-release",
+        FirstOnly
+    );
 
     BREAD_CRUMB(L"%a:  4", __func__);
     if (!FirstOnly || *OSIconName == NULL) {
         BREAD_CRUMB(L"%a:  4a 1", __func__);
-        ParseReleaseFile (OSIconName, Volume, L"etc\\lsb-release", FirstOnly);
+        ParseReleaseFile (
+            OSIconName, Volume,
+            L"etc\\lsb-release",
+            FirstOnly
+        );
         BREAD_CRUMB(L"%a:  4a 2", __func__);
     }
 
@@ -631,11 +697,16 @@ VOID GuessLinuxDistribution (
         BREAD_CRUMB(L"%a:  7a 1 - Fedora Loader", __func__);
         if (FirstOnly) {
             BREAD_CRUMB(L"%a:  7a 1a 1", __func__);
-            *OSIconName = StrDuplicate (L"Fedora");
+            *OSIconName = StrDuplicate (
+                L"Fedora"
+            );
         }
         else {
             BREAD_CRUMB(L"%a:  7a 1b 1", __func__);
-            MergeUniqueStrings (OSIconName, L"fedora", L',');
+            MergeUniqueStrings (
+                OSIconName,
+                L"fedora", L','
+            );
             BREAD_CRUMB(L"%a:  7a 1b 2", __func__);
         }
         BREAD_CRUMB(L"%a:  7a 2", __func__);
@@ -644,11 +715,16 @@ VOID GuessLinuxDistribution (
         BREAD_CRUMB(L"%a:  7b 1 - RedHat Loader", __func__);
         if (FirstOnly) {
             BREAD_CRUMB(L"%a:  7b 1a 1", __func__);
-            *OSIconName = StrDuplicate (L"RedHat");
+            *OSIconName = StrDuplicate (
+                L"RedHat"
+            );
         }
         else {
             BREAD_CRUMB(L"%a:  7b 1b 1", __func__);
-            MergeUniqueStrings (OSIconName, L"redhat", L',');
+            MergeUniqueStrings (
+                OSIconName,
+                L"redhat", L','
+            );
             BREAD_CRUMB(L"%a:  7b 1b 2", __func__);
         }
         BREAD_CRUMB(L"%a:  7b 2", __func__);
@@ -664,15 +740,22 @@ VOID GuessLinuxDistribution (
             );
             if (LinuxName == NULL) break;
 
-            ShowName = GetShowName (LinuxName);
+            ShowName = GetShowName (
+                LinuxName
+            );
             if (FindSubStr (LoaderPath, ShowName)) {
                 Found = TRUE;
 
                 if (FirstOnly) {
-                    *OSIconName = StrDuplicate (ShowName);
+                    *OSIconName = StrDuplicate (
+                        ShowName
+                    );
                 }
                 else {
-                    MergeUniqueStrings (OSIconName, ShowName, L',');
+                    MergeUniqueStrings (
+                        OSIconName,
+                        ShowName, L','
+                    );
                 }
             }
 
@@ -680,10 +763,15 @@ VOID GuessLinuxDistribution (
                 Found = TRUE;
 
                 if (FirstOnly) {
-                    *OSIconName = StrDuplicate (LinuxName);
+                    *OSIconName = StrDuplicate (
+                        LinuxName
+                    );
                 }
                 else {
-                    MergeUniqueStrings (OSIconName, LinuxName, L',');
+                    MergeUniqueStrings (
+                        OSIconName,
+                        LinuxName, L','
+                    );
                 }
             }
 

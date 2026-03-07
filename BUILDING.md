@@ -60,9 +60,14 @@ Please refer to that project's repository (https://github.com/xaionaro/edk2-buil
 
 <br><br>
 
+<!--
+DA-TAG: High chance of need to recycle to flag as limited to Mac OS 26.x Tahoe/Older!
+        Maybe Mac OS 27.x WhatEver/Older. Best case scenario (unless RUDK is patched)
+
 > [!CAUTION]
 >
 > The process outlined below *HAS NOT* been verified on Mac OS 26.x Tahoe/Newer.
+-->
 
 ## Local Build (Mac OS)
 
@@ -91,23 +96,43 @@ To do this, at a Terminal prompt, enter:
 $ xcode-select --install
 ```
 
-### HomeBrew
+### Additional Packages
 
 #### Background
 
 While Xcode provides a full development environment as well as a suite of different utilities, it does not provide all the tools required for TianoCore EDK II development as required to build RefindPlus on Mac OS natively.
 
-This guide focuses on using HomeBrew to provide the required tools but equivalent steps can be taken in MacPorts and Fink. These may offer better support for older versions of Mac OS.\
-Substitute equivalent commands in as required.
+These tools can be easily installed with package managers such as `MacPorts` or `HomeBrew`.
 
-You will find HomeBrew installation instructions on the project website (https://brew.sh)
+> [!NOTE]
+>
+> MacPorts supports Mac OS versions for a lot longer than HomeBrew.\
+> However, HomeBrew typically tends to have more packages available.
+
+If not already installed, follow installation instructions on the respective project websites:
+- MacPorts: https://macports.org
+- HomeBrew: https://brew.sh
+
+#### Update Package Manager
+
+Package Managers work best when up to date.
+
+```
+$ sudo port selfupdate && sudo port upgrade outdated
+```
+```
+$ brew update && brew upgrade && brew cleanup
+```
 
 #### Install Build Assembler
 
 The assembler used for TianoCore EDK II is the Netwide Assembler (NASM).
 
 ```
-$ brew install nasm && brew upgrade nasm
+$ sudo port install nasm
+```
+```
+$ brew install nasm
 ```
 
 #### Install ACPI Compiler
@@ -115,7 +140,10 @@ $ brew install nasm && brew upgrade nasm
 ACPICA is required to compile code in ACPI Source Language for TianoCore EDK II firmware builds.
 
 ```
-$ brew install acpica && brew upgrade acpica
+$ sudo port install acpica
+```
+```
+$ brew install acpica
 ```
 
 #### Install Image Converter
@@ -123,12 +151,19 @@ $ brew install acpica && brew upgrade acpica
 The ocmtoc utility converts the Mach-O image format generated on Mac OS to the PE/COFF format required by the UEFI specifications.
 
 ```
-$ brew uninstall mtoc && brew install ocmtoc && brew upgrade ocmtoc
+$ brew uninstall mtoc && brew install ocmtoc
 ```
 
 > [!NOTE]
 >
-> `ocmtoc` is only available as an HomeBrew package on Mac OS 11.x Big Sur and newer but pre-built `ocmtoc` files can be used on Mac OS versions back to 10.9 Mavericks.
+> Building RefindPlus on Mac OS specifically requires `ocmtoc v1.0.4/newer`.\
+> The `RefindPlusBuilder` script will use a copy bundled within `RefindPlusUDK` if missing.
+>
+> This technically means installing ocmtoc **IS NOT** compulsory.\
+> It is preferable however, that such requirements are provided by the host system.
+>
+> `ocmtoc` is only available as an HomeBrew package and only for Mac OS 11.x Big Sur and newer.\
+> However, pre-built `ocmtoc` files can be manually installed on Mac OS 10.9 Mavericks and newer.
 >
 > Pre-built files can be found here: https://github.com/acidanthera/ocmtoc/releases.
 
@@ -184,10 +219,11 @@ Your local RefindPlusUDK repository will be under `Documents/RefindPlus/edk2`.
 - Separately, open a new Terminal window.
   - Always use a new Terminal window when building.
 - Type `chmod +x` in Terminal, add a space, then drag the `RefindPlusBuilder.sh` file onto the Terminal window and press `Enter`.
+  - This "chmod +x" step is typically only required the first time the script file is ever run.
 - Type `bash` in Terminal, add a space, then drag the `RefindPlusBuilder.sh` file to the Terminal window again and press `Enter`.
-  - Enter a space followed by a branch name to the end of the line (if you want to build on that branch) before pressing `Enter`.
-  - If nothing is entered, the script will build on the default `GOPFix` branch.
-  - The "chmod +x" step is typically only required the first time the script file is ever run.
+  - Enter a space followed by `--build-branch="BRANCH_NAME"` to the end of the line (if you want to build on `BRANCH_NAME`) before pressing `Enter`.
+  - If nothing is entered, the script will build on the current checked out code.
+  - Pass `--help` to the build script for guidance on script options
 
 ## Repository Sync
 
@@ -203,8 +239,8 @@ If some time has passed since your last build or since you initially created you
 - Separately, open a new Terminal window.
   - A new Terminal window is best for syncing.
 - Type `chmod +x`, add a space, then drag the `RepoUpdater.sh` file onto the Terminal window and press `Enter`.
+  - This "chmod +x" step is typically only required the first time the script file is ever run.
 - Type `bash`, add a space, then drag the `RepoUpdater.sh` file to the Terminal window again and press `Enter`.
-  - The "chmod +x" step is typically only required the first time the script file is ever run
 
 > [!TIP]
 >
@@ -218,20 +254,22 @@ If some time has passed since your last build or since you initially created you
 
 ```
 $ cd ~/Documents/RefindPlus/Working && git checkout GOPFix
-$ (git remote get-url upstream 2>/dev/null | grep -q "https://github.com/RefindPlusRepo/RefindPlus.git") || (git remote remove upstream && git remote add upstream https://github.com/RefindPlusRepo/RefindPlus.git 2>/dev/null)
-$ git reset --hard a2cc87f019c4de3a1237e2dc23f432c27cec5ec6
-$ git push origin HEAD -f && git pull upstream GOPFix
-$ git push
+$ export REPO_URL="https://github.com/RefindPlusRepo/RefindPlus.git"
+$ git remote get-url upstream 2>/dev/null | grep -q "${REPO_URL}" || (git remote add upstream "${REPO_URL}" 2>/dev/null || git remote set-url upstream "${REPO_URL}")
+$ git reset --hard a2cc87f019c4de3a1237e2dc23f432c27cec5ec6 && git push origin HEAD -f
+$ git pull --tags upstream GOPFix && git push
+$ git push --tags origin -f && unset REPO_URL
 ```
 
 #### Sync RefindPlusUDK Manually
 
 ```
 $ cd ~/Documents/RefindPlus/edk2 && git checkout rudk
-$ (git remote get-url upstream 2>/dev/null | grep -q "https://github.com/RefindPlusRepo/RefindPlusUDK.git") || (git remote remove upstream && git remote add upstream https://github.com/RefindPlusRepo/RefindPlusUDK.git 2>/dev/null)
-$ git reset --hard a94082b4e5e42a1cfdcbab0516f9ecdbb596d201
-$ git push origin HEAD -f && git pull upstream rudk
-$ git push
+$ export REPO_URL="https://github.com/RefindPlusRepo/RefindPlusUDK.git"
+$ git remote get-url upstream 2>/dev/null | grep -q "${REPO_URL}" || (git remote add upstream "${REPO_URL}" 2>/dev/null || git remote set-url upstream "${REPO_URL}")
+$ git reset --hard a94082b4e5e42a1cfdcbab0516f9ecdbb596d201 && git push origin HEAD -f
+$ git pull --tags upstream rudk && git push
+$ git push --tags origin -f && unset REPO_URL
 ```
 
 ### OPTION 3: GitHub Sync

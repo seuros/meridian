@@ -40,12 +40,12 @@
  * License (GPL) version 3 (GPLv3), a copy of which must be distributed
  * with this source code or binaries made from it.
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2021-2024 Dayo Akanji (sf.net/u/dakanji/profile)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2021-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #ifndef __REFINDPLUS_MENU_H_
 #define __REFINDPLUS_MENU_H_
@@ -133,9 +133,15 @@ INTN FindMenuShortcutEntry (
 
 VOID ManageHiddenTags (VOID);
 VOID GenerateWaitList (VOID);
-VOID FreeBdsOption (BDS_COMMON_OPTION **BdsOption);
-VOID FreeMenuScreen (IN REFIT_MENU_SCREEN **Screen);
-VOID FreeMenuEntry (IN OUT REFIT_MENU_ENTRY **Entry);
+VOID FreeBdsOption (
+    BDS_COMMON_OPTION **BdsOption
+);
+VOID FreeMenuScreen (
+    IN REFIT_MENU_SCREEN **Screen
+);
+VOID FreeMenuEntry (
+    IN OUT REFIT_MENU_ENTRY **Entry
+);
 VOID AddMenuEntry (
     IN REFIT_MENU_SCREEN *Screen,
     IN REFIT_MENU_ENTRY  *Entry
@@ -183,8 +189,12 @@ VOID LogExit (
 );
 #endif
 
-UINTN ComputeRow0PosY (IN BOOLEAN ApplyOffset);
-UINTN WaitForInput (IN UINTN Timeout);
+UINTN ComputeRow0PosY (
+    IN BOOLEAN ApplyOffset
+);
+UINTN WaitForInput (
+    IN UINTN Timeout
+);
 UINTN AbortSyncTrust (VOID);
 UINTN DrawMenuScreen (
     IN     REFIT_MENU_SCREEN   *Screen,
@@ -207,12 +217,18 @@ UINTN RunMainMenu (
 CHAR16 * ReadHiddenTags (CHAR16 *VarName);
 CHAR16 * MenuExitInfo (IN UINTN MenuExit);
 
-BOOLEAN GetMenuEntryYesNo (IN OUT REFIT_MENU_SCREEN **Screen);
-BOOLEAN GetMenuEntryReturn (IN OUT REFIT_MENU_SCREEN **Screen);
+BOOLEAN GetMenuEntryYesNo (
+    IN OUT REFIT_MENU_SCREEN **Screen
+);
+BOOLEAN GetMenuEntryReturn (
+    IN OUT REFIT_MENU_SCREEN **Screen
+);
 BOOLEAN ConfirmSyncNVram (VOID);
 BOOLEAN ConfirmRotate (VOID);
 
-BDS_COMMON_OPTION * CopyBdsOption (BDS_COMMON_OPTION *BdsOption);
+BDS_COMMON_OPTION * CopyBdsOption (
+    BDS_COMMON_OPTION *BdsOption
+);
 
 #endif
 

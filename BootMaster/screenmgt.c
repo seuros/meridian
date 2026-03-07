@@ -39,13 +39,13 @@
  * Modifications distributed under the terms of the GNU General Public
  * License (GPL) version 3 (GPLv3), or (at your option) any later version.
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2020-2025 Dayo Akanji (sf.net/u/dakanji/profile)
- * Portions Copyright (c) 2021 Joe van Tunen (joevt@shaw.ca)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2020-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+** Portions Copyright (c) 2021 Joe van Tunen (joevt@shaw.ca)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #include "global.h"
 #include "screenmgt.h"
@@ -189,23 +189,24 @@ VOID FixIconScale (VOID) {
             GlobalConfig.IconSizes[ICON_SIZE_BADGE] *= 2;
             GlobalConfig.IconSizes[ICON_SIZE_MOUSE] *= 2;
         }
-        else if (
-            ScreenLongest  < LOREZ_LIMIT ||
-            ScreenShortest < LOREZ_LIMIT
-        ) {
-            if (ScreenLongest  > BASE_REZ &&
-                ScreenShortest > BASE_REZ
+        else {
+            if (ScreenLongest  < LOREZ_LIMIT ||
+                ScreenShortest < LOREZ_LIMIT
             ) {
-                GlobalConfig.IconSizes[ICON_SIZE_BIG]   /= 2;
-                GlobalConfig.IconSizes[ICON_SIZE_SMALL] /= 2;
-                GlobalConfig.IconSizes[ICON_SIZE_BADGE] /= 2;
-                GlobalConfig.IconSizes[ICON_SIZE_MOUSE] /= 2;
-            }
-            else {
-                GlobalConfig.IconSizes[ICON_SIZE_BIG]   /= 4;
-                GlobalConfig.IconSizes[ICON_SIZE_SMALL] /= 4;
-                GlobalConfig.IconSizes[ICON_SIZE_BADGE] /= 4;
-                GlobalConfig.IconSizes[ICON_SIZE_MOUSE] /= 4;
+                if (ScreenLongest  > BASE_REZ &&
+                    ScreenShortest > BASE_REZ
+                ) {
+                    GlobalConfig.IconSizes[ICON_SIZE_BIG]   /= 2;
+                    GlobalConfig.IconSizes[ICON_SIZE_SMALL] /= 2;
+                    GlobalConfig.IconSizes[ICON_SIZE_BADGE] /= 2;
+                    GlobalConfig.IconSizes[ICON_SIZE_MOUSE] /= 2;
+                }
+                else {
+                    GlobalConfig.IconSizes[ICON_SIZE_BIG]   /= 4;
+                    GlobalConfig.IconSizes[ICON_SIZE_SMALL] /= 4;
+                    GlobalConfig.IconSizes[ICON_SIZE_BADGE] /= 4;
+                    GlobalConfig.IconSizes[ICON_SIZE_MOUSE] /= 4;
+                }
             }
         }
     } // if/else GlobalConfig.ScaleUI
@@ -228,6 +229,11 @@ VOID PrepareBlankLine (VOID) {
 } // VOID PrepareBlankLine()
 
 VOID InitScreen (VOID) {
+    #if REFIT_DEBUG > 1
+    BOOLEAN      HybridLogger = FALSE;
+    #endif
+
+
     LOG_SEP(L"X");
     LOG_INCREMENT();
     BREAD_CRUMB(L"%a:  A - START", __func__);
@@ -235,17 +241,25 @@ VOID InitScreen (VOID) {
     // Initialise libeg
     egInitScreen();
 
+    #if REFIT_DEBUG > 1
+    MY_HYBRIDLOGGER_SET;
+    #endif
+
     if (egHasGraphicsMode()) {
-        #if REFIT_DEBUG > 0
-        ALT_LOG(1, LOG_THREE_STAR_MID, L"Graphics Mode Detected ... Getting Resolution");
+        #if REFIT_DEBUG > 1
+        ALT_LOG(1, LOG_THREE_STAR_MID,
+            L"Graphics Mode Detected ... Get Resolution"
+        );
         #endif
 
         egGetScreenSize (&ScreenW, &ScreenH);
         AllowGraphicsMode = TRUE;
     }
     else {
-        #if REFIT_DEBUG > 0
-        ALT_LOG(1, LOG_THREE_STAR_MID, L"Graphics Mode *NOT* Detected ... Set Text Mode");
+        #if REFIT_DEBUG > 1
+        ALT_LOG(1, LOG_THREE_STAR_MID,
+            L"Graphics Mode *NOT* Detected ... Set Text Mode"
+        );
         #endif
 
         AllowGraphicsMode = FALSE;
@@ -254,6 +268,10 @@ VOID InitScreen (VOID) {
         // Ensure we are in Text Mode
         egSetGraphicsModeEnabled (FALSE);
     }
+
+    #if REFIT_DEBUG > 1
+    MY_HYBRIDLOGGER_OFF;
+    #endif
 
     GraphicsScreenDirty = TRUE;
 
@@ -481,7 +499,8 @@ VOID SetupScreen (VOID) {
                         : L"Basic Flag ... Scale UI Elements Down";
                 }
             }
-            else { // GlobalConfig.ScaleUI == 0 ... Technically any other value
+            else {
+                // GlobalConfig.ScaleUI == 0 ... Technically any other value
                 if (ScreenLongest  > HIDPI_LONG &&
                     ScreenShortest > HIDPI_SHORT
                 ) {
@@ -660,7 +679,7 @@ VOID SwitchToText (
         #if REFIT_DEBUG > 0
         if (TextModeOnEntry) {
             LOG_MSG(
-                "Could *NOT* Get Text Console Size ... Using Default:- '%d x %d'",
+                "Could *NOT* Get Text Console Size ... Use Default:- '%d x %d'",
                 ConHeight, ConWidth
             );
         }
@@ -915,8 +934,8 @@ VOID DrawScreenHeader (
     );
     for (i = 0; i < 3; i++) {
         REFIT_CALL_3_WRAPPER(
-            gST->ConOut->SetCursorPosition, gST->ConOut,
-            0, i
+            gST->ConOut->SetCursorPosition,
+            gST->ConOut, 0, i
         );
         if (BlankLine != NULL) {
             Print (BlankLine);
@@ -925,7 +944,10 @@ VOID DrawScreenHeader (
 
     // Print header text
     if (Title != NULL) {
-        REFIT_CALL_3_WRAPPER(gST->ConOut->SetCursorPosition, gST->ConOut, 3, 1);
+        REFIT_CALL_3_WRAPPER(
+            gST->ConOut->SetCursorPosition,
+            gST->ConOut, 3, 1
+        );
         if (MyStriCmp (Title, MAIN_MENU_NAME)) {
             Print (L"%s  -  Select a Loader or Tool", Title);
         }
@@ -940,8 +962,8 @@ VOID DrawScreenHeader (
         gST->ConOut, ATTR_BASIC
     );
     REFIT_CALL_3_WRAPPER(
-        gST->ConOut->SetCursorPosition, gST->ConOut,
-        0, 4
+        gST->ConOut->SetCursorPosition,
+        gST->ConOut, 0, 4
     );
 } // VOID DrawScreenHeader()
 
@@ -1106,15 +1128,17 @@ VOID PauseForKey (VOID) {
 
                 Breakout = TRUE;
             }
-            else if (WaitOut == INPUT_TIMER_ERROR) {
-                #if REFIT_DEBUG > 0
-                MsgStr = L"Pause Terminated on Timer Error";
-                ALT_LOG(1, LOG_LINE_NORMAL, L"%s!!", MsgStr);
-                LOG_MSG("%s      * %s", OffsetNext, MsgStr);
-                LOG_MSG("\n\n");
-                #endif
+            else {
+                if (WaitOut == INPUT_TIMER_ERROR) {
+                    #if REFIT_DEBUG > 0
+                    MsgStr = L"Pause Terminated on Timer Error";
+                    ALT_LOG(1, LOG_LINE_NORMAL, L"%s!!", MsgStr);
+                    LOG_MSG("%s      * %s", OffsetNext, MsgStr);
+                    LOG_MSG("\n\n");
+                    #endif
 
-                Breakout = TRUE;
+                    Breakout = TRUE;
+                }
             }
 
             if (Breakout) {
@@ -1705,7 +1729,9 @@ VOID BltClearScreen (
                 );
 
                 if (CompImage != NULL) {
-                    egComposeImage (CompImage, Banner, 0, 0);
+                    egComposeImage (
+                        CompImage, Banner, 0, 0
+                    );
                     MY_FREE_IMAGE(Banner);
                     Banner = CompImage;
                 }
@@ -1770,7 +1796,9 @@ VOID BltClearScreen (
             BannerPosX = (
                 Banner->Width < ScreenW
             ) ? ((ScreenW - Banner->Width) / 2) : 0;
-            BannerPosY = (INTN) (ComputeRow0PosY(FALSE) / 2) - (INTN) Banner->Height;
+            BannerPosY = (INTN) (
+                ComputeRow0PosY(FALSE) / 2
+            ) - (INTN) Banner->Height;
             if (BannerPosY < 0) {
                 BannerPosY = 0;
             }
@@ -1778,7 +1806,11 @@ VOID BltClearScreen (
             GlobalConfig.BannerBottomEdge = BannerPosY + Banner->Height;
 
             if (GlobalConfig.ScreensaverTime != -1) {
-                BltImage (Banner, (UINTN) BannerPosX, (UINTN) BannerPosY);
+                BltImage (
+                    Banner,
+                    (UINTN) BannerPosX,
+                    (UINTN) BannerPosY
+                );
             }
         }
 
@@ -1874,7 +1906,10 @@ VOID BltImageCompositeAny (
         }
 
         OffsetY = (TotalHeight - CompHeight) >> 1;
-        egComposeImage (CompImage, TopImage, OffsetX, OffsetY);
+        egComposeImage (
+            CompImage, TopImage,
+            OffsetX,   OffsetY
+        );
     }
 
     // Place the badge image
@@ -1884,7 +1919,10 @@ VOID BltImageCompositeAny (
     ) {
         OffsetX += CompWidth  - 8 - BadgeImage->Width;
         OffsetY += CompHeight - 8 - BadgeImage->Height;
-        egComposeImage (CompImage, BadgeImage, OffsetX, OffsetY);
+        egComposeImage (
+            CompImage, BadgeImage,
+            OffsetX,   OffsetY
+        );
     }
 
     // Blt to screen and clean up
@@ -1892,8 +1930,9 @@ VOID BltImageCompositeAny (
         if (CompImage->HasAlpha) {
             egDrawImageWithTransparency (
                 CompImage, NULL,
-                XPos, YPos,
-                CompImage->Width, CompImage->Height
+                XPos,     YPos,
+                CompImage->Width,
+                CompImage->Height
             );
         }
         else {

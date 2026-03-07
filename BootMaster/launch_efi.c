@@ -39,12 +39,12 @@
  * Modifications distributed under the terms of the GNU General Public
  * License (GPL) version 3 (GPLv3), or (at your option) any later version.
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2020-2025 Dayo Akanji (sf.net/u/dakanji/profile)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2020-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #include "global.h"
 #include "lib.h"
@@ -156,7 +156,7 @@ VOID WarnSecureBootError(
             LoaderName
         );
         MsgStrE = PoolPrint (
-            L" * Use a MOK utility to register %s ('Enroll Hash') without signing it",
+            L" * Use a MOK utility to register %s ('Enrol Hash') without signing it",
             LoaderName
         );
 
@@ -327,7 +327,7 @@ EFI_STATUS RecoveryBootAPFS (
 static
 VOID LogAssumedValid (
     CHAR16   *FileName,
-    BOOLEAN   FIreWire
+    BOOLEAN   FireWire
 ) {
     BOOLEAN   Known;
 
@@ -343,8 +343,12 @@ VOID LogAssumedValid (
     ALT_LOG(1, LOG_THREE_STAR_MID,
         L"%s%s:- '%s%s'",
         ValidText,
-        FIreWire ? L" on Apple Firmware (FireWire Workaround)" : L"",
-        FileName ? FileName : L"NULL File",
+        (
+            FireWire
+        ) ? L" on Apple Firmware (FireWire Workaround)" : L"",
+        (
+            FileName != NULL
+        ) ? FileName : L"NULL File",
         (!Known) ? L" ... System Arch Unknown" : L""
     );
     if (IsBoot) {
@@ -581,7 +585,9 @@ BOOLEAN IsValidLoader (
         ALT_LOG(1, LOG_THREE_STAR_MID,
             L"%s:- '%s' ... Aborting%s",
             ValidText,
-            FileName ? FileName : L"NULL File",
+            (
+                FileName != NULL
+            ) ? FileName : L"NULL File",
             AbortReason
         );
     }
@@ -589,7 +595,9 @@ BOOLEAN IsValidLoader (
         ALT_LOG(1, LOG_THREE_STAR_MID,
             L"%s:- '%s'",
             ValidText,
-            FileName ? FileName : L"NULL File"
+            (
+                FileName != NULL
+            ) ? FileName : L"NULL File"
         );
     }
     #endif
@@ -617,7 +625,23 @@ BOOLEAN IsValidLoader (
 #endif
 } // BOOLEAN IsValidLoader()
 
+//
 // Launch an EFI binary
+//
+// @param[in]  Volume          Volume to load from
+// @param[in]  Filename        Path to EFI binary
+// @param[in]  LoadOptions     Commandline Options (May be NULL)
+// @param[in]  ImageTitle      Descriptive Title (For Logs/UI)
+// @param[in]  OSType          Single-char OS Type Indicator
+// @param[in]  Verbose         TRUE = Verbose UI
+// @param[in]  IsDriver        TRUE if loading a driver
+// @param[out] NewImageHandle  On success, returns handle to the loaded
+//                             image/driver (May be NULL if irrelevant)
+//
+// @retval EFI_SUCCESS         Image Started Successfully
+// @retval EFI_LOAD_ERROR      Failed to Load Image
+// @retval Others              Status Codes From LoadImage/StartImage
+//
 EFI_STATUS StartEFIImage (
     IN   REFIT_VOLUME  *Volume,
     IN   CHAR16        *Filename,
@@ -671,7 +695,7 @@ EFI_STATUS StartEFIImage (
         return ReturnStatus;
     }
 
-    // Set load options
+    // Set Load Options
     if (LoadOptions == NULL) {
         FullLoadOptions = NULL;
     }
@@ -687,7 +711,10 @@ EFI_STATUS StartEFIImage (
 
     MsgStr = PoolPrint (
         L"Start '%s' with Load Options:- '%s'",
-        ImageTitle, (FullLoadOptions != NULL) ? FullLoadOptions : L"NULL"
+        ImageTitle,
+        (
+            FullLoadOptions !=  NULL
+        ) ? FullLoadOptions : L"NULL"
     );
 
     #if REFIT_DEBUG > 0
@@ -848,9 +875,9 @@ EFI_STATUS StartEFIImage (
             MY_FREE_POOL(MsgStr);
             #endif
 
-            // NB: Does not check the return status and/or handle errors.
-            // It could result in unexpected behaviour if RefindPlus runs
-            // on a drive that is disconnected before launching a program.
+            // DA-TAG: Does not check the return status and/or handle errors.
+            //         Could result in unexpected behaviour if running on a
+            //          drive later disconnected before starting a program.
             REFIT_CALL_6_WRAPPER(
                 gBS->LoadImage, FALSE,
                 SelfImageHandle, GlobalConfig.SelfDevicePath,
@@ -875,8 +902,9 @@ EFI_STATUS StartEFIImage (
             }
 
             ChildLoadedImage->LoadOptions     = (VOID *) FullLoadOptions;
-            ChildLoadedImage->LoadOptionsSize = (FullLoadOptions)
-                ? ((UINT32) StrLen (FullLoadOptions) + 1) * sizeof (CHAR16) : 0;
+            ChildLoadedImage->LoadOptionsSize = (
+                FullLoadOptions != NULL
+            ) ? (UINT32) StrSize (FullLoadOptions) : 0;
 
             // DA-TAG: Investigate This
             //         Optionally Re-enable the EFI watchdog timer
@@ -924,7 +952,9 @@ EFI_STATUS StartEFIImage (
                         }
 
                         if (TmpStr == NULL) {
-                            TmpStr = StrDuplicate (Volume->OSIconName);
+                            TmpStr = StrDuplicate (
+                                Volume->OSIconName
+                            );
                         }
                         ToLower (TmpStr);
 
@@ -969,7 +999,9 @@ EFI_STATUS StartEFIImage (
 
                 if (GlobalConfig.WriteSystemdVars && OSType == 'L') {
                     // Inform SystemD of RefindPlus ESP
-                    EspGUID = GuidAsString (&(SelfVolume->PartGuid));
+                    EspGUID = GuidAsString (
+                        &(SelfVolume->PartGuid)
+                    );
 
                     #if REFIT_DEBUG > 0
                     MsgStr = PoolPrint (
@@ -979,7 +1011,7 @@ EFI_STATUS StartEFIImage (
                     ALT_LOG(1, LOG_LINE_NORMAL, L"%s", MsgStr);
                     MY_FREE_POOL(MsgStr);
 
-                    // DA-TAG: Delibrate for Codacy
+                    // DA-TAG: Deliberate for Codacy
                     Status =
                     #endif
 
@@ -1009,7 +1041,9 @@ EFI_STATUS StartEFIImage (
             // Store loader name if booting and set to do so
             if (BootSelection != NULL) {
                 if (IsBoot) {
-                    StoreLoaderName (BootSelection);
+                    StoreLoaderName (
+                        BootSelection
+                    );
                 }
                 BootSelection = NULL;
             }
@@ -1030,7 +1064,7 @@ EFI_STATUS StartEFIImage (
             #endif
 
             if (GlobalConfig.BootLogoClear) {
-                // Free BootLogoImage ... Delibrately delayed
+                // Free BootLogoImage ... Deliberately delayed
                 MY_FREE_IMAGE(BootLogoImage);
             }
 
@@ -1057,9 +1091,12 @@ EFI_STATUS StartEFIImage (
             }
 
             #if REFIT_DEBUG > 0
+            CHAR16 *TmpMsgStr = (
+                EFI_ERROR(ReturnStatus)
+            ) ? L"While Loading" : L"Returned by";
             MsgStrEx = PoolPrint (
-                L"'%r' While Loading %s",
-                ReturnStatus, ConstMsgStr
+                L"'%r' %s %s",
+                ReturnStatus, TmpMsgStr, ConstMsgStr
             );
             ALT_LOG(1, LOG_THREE_STAR_MID, L"%s", MsgStrEx);
             if (!IsDriver) {
@@ -1078,7 +1115,9 @@ EFI_STATUS StartEFIImage (
                     );
                 }
                 else {
-                    MsgStrEx = StrDuplicate (MsgStrTmp);
+                    MsgStrEx = StrDuplicate (
+                        MsgStrTmp
+                    );
 
                     #if REFIT_DEBUG > 0
                     MY_MUTELOGGER_SET;
@@ -1101,7 +1140,10 @@ EFI_STATUS StartEFIImage (
                     #endif
                 }
 
-                CheckError (ReturnStatus, MsgStrEx);
+                CheckError (
+                    ReturnStatus,
+                    MsgStrEx
+                );
                 MY_FREE_POOL(MsgStrEx);
 
                 // Reset IsBoot if required
@@ -1125,8 +1167,12 @@ EFI_STATUS StartEFIImage (
 
         // DA-TAG: bailout_unload:
         if (!IsDriver) {
-            REFIT_CALL_1_WRAPPER(gBS->UnloadImage, ChildImageHandle);
-            REFIT_CALL_1_WRAPPER(gBS->UnloadImage, TempImageHandle);
+            REFIT_CALL_1_WRAPPER(
+                gBS->UnloadImage, ChildImageHandle
+            );
+            REFIT_CALL_1_WRAPPER(
+                gBS->UnloadImage, TempImageHandle
+            );
         }
     } while (0); // This 'loop' only runs once
 
@@ -1280,6 +1326,7 @@ VOID RebootIntoLoader (
 
         PauseForKey();
         MY_FREE_POOL(MsgStr);
+
         return;
     }
 

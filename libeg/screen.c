@@ -40,12 +40,12 @@
  * License (GPL) version 3 (GPLv3), or (at your option) any later version.
  *
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2020-2025 Dayo Akanji (sf.net/u/dakanji/profile)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2020-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #include "../BootMaster/lib.h"
 #include "../BootMaster/apple.h"
@@ -175,13 +175,32 @@ typedef struct {
 } RP_UGA_PROTOCOL;
 
 
+// GOP 'SetMode' Helper
+static
+EFI_STATUS SwitchMode (
+    IN UINT32 ModeNumber
+) {
+    EFI_STATUS  Status;
+
+
+    Status = REFIT_CALL_2_WRAPPER(
+        GOPDraw->SetMode,
+        GOPDraw, ModeNumber
+    );
+
+    return Status;
+} // static EFI_STATUS SwitchMode()
+
 // When the GOP mode is changed on some firmware,
 // "SimpleTextOut" drivers must be reconnected
 // as text will not be produced otherwise.
 static
 VOID ReconnectTextOut (VOID) {
     EFI_STATUS  Status;
-    UINTN       Index;
+    INT32       StashMode;
+    INTN        StashWidth;
+    INTN        StashHeight;
+    UINTN       HandleIndex;
     UINTN       HandleCount;
     EFI_HANDLE *HandleBuffer;
 
@@ -191,29 +210,60 @@ VOID ReconnectTextOut (VOID) {
         &gEfiSimpleTextOutProtocolGuid, NULL,
         &HandleCount, &HandleBuffer
     );
-    if (EFI_ERROR (Status)) {
+    if (EFI_ERROR(Status)) {
         return;
     }
 
-    for (Index = 0; Index < HandleCount; Index++) {
+    StashWidth = (
+        GOPDraw != NULL
+    ) ? GOPDraw->Mode->Info->HorizontalResolution : -1;
+
+    StashHeight = (
+        GOPDraw != NULL
+    ) ? GOPDraw->Mode->Info->VerticalResolution : -1;
+
+    StashMode = (
+        GOPDraw != NULL
+    ) ? GOPDraw->Mode->Mode : -1;
+
+    for (
+        HandleIndex = 0;
+        HandleIndex < HandleCount;
+        HandleIndex++
+    ) {
         REFIT_CALL_3_WRAPPER(
-            gBS->DisconnectController, HandleBuffer[Index],
+            gBS->DisconnectController,
+            HandleBuffer[HandleIndex],
             NULL, NULL
         );
     }
 
-    for (Index = 0; Index < HandleCount; Index++) {
+    for (
+        HandleIndex = 0;
+        HandleIndex < HandleCount;
+        HandleIndex++
+    ) {
         REFIT_CALL_4_WRAPPER(
-            gBS->ConnectController, HandleBuffer[Index],
+            gBS->ConnectController,
+            HandleBuffer[HandleIndex],
             NULL, NULL, TRUE
         );
+    }
+
+    if (GOPDraw != NULL && StashHeight > 0 && StashWidth > 0 && (
+        GOPDraw->Mode->Mode                       != StashMode ||
+        GOPDraw->Mode->Info->HorizontalResolution != StashWidth
+    )) {
+        // DA-TAG: Mode index optionally forced later by caller
+        GOPDraw->Mode->Info->HorizontalResolution = StashWidth;
+        GOPDraw->Mode->Info->VerticalResolution   = StashHeight;
     }
 
     MY_FREE_POOL(HandleBuffer);
 } // static VOID ReconnectTextOut()
 
-// Sets mode via GOP protocol and
-// reconnects simpletextout drivers
+// Set mode for GOP protocol then
+// reconnect 'SimpleTextOut' drivers
 static
 EFI_STATUS GopSetModeAndReconnectTextOut (
     IN UINT32 ModeNumber
@@ -229,9 +279,8 @@ EFI_STATUS GopSetModeAndReconnectTextOut (
         return EFI_UNSUPPORTED;
     }
 
-    Status = REFIT_CALL_2_WRAPPER(
-        GOPDraw->SetMode,
-        GOPDraw, ModeNumber
+    Status = SwitchMode (
+        ModeNumber
     );
 
     #if REFIT_DEBUG > 0
@@ -241,7 +290,6 @@ EFI_STATUS GopSetModeAndReconnectTextOut (
     );
     ALT_LOG(1, LOG_LINE_NORMAL, L"%s", MsgStr);
     LOG_MSG("%s", MsgStr);
-    LOG_MSG("\n\n");
     MY_FREE_POOL(MsgStr);
     #endif
 
@@ -250,6 +298,23 @@ EFI_STATUS GopSetModeAndReconnectTextOut (
     }
 
     ReconnectTextOut();
+
+    if (GOPDraw->Mode->Mode != ModeNumber) {
+        #if REFIT_DEBUG > 0
+        MsgStr = StrDuplicate (
+            L"Firmware Reset GOP Mode ... Reasserting"
+        );
+        ALT_LOG(1, LOG_LINE_NORMAL, L"%s", MsgStr);
+        LOG_MSG("%s%s", OffsetNext, MsgStr);
+        MY_FREE_POOL(MsgStr);
+        #endif
+
+        SwitchMode (ModeNumber);
+    }
+
+    #if REFIT_DEBUG > 0
+    LOG_MSG("\n\n");
+    #endif
 
     return EFI_SUCCESS;
 } // static EFI_STATUS GopSetModeAndReconnectTextOut()
@@ -1278,8 +1343,8 @@ EFI_STATUS egSetGopMode (
     else {
         i = 0;
         while (EFI_ERROR(Status) && i <= MaxMode) {
-            Mode = Mode + Next;
-            Mode = (Mode >= (INT32) MaxMode) ? 0 : Mode;
+            Mode =  Mode + Next;
+            Mode = (Mode >=      (INT32) MaxMode) ? 0 : Mode;
             Mode = (Mode < 0) ? ((INT32) MaxMode - 1) : Mode;
 
             Status = REFIT_CALL_4_WRAPPER(
@@ -1324,6 +1389,7 @@ static
 EFI_STATUS egSetMaxResolution (VOID) {
     #if REFIT_DEBUG > 0
     CHAR16                               *MsgStr;
+    CHAR16                               *TmpStr;
     #endif
 
     EFI_STATUS                            Status;
@@ -1396,19 +1462,19 @@ EFI_STATUS egSetMaxResolution (VOID) {
     } // for
 
     #if REFIT_DEBUG > 0
+    TmpStr = (
+        MaxMode > 1
+    ) ? L"Best (Max Rez)" : L"Only Available";
     if (EFI_ERROR(XStatus)) {
         MsgStr = PoolPrint (
-            L"%s (Max Rez) Mode ... %r",
-            (MaxMode > 1) ? L"Best" : L"Only",
-            XStatus
+            L"%s Mode ... %r",
+            TmpStr, XStatus
         );
     }
     else {
         MsgStr = PoolPrint (
             L"%s Mode:- 'GOP Mode[%02d] on GFX Handle[%02d] @ %d x %d'",
-            (MaxMode > 1) ? L"Best (Max Rez)" : L"Only Available",
-            BestMode, SelectedGOP,
-            Width, Height
+            TmpStr, BestMode, SelectedGOP, Width, Height
         );
     }
 
@@ -1430,11 +1496,6 @@ EFI_STATUS egSetMaxResolution (VOID) {
         MY_FREE_POOL(MsgStr);
         #endif
 
-        // Explicitly use 'GOPDraw->Mode->Info' below
-        // as 'Info' is not available (freed earlier)
-        egScreenHeight = GOPDraw->Mode->Info->VerticalResolution;
-        egScreenWidth  = GOPDraw->Mode->Info->HorizontalResolution;
-
         // Proceed
         Status = EFI_SUCCESS;
     }
@@ -1443,14 +1504,14 @@ EFI_STATUS egSetMaxResolution (VOID) {
             Status = XStatus;
         }
         else {
-            Status = GopSetModeAndReconnectTextOut (BestMode);
+            Status = GopSetModeAndReconnectTextOut (
+                BestMode
+            );
+
+            XStatus = Status;
         }
 
-        if (!EFI_ERROR(Status)) {
-            egScreenWidth  = Width;
-            egScreenHeight = Height;
-        }
-        else {
+        if (EFI_ERROR(Status)) {
             #if REFIT_DEBUG > 0
             MsgStr = PoolPrint (
                 L"Could *NOT* Set Intended GOP Mode ... %s",
@@ -1464,19 +1525,26 @@ EFI_STATUS egSetMaxResolution (VOID) {
             MY_FREE_POOL(MsgStr);
             #endif
 
-            // Cannot set BestMode ... Search for first usable one or exit
+            // Cannot set BestMode
+            // Search for first usable one or exit
             Status = (
                 MaxMode > 1
             ) ? egSetGopMode (1) : EFI_UNSUPPORTED;
         }
     }
 
+    // DA-TAG: XStatus is Deliberate
+    if (!EFI_ERROR(XStatus)) {
+        egScreenWidth  = Width;
+        egScreenHeight = Height;
+    }
+
     return Status;
 } // static EFI_STATUS egSetMaxResolution()
 
-// Make the necessary system calls to identify the current graphics mode.
+// Make system calls needed to identify the current graphics mode.
 // Stores the results in the file-global variables egScreenWidth,
-// egScreenHeight, and egHasGraphics. The first two of these will be
+// egScreenHeight, and egHasGraphics. The first two of these are
 // unchanged if neither GOPDraw nor UGADraw is a valid pointer.
 static
 VOID egDetermineScreenSize (VOID) {
@@ -1488,6 +1556,7 @@ VOID egDetermineScreenSize (VOID) {
 
 
     // Get screen size
+    egHasGraphics = FALSE;
     if (GOPDraw != NULL) {
         egHasGraphics  = TRUE;
         egScreenHeight = GOPDraw->Mode->Info->VerticalResolution;
@@ -1501,14 +1570,12 @@ VOID egDetermineScreenSize (VOID) {
                 &UgaDepth, &UgaRefreshRate
             );
             if (EFI_ERROR(Status)) {
-                // Graphics *IS NOT* Available
-                UGADraw       =  NULL;
-                egHasGraphics = FALSE;
+                UGADraw =  NULL;
             }
             else {
-                egScreenWidth  = ScreenW;
-                egScreenHeight = ScreenH;
                 egHasGraphics  =    TRUE;
+                egScreenHeight = ScreenH;
+                egScreenWidth  = ScreenW;
             }
         }
     }
@@ -2418,7 +2485,7 @@ VOID egInitScreen (VOID) {
         }
         else {
             #if REFIT_DEBUG > 0
-            // DA-TAG: Delibrate for Codacy
+            // DA-TAG: Deliberate for Codacy
             Status =
             #endif
             RefitProvideGopPassThrough (FALSE);
@@ -2465,7 +2532,7 @@ VOID egInitScreen (VOID) {
         ) {
             // Implement Text Renderer
             #if REFIT_DEBUG > 0
-            // DA-TAG: Delibrate for Codacy
+            // DA-TAG: Deliberate for Codacy
             Status =
             #endif
             OcUseBuiltinTextOutput (

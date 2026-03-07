@@ -1,9 +1,13 @@
 0.14.2.AE (PRE-RELEASE):
 -----------------------
+- Fixes `SimpleTextOut` Reconnection Issues
+  * Some firmware reset to the console default resolution on reconnection
+    - This quirk was not accounted for when enforcing reconnection
+  * This bug was introduced in v0.14.2.AB (Commit 44b6d7d)
 - Fixes `BtrFS` Driver
   * Cursor was not being properly iterated
   * Refactoring of `fsw_strfunc.h` meant the driver was a `NOOP`
-    - This bug was introduced in v0.14.0.AC (Commit 9ac45b9)
+    - This bug was introduced in v0.14.2.AC (Commit 9ac45b9)
 - Fixes Failure of FS Drivers to Handle `Sparse Holes`
   * Resulted in a failure to boot Linux Kernel v6.17.4/Newer
     - https://sf.net/p/refind/discussion/general/thread/172b9cbf09
@@ -31,6 +35,10 @@
     - Dynamic AppleLegacyLoader search was added to `rEFIt` in 2009:
       * sf.net/p/refit/code/438
       * sf.net/p/refit/code/440
+- Amends `SupplyNVME` Feature
+  * Disabled if `UEFI Secure Boot` active
+    - Avoids `Security Violation` errors
+  * Use `signed standalone drivers` instead
 
 
 0.14.2.AD (11 NOV 2025):
@@ -60,10 +68,10 @@
   * `SBAT` sections now added to binaries at compile time
   * Signed binaries now available
     - Option to sign binaries added to repository `Artefact Creation` Github action
-- Improves `SD-Boot` Handling
+- Improves `SDBoot` Handling
   * Manual Stanzas now accept a `SystemD` OSType
   * The `use_graphics_for` token now accepts a `systemd` input
-    - This allows specifically loading `SD-Boot` in graphics mode
+    - This allows specifically loading `SDBoot` in graphics mode
 - Improves `APFS Data Volume` Handling
   * The `VolName - DATA` tag extended to match more languages
     - German, Spanish, French, Portuguese, Italian, Finnish, Dutch, Croatian

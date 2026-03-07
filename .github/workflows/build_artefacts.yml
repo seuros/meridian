@@ -25,7 +25,7 @@ on:
         - 'YES'
         default: 'NO'
       commit_id:
-        description: 'Commit ID (Blank Means Latest GOPFix)'
+        description: 'Commit ID (Blank == GOPFix-Latest)'
         type: string
         required: false
 
@@ -59,6 +59,7 @@ jobs:
           # Set Misc Paths
           USE_BASE="${HOME}/Documents/RefindPlus"
           echo "ENV_BASE_DIR=${USE_BASE}" >> "${GITHUB_ENV}"
+          echo "ENV_EDK2_DIR=${USE_BASE}/edk2" >> "${GITHUB_ENV}"
           echo "ENV_WORK_DIR=${USE_BASE}/Working" >> "${GITHUB_ENV}"
 
       - name: Get Repositories
@@ -69,8 +70,8 @@ jobs:
           cd "${ENV_BASE_DIR}" || exit 1
 
           # Clone Repos
-          git clone "https://github.com/${ENV_REPO}.git" Working
-          git clone https://github.com/RefindPlusRepo/RefindPlusUDK.git edk2
+          git clone "https://github.com/${ENV_REPO}.git" Working || exit 1
+          git clone "https://github.com/RefindPlusRepo/RefindPlusUDK.git" edk2 || exit 1
 
       - name: Determine Target Branch
         shell: bash
@@ -157,7 +158,7 @@ jobs:
 
           if (( FlagFind )) ; then
             /usr/bin/perl -i -p -e 's~\(Local\)~(Outer)~' "${ADD_TAG}" || {
-              echo "[WARN] Tag Replacement Failed: '${ADD_TAG}'"
+              echo "[NOTE] Tag Replacement Failed: '${ADD_TAG}'"
             }
           fi
 
@@ -170,23 +171,47 @@ jobs:
           # Install Final Python 2 Version
           PYTHON_VER='2.7.18'
           PYTHON_PKG="python-${PYTHON_VER}-macosx10.9.pkg"
-          PYTHON_URL="https://www.python.org/ftp/python/${PYTHON_VER}/${PYTHON_PKG}"
           EXPECT_MD5='ce98eeb7bdf806685adc265ec1444463'
 
-          printf "\nDownloading Python %s\n" "${PYTHON_VER}"
-          curl --retry 3 --fail -O "${PYTHON_URL}"
-
-          printf "\nVerify Python %s Download\n" "${PYTHON_VER}"
-          ACTUAL_MD5=$(md5 -q "${PYTHON_PKG}")
-          if [[ "${ACTUAL_MD5}" != "${EXPECT_MD5}" ]]; then
-            echo "ERROR: Package Checksum Check Failure"
-            echo "       Expect: ${EXPECT_MD5}"
-            echo "       Actual: ${ACTUAL_MD5}"
-            echo "       Exiting Now"
-            exit 1
+          PYTHON2_INSTALLER="${ENV_EDK2_DIR}/Conf/Blobs/${PYTHON_PKG}"
+          if [[ -f "${PYTHON2_INSTALLER}" ]]; then
+            cp -f "${PYTHON2_INSTALLER}" . || true
           fi
 
-          printf "\nVerified ... Installing Python %s\n" "${PYTHON_VER}"
+          if [[ -f "${PYTHON_PKG}" ]]; then
+            printf "\nUsing Bundled Python %s\n" "${PYTHON_VER}"
+            printf "Verify Python %s File\n" "${PYTHON_VER}"
+            ACTUAL_MD5=$(md5 -q "${PYTHON_PKG}")
+            if [[ "${ACTUAL_MD5}" != "${EXPECT_MD5}" ]]; then
+              echo "ERROR: Python Bundle Checksum Check Failure"
+              echo "       Expect: ${EXPECT_MD5}"
+              echo "       Actual: ${ACTUAL_MD5}"
+
+              rm -f "${PYTHON_PKG}"
+              printf "\n\nFetch From Project Page Instead"
+            fi
+          fi
+
+          if [[ ! -f "${PYTHON_PKG}" ]]; then
+            PYTHON_URL="https://www.python.org/ftp/python/${PYTHON_VER}/${PYTHON_PKG}"
+            printf "\nDownloading Python %s\n" "${PYTHON_VER}"
+            curl --retry 3 --fail -O "${PYTHON_URL}" || {
+              printf "\nERROR: Python %s Download Failed\n" "${PYTHON_VER}"
+              exit 1
+            }
+
+            printf "Verify Python %s Download\n" "${PYTHON_VER}"
+            ACTUAL_MD5=$(md5 -q "${PYTHON_PKG}")
+            if [[ "${ACTUAL_MD5}" != "${EXPECT_MD5}" ]]; then
+              echo "ERROR: Python Download Checksum Check Failure"
+              echo "       Expect: ${EXPECT_MD5}"
+              echo "       Actual: ${ACTUAL_MD5}"
+              echo "       Exiting Now"
+              exit 1
+            fi
+          fi
+
+          printf "Verified ... Installing Python %s\n" "${PYTHON_VER}"
           sudo installer -pkg "${PYTHON_PKG}" -target /
 
       - name: Run Main Script
@@ -200,10 +225,10 @@ jobs:
           ./RefindPlusBuilder.sh "${BRANCH}" "${BUILD_FLAG}"
 
 
-        ##
+        ###
         # If signing is active, prefix with 'NOT_SIGNED---' for the
         # signing job to handle the final outputs without collision
-        ##
+        ###
       - name: Upload Artefact (REL)
         if: success() && contains(github.event.inputs.build_type, 'REL')
         uses: actions/upload-artifact@v6
@@ -231,6 +256,29 @@ jobs:
     if: ${{ github.event.inputs.sign_output == 'YES' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Validate Repository Secrets
+        shell: bash
+        env:
+          INPUT_KEY: ${{ secrets.SIG_RP_KEY }}
+          INPUT_CRT: ${{ secrets.SIG_RP_CRT }}
+          INPUT_CER: ${{ secrets.SIG_RP_CER }}
+        run: |
+          # Vet Repository Secrets Setup (If Detected)
+          [[ -z "${INPUT_KEY}" && (-n "${INPUT_CRT}" || -n "${INPUT_CER}") ]] && NO_KEY=1 || NO_KEY=0
+          [[ -n "${INPUT_KEY}" &&  -z "${INPUT_CRT}" ]]                       && NO_CRT=1 || NO_CRT=0
+          [[ -n "${INPUT_CER}" &&  -z "${INPUT_CRT}" && "${NO_CRT}" == "0" ]] && NO_CRT=1 || true
+
+          if (( NO_KEY || NO_CRT )); then
+            echo "ERROR: Invalid Repository Secrets Setup for Secure Boot Signing"
+
+            (( NO_KEY )) && echo "       The required 'SIG_RP_KEY' repository secret is missing"
+            (( NO_CRT )) && echo "       The required 'SIG_RP_CRT' repository secret is missing"
+
+            echo "       Unsigned Artefacts Saved with Prefix: 'NOT_SIGNED---'"
+            echo "       Exiting Now"
+            exit 1
+          fi
+
       - name: Fetch Interim Artefact (REL)
         if: contains(github.event.inputs.build_type, 'REL')
         uses: actions/download-artifact@v7
@@ -254,25 +302,56 @@ jobs:
 
       - name: Prepare to Sign Binaries
         shell: bash
+        env:
+          ENV_USER_KEY: ${{ secrets.SIG_RP_KEY }}
+          ENV_USER_CRT: ${{ secrets.SIG_RP_CRT }}
+          ENV_USER_CER: ${{ secrets.SIG_RP_CER }}
         run: |
-          # Generate Certificate and Private Key
+          # Handle Certificate and Private Key
           Certs="Artefact_Certs"
-          mkdir "${Certs}"
+          mkdir -p "${Certs}"
           NOW=$(date +%y%m%d%H%M%S)
-          openssl req -new -x509 -newkey rsa:2048 \
-            -keyout ${Certs}/build_cert_${NOW}.key \
-            -out ${Certs}/build_cert_${NOW}.crt \
-            -days 3650 -nodes \
-            -subj "/CN=RefindPlus Artefact Build ${NOW}/"
+          CERT_PATH="${Certs}/build_cert_${NOW}"
 
-          # Create Alternative Certificate Format
-          cp "${Certs}/build_cert_${NOW}.crt" "${Certs}/build_cert_${NOW}.cer"
+          if [[ -n "${ENV_USER_KEY}" ]]; then
+            echo "Cert/Key: Fetch User-Provided"
+            echo "${ENV_USER_KEY}" > "${CERT_PATH}.key"
 
-          # Store Outputs
-          echo "CER_PATH=${Certs}/build_cert_${NOW}.cer" >> $GITHUB_ENV
-          echo "CRT_PATH=${Certs}/build_cert_${NOW}.crt" >> $GITHUB_ENV
-          echo "KEY_PATH=${Certs}/build_cert_${NOW}.key" >> $GITHUB_ENV
-          echo "NOW_FLAG=${NOW}"                         >> $GITHUB_ENV
+            if [[ -n "${ENV_USER_CRT}" ]]; then
+              echo "${ENV_USER_CRT}" > "${CERT_PATH}.crt"
+            fi
+            if [[ -n "${ENV_USER_CER}" ]]; then
+              echo "${ENV_USER_CER}" > "${CERT_PATH}.cer"
+            fi
+          fi
+
+          if [[ -z "${ENV_USER_CRT}" ]]; then
+            ENV_USER_KEY="${CERT_PATH}.key"
+            ENV_USER_CRT="${CERT_PATH}.crt"
+            ENV_USER_CER="${CERT_PATH}.cer"
+
+            echo "Cert/Key: Generate Transient"
+            openssl req -new -x509 -nodes \
+              -newkey rsa:2048 \
+              -keyout "${ENV_USER_KEY}" \
+              -out "${ENV_USER_CRT}" \
+              -days 3650 \
+              -subj "/CN=RefindPlus Build Artefact ${NOW}/"
+          fi
+
+          if [[ (-z "${ENV_USER_CER}" || ! -f "${ENV_USER_CER}")  && -f "${ENV_USER_CRT}" ]]; then
+            # Create '.cer' From '.crt' For UEFI Enrolment
+            openssl x509 \
+              -in "${ENV_USER_CRT}" \
+              -out "${ENV_USER_CER}" \
+              -outform DER
+          fi
+
+          # Store Outputs for Subsequent Steps
+          echo "PATH_KEY=${ENV_USER_KEY}" >> $GITHUB_ENV
+          echo "PATH_CRT=${ENV_USER_CRT}" >> $GITHUB_ENV
+          echo "PATH_CER=${ENV_USER_CER}" >> $GITHUB_ENV
+          echo "FLAG_NOW=${NOW}"          >> $GITHUB_ENV
 
       - name: Sign Requested Binaries
         env:
@@ -286,6 +365,7 @@ jobs:
             local base=""
             local infile=""
             local outfile=""
+            local sign_item=0
 
             local outdir="${target}_signed_DIR"
             mkdir -p "${outdir}"
@@ -293,21 +373,74 @@ jobs:
             printf "\n\n"
             echo "===== Signing Target: ${target} ====="
 
-            # Sign Main Binaries
-            echo "Sign Main Binaries..."
-            for prefix in x64_RefindPlus x64_gptsync; do
-              base="UEFI_APP---${prefix}_${target}"
-              infile="Unsigned_${target}/${base}.efi"
-              outfile="${outdir}/SIGNED_${NOW_FLAG}___${base}.efi"
+            # Sign Main Binary
+            echo "Sign Main Binary..."
+            prefix="x64_RefindPlus_${target}"
+            base="APP_xx_${target}---${prefix}"
+            infile="Unsigned_${target}/${base}.efi"
+            outfile="${outdir}/SIGNED_${FLAG_NOW}___${base}.efi"
 
-              if [[ ! -f "${infile}" ]]; then
-                echo "[WARN] Not Found: '${infile}' ... SKIPPED"
+            sign_item=0
+            if [[ -f "${infile}" ]]; then
+              sign_item=1
+            else
+              base="UEFI_APP---${prefix}"
+              infile="Unsigned_${target}/${base}.efi"
+              outfile="${outdir}/SIGNED_${FLAG_NOW}___${base}.efi"
+
+              if [[ -f "${infile}" ]]; then
+                sign_item=1
               else
+                echo "ERROR: Main Binary Not Found: '${prefix}'"
+                echo "       Unsigned Artefacts Saved with Prefix: 'NOT_SIGNED---'"
+                echo "       Exiting Now"
+                exit 1
+              fi
+            fi
+
+            if (( sign_item )); then
                 echo "[SIGN] '${infile}' >>---> as >>---> '${outfile}'"
-                sbsign --key "${KEY_PATH}" \
-                       --cert "${CRT_PATH}" \
+                sbsign --key "${PATH_KEY}" \
+                       --cert "${PATH_CRT}" \
                        --output "${outfile}" "${infile}" || {
                   echo "ERROR: Failed While Signing ${infile}"
+                  echo "       Unsigned Artefacts Saved with Prefix: 'NOT_SIGNED---'"
+                  echo "       Exiting Now"
+                  exit 1
+                }
+            fi
+
+            # Sign Misc Tools
+            echo ''
+            echo "Sign Misc Tools..."
+            for prefix in x64_shell x64_memtest86 x64_gptsync x64_gdisk x64_CleanNvram x64_ipxe; do
+              base="APP_xx_${target}---${prefix}"
+              infile="Unsigned_${target}/${base}.efi"
+              outfile="${outdir}/SIGNED_${FLAG_NOW}___${base}.efi"
+
+              sign_item=0
+              if [[ -f "${infile}" ]]; then
+                sign_item=1
+              else
+                base="UEFI_APP---${prefix}_${target}"
+                infile="Unsigned_${target}/${base}.efi"
+                outfile="${outdir}/SIGNED_${FLAG_NOW}___${base}.efi"
+
+                if [[ -f "${infile}" ]]; then
+                  sign_item=1
+                else
+                  echo "[WARN] Not Found: '${infile}' ... SKIPPED"
+                fi
+              fi
+
+              if (( sign_item )); then
+                echo "[SIGN] '${infile}' >>---> as >>---> '${outfile}'"
+                sbsign --key "${PATH_KEY}" \
+                       --cert "${PATH_CRT}" \
+                       --output "${outfile}" "${infile}" || {
+                  echo "ERROR: Failed While Signing ${infile}"
+                  echo "       Unsigned Artefacts Saved with Prefix: 'NOT_SIGNED---'"
+                  echo "       Exiting Now"
                   exit 1
                 }
               fi
@@ -319,16 +452,18 @@ jobs:
             for fs in btrfs ext2 ext4 hfs iso9660 ntfs reiserfs; do
               base="DRIVER_${target}---x64_${fs}"
               infile="Unsigned_${target}/${base}.efi"
-              outfile="${outdir}/SIGNED_${NOW_FLAG}_${base}.efi"
+              outfile="${outdir}/SIGNED_${FLAG_NOW}_${base}.efi"
 
               if [[ ! -f "${infile}" ]]; then
                 echo "[WARN] Not Found: '${infile}' ... SKIPPED"
               else
                 echo "[SIGN] '${infile}' >>--> as >>--> '${outfile}'"
-                sbsign --key "${KEY_PATH}" \
-                       --cert "${CRT_PATH}" \
+                sbsign --key "${PATH_KEY}" \
+                       --cert "${PATH_CRT}" \
                        --output "${outfile}" "${infile}" || {
                   echo "ERROR: Failed While Signing ${infile}"
+                  echo "       Unsigned Artefacts Saved with Prefix: 'NOT_SIGNED---'"
+                  echo "       Exiting Now"
                   exit 1
                 }
               fi
@@ -357,11 +492,11 @@ jobs:
           printf "\n\n"
 
 
-        ##
+        ###
         # Handle interim artefacts, which are now deleted to leave
         # a final definititve set of artefacts with the same names
         # as produced when signing for secure boot is not required
-        ##
+        ###
       - name: Remove Interim Unsigned Artefacts
         continue-on-error: true
         env:
@@ -371,10 +506,10 @@ jobs:
         shell: bash
         run: |
           echo "Remove Interim Unsigned Artefacts"
-          artifacts=$(gh api "repos/${ENV_REPO}/actions/runs/${ENV_GHID}/artifacts" \
+          got_artefacts=$(gh api "repos/${ENV_REPO}/actions/runs/${ENV_GHID}/artifacts" \
             --jq '.artifacts[] | select(.name | startswith("NOT_SIGNED---")) | "\(.id):\(.name)"')
 
-          if [[ -z "${artifacts}" ]]; then
+          if [[ -z "${got_artefacts}" ]]; then
             echo "Interim Unsigned Artefacts Not Found"
             exit 0
           fi
@@ -393,21 +528,21 @@ jobs:
               echo "[WARN] Failed to Remove Interim Artefact: ${artifact_name} (ID: ${artifact_id})"
               FirstPass='True'
             fi
-          done <<< "${artifacts}"
+          done <<< "${got_artefacts}"
 
 
-        ##
+        ###
         # Always include the certificate files along with the
-        # signed binaries for users to enroll for Secure Boot
-        ##
+        # signed binaries for users to enrol for Secure Boot
+        ###
       - name: Upload Signed Binaries (REL)
         if: contains(github.event.inputs.build_type, 'REL')
         uses: actions/upload-artifact@v6
         with:
           name: x64_RefindPlus-Artefacts_REL
           path: |
-              ${{ env.CER_PATH }}
-              ${{ env.CRT_PATH }}
+              ${{ env.PATH_CER }}
+              ${{ env.PATH_CRT }}
               REL_signed_DIR/*.efi
 
       - name: Upload Signed Binaries (DBG)
@@ -416,8 +551,8 @@ jobs:
         with:
           name: x64_RefindPlus-Artefacts_DBG
           path: |
-              ${{ env.CER_PATH }}
-              ${{ env.CRT_PATH }}
+              ${{ env.PATH_CER }}
+              ${{ env.PATH_CRT }}
               DBG_signed_DIR/*.efi
 
       - name: Upload Signed Binaries (NPT)
@@ -426,6 +561,6 @@ jobs:
         with:
           name: x64_RefindPlus-Artefacts_NPT
           path: |
-              ${{ env.CER_PATH }}
-              ${{ env.CRT_PATH }}
+              ${{ env.PATH_CER }}
+              ${{ env.PATH_CRT }}
               NPT_signed_DIR/*.efi

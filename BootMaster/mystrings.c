@@ -7,12 +7,12 @@
  * Distributed under the terms of the GNU General Public License (GPL)
  * version 3 (GPLv3), or (at your option) any later version.
  */
-/*
- * Modified for RefindPlus
- * Copyright (c) 2020-2025 Dayo Akanji (sf.net/u/dakanji/profile)
- *
- * Modifications distributed under the preceding terms.
- */
+/**
+** Modified for RefindPlus
+** Copyright (c) 2020-2026 Dayo Akanji (sf.net/u/dakanji/profile)
+**
+** Modifications distributed under the preceding terms.
+**/
 
 #include "mystrings.h"
 #include "lib.h"
@@ -466,18 +466,23 @@ BOOLEAN MyStriCmp (
     IN CHAR16 *String1,
     IN CHAR16 *String2
 ) {
+    CHAR16 c1;
+    CHAR16 c2;
+
+
     if (String1 == NULL ||
         String2 == NULL
     ) {
         return FALSE;
     }
 
-    while (*String1 != L'\0') {
-        if ((*String1 | 0x20) !=
-            (*String2 | 0x20)
-        ) {
-            break;
-        }
+    while (*String1 && *String2) {
+        c1 = *String1;
+        c2 = *String2;
+
+        if (c1 >= L'A' && c1 <= L'Z') c1 += 32;
+        if (c2 >= L'A' && c2 <= L'Z') c2 += 32;
+        if (c1 != c2) return FALSE;
 
         String1++;
         String2++;

@@ -112,7 +112,7 @@ EG_IMAGE * egCreateImage (
         Width * Height * sizeof (EG_PIXEL)
     );
     if (NewImage->PixelData == NULL) {
-        // Delibrate as PixelData is NULL
+        // Deliberate as PixelData is NULL
         MY_FREE_POOL(NewImage);
 
         return NULL;

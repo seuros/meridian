@@ -156,7 +156,7 @@ jobs:
     needs: [add_label_user_open_drop1]
     runs-on: ubuntu-latest
 
-    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED - disregarding guidance given') }}
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && contains(github.event.issue.body, 'DEBUG_LOGS_NOT_PROVIDED - disregarding_guidance_given') }}
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v2
@@ -204,7 +204,7 @@ jobs:
     needs: [add_label_user_open_drop2]
     runs-on: ubuntu-latest
 
-    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') }}
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && contains(github.event.issue.body, 'SUGGESTED_TESTS_IGNORED despite applicable_item') }}
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v2
@@ -252,7 +252,7 @@ jobs:
     needs: [add_label_user_open_drop3]
     runs-on: ubuntu-latest
 
-    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED - disregarding guidance given') && contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') }}
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'DEBUG_LOGS_NOT_PROVIDED - disregarding_guidance_given') && contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') }}
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v2
@@ -299,7 +299,7 @@ jobs:
     needs: [add_label_user_open_drop4]
     runs-on: ubuntu-latest
 
-    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED - disregarding guidance given') && !contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') && contains(github.event.issue.body, 'Official Older Released Version') }}
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'DEBUG_LOGS_NOT_PROVIDED - disregarding_guidance_given') && !contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') && contains(github.event.issue.body, 'Official Older Released Version') }}
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v2
@@ -348,7 +348,7 @@ jobs:
     needs: [add_label_user_outdated]
     runs-on: ubuntu-latest
 
-    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED - disregarding guidance given') && !contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') }}
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED_TESTS_IGNORED despite applicable_item') && !contains(github.event.issue.body, 'DEBUG_LOGS_NOT_PROVIDED - disregarding_guidance_given') && !contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') }}
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v2
@@ -370,7 +370,7 @@ jobs:
     needs: [add_label_user_open1]
     runs-on: ubuntu-latest
 
-    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED - disregarding guidance given') && !contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') && !contains(github.event.issue.body, 'Suggested Feature') && !contains(github.event.issue.body, 'Background Information') && !contains(github.event.issue.body, 'Additional Context') }}
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED_TESTS_IGNORED despite applicable_item') && !contains(github.event.issue.body, 'DEBUG_LOGS_NOT_PROVIDED - disregarding_guidance_given') && !contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') && !contains(github.event.issue.body, 'Suggested Feature') && !contains(github.event.issue.body, 'Background Information') && !contains(github.event.issue.body, 'Additional Context') }}
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v2
@@ -409,7 +409,7 @@ jobs:
     needs: [add_label_user_open2]
     runs-on: ubuntu-latest
 
-    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED TESTS IGNORED') && !contains(github.event.issue.body, 'DEBUG LOGS NOT PROVIDED - disregarding guidance given') && !contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') }}
+    if: ${{ !failure() && github.actor != 'refindplusrepo[bot]' && github.actor != 'dakanji' && github.event.action == 'opened' && !contains(github.event.issue.body, 'Unofficially Modified Code Build') && !contains(github.event.issue.body, 'Official Older Released Version') && !contains(github.event.issue.body, 'SUGGESTED_TESTS_IGNORED despite applicable_item') && !contains(github.event.issue.body, 'DEBUG_LOGS_NOT_PROVIDED - disregarding_guidance_given') && !contains(github.event.issue.body, 'No_Idea and/or Forgotten_Details') }}
     steps:
       - id: app-token
         uses: actions/create-github-app-token@v2
