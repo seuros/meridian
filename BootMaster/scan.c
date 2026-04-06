@@ -589,10 +589,10 @@ REFIT_MENU_SCREEN * InitializeSubScreen (
 
             if (!Found) {
                 if (0);
-                else if (Entry->OSType == 'L') NameOS = L"Instance: Linux"  ;
-                else if (Entry->OSType == 'E') NameOS = L"Instance: Elilo"  ;
-                else if (Entry->OSType == 'G') NameOS = L"Instance: Grub"   ;
-                else if (Entry->OSType == 'S') NameOS = L"Instance: SD-Boot";
+                else if (Entry->OSType == 'L') NameOS = L"Instance: Linux" ;
+                else if (Entry->OSType == 'E') NameOS = L"Instance: Elilo" ;
+                else if (Entry->OSType == 'G') NameOS = L"Instance: Grub"  ;
+                else if (Entry->OSType == 'S') NameOS = L"Instance: SDBoot";
             }
         }
         else if (Entry->OSType == 'R'                    ) NameOS = L"Instance: RefindPlus";
@@ -2358,7 +2358,7 @@ LOADER_ENTRY * AddLoaderEntry (
                                 )
                                 : (GotSysD)
                                     ? PoolPrint (
-                                        L"Instance: Linux via SD-Boot - %s",
+                                        L"Instance: Linux via SDBoot - %s",
                                         ShowName
                                     )
                                     : PoolPrint (

@@ -83,7 +83,7 @@ fsw_status_t fsw_mount (
         (void **) &vol
     );
     if (status) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_mount ... Leaving with Status '%d' Error (1):- Memory Allocation Failure\n"
             ), status
@@ -111,7 +111,7 @@ fsw_status_t fsw_mount (
 errorexit:
     fsw_unmount (vol);
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_CORE: fsw_mount ... Leaving with Status '%d' Error (2)\n"
         ), status
@@ -273,7 +273,7 @@ fsw_status_t fsw_block_get (
             &new_bcache
         );
         if (status) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_CORE: fsw_block_get ... Leaving with Status '%d' Error (Tag_01)\n"
                 ), status
@@ -313,7 +313,7 @@ fsw_status_t fsw_block_get (
             &vol->bcache[i].data
         );
         if (status) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_CORE: fsw_block_get ... Leaving with Status '%d' Error (Tag_02)\n"
                 ), status
@@ -328,7 +328,7 @@ fsw_status_t fsw_block_get (
         vol->bcache[i].data
     );
     if (status) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_block_get ... Leaving with Status '%d' Error (Tag_03)\n"
             ), status
@@ -436,7 +436,7 @@ fsw_status_t fsw_dnode_create_root_with_tree (
         (void **) &dno
     );
     if (status) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_create_root_with_tree ... Leaving with Status '%d' Error (1)\n"
             ), status
@@ -516,7 +516,7 @@ fsw_status_t fsw_dnode_create_with_tree (
         (void **) &dno
     );
     if (status) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_create_with_tree ... Leaving with Status '%d' Error (1)\n"
             ), status
@@ -541,7 +541,7 @@ fsw_status_t fsw_dnode_create_with_tree (
     if (status) {
         FSW_DO_FREE(dno);
 
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_create_with_tree ... Leaving with Status '%d' Error (2)\n"
             ), status
@@ -652,7 +652,7 @@ fsw_status_t fsw_dnode_stat(
 
     status = fsw_dnode_fill (dno);
     if (status) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_stat ... Exit on Failure to Load Node Info\n"
             )
@@ -697,7 +697,7 @@ fsw_status_t fsw_dnode_lookup (
 
     status = fsw_dnode_fill (dno);
     if (status) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_lookup ... Exit on Failure to Load Node Info\n"
             ), status
@@ -707,7 +707,7 @@ fsw_status_t fsw_dnode_lookup (
     }
 
     if (dno->type != FSW_DNODE_TYPE_DIR) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_lookup ... Leaving with Status: FSW_UNSUPPORTED\n"
             )
@@ -757,7 +757,7 @@ fsw_status_t fsw_dnode_lookup_path (
             &lookup_name, &remaining_path, separator
         );
 
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_lookup_path ... Split Path into '%s' and '%s'\n"
             ), lookup_name.data, remaining_path.data
@@ -774,7 +774,7 @@ fsw_status_t fsw_dnode_lookup_path (
             // Load dno data
             status = fsw_dnode_fill (dno);
             if (status) {
-                FSW_MSG_LEVEL_3((
+                FSW_MSG_L03((
                     FSW_MSG_STR(
                         "FSW_CORE: fsw_dnode_lookup_path ... Exit on Failure to Load Node Info (1)\n"
                     )
@@ -787,7 +787,7 @@ fsw_status_t fsw_dnode_lookup_path (
             if (dno->type == FSW_DNODE_TYPE_SYMLINK) {
                 status = fsw_dnode_resolve (dno, &child_dno);
                 if (status) {
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_CORE: fsw_dnode_lookup_path ... Exit on Failure to Resolve Symlink\n"
                         )
@@ -804,7 +804,7 @@ fsw_status_t fsw_dnode_lookup_path (
                 // Load dno data
                 status = fsw_dnode_fill (dno);
                 if (status) {
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_CORE: fsw_dnode_lookup ... Exit on Failure to Load Node Info (2)\n"
                         )
@@ -818,7 +818,7 @@ fsw_status_t fsw_dnode_lookup_path (
             if (dno->type != FSW_DNODE_TYPE_DIR) {
                 status = FSW_UNSUPPORTED;
 
-                FSW_MSG_LEVEL_3((
+                FSW_MSG_L03((
                     FSW_MSG_STR(
                         "FSW_CORE: fsw_dnode_lookup_path ... Exit with Directory Error 'FSW_UNSUPPORTED'\n"
                     )
@@ -833,7 +833,7 @@ fsw_status_t fsw_dnode_lookup_path (
                 child_dno = dno;
                 fsw_dnode_retain (child_dno);
 
-                FSW_MSG_LEVEL_3((
+                FSW_MSG_L03((
                     FSW_MSG_STR(
                         "FSW_CORE: fsw_dnode_lookup_path ... Handling Special Case ( . )\n"
                     )
@@ -848,7 +848,7 @@ fsw_status_t fsw_dnode_lookup_path (
                     // Caution: Apps like the uEFI shell rely on this behaviour!
                     status = FSW_NOT_FOUND;
 
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_CORE: fsw_dnode_lookup_path ... Handling Special Case ( .. )\n"
                         )
@@ -867,7 +867,7 @@ fsw_status_t fsw_dnode_lookup_path (
                     &lookup_name, &child_dno
                 );
                 if (status) {
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_CORE: fsw_dnode_lookup_path ... Exit on Failed Actual Lookup with Error '%d'\n"
                         ), status
@@ -884,7 +884,7 @@ fsw_status_t fsw_dnode_lookup_path (
         dno = child_dno;   // Already retained
         child_dno = NULL;
 
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_lookup_path ... Current Inode ID is %d\n"
             ), dno->dnode_id
@@ -893,7 +893,7 @@ fsw_status_t fsw_dnode_lookup_path (
         if (remaining_path.len < 1) break;
     } // for
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_CORE: fsw_dnode_lookup_path ... Leaving with Status: FSW_SUCCESS\n"
         )
@@ -904,14 +904,14 @@ fsw_status_t fsw_dnode_lookup_path (
 
 errorexit:
     if (status == FSW_NOT_FOUND) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_lookup_path ... Leaving with Status: FSW_NOT_FOUND\n"
             )
         ));
     }
     else {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_lookup_path ... Leaving with Status '%d' Error\n"
             ), status
@@ -948,7 +948,7 @@ fsw_status_t fsw_dnode_dir_read (
     struct fsw_dnode *dno = shand->dnode;
 
     if (dno->type != FSW_DNODE_TYPE_DIR) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_dir_read ... Leaving with Status: FSW_UNSUPPORTED\n"
             )
@@ -962,7 +962,7 @@ fsw_status_t fsw_dnode_dir_read (
         dno->vol, dno, shand, child_dno_out
     );
     if (status == FSW_SUCCESS) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_dir_read ... Leaving with Status: FSW_SUCCESS\n"
             )
@@ -972,14 +972,14 @@ fsw_status_t fsw_dnode_dir_read (
         shand->pos = saved_pos;
 
         if (status == FSW_NOT_FOUND) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_CORE: fsw_dnode_dir_read ... Leaving with Status: FSW_NOT_FOUND\n"
                 )
             ));
         }
         else {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_CORE: fsw_dnode_dir_read ... Leaving with Status '%d' Error\n"
                 ), status
@@ -1009,7 +1009,7 @@ fsw_status_t fsw_dnode_readlink (
 
     status = fsw_dnode_fill (dno);
     if (status) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_readlink ... Leaving with Status '%d' Error\n"
             ), status
@@ -1019,7 +1019,7 @@ fsw_status_t fsw_dnode_readlink (
     }
 
     if (dno->type != FSW_DNODE_TYPE_SYMLINK) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_readlink ... Leaving with Status: FSW_UNSUPPORTED (Not Symlink)\n"
             )
@@ -1125,7 +1125,7 @@ fsw_status_t fsw_dnode_resolve (
         // Get full information
         status = fsw_dnode_fill(dno);
         if (status) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_CORE: fsw_dnode_resolve ... Leaving with Status: 'FSW_SUCCESS'\n"
                 )
@@ -1142,7 +1142,7 @@ fsw_status_t fsw_dnode_resolve (
 
         if (dno->parent == NULL) {
             // Safety measure  ... Cannot happen in theory
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_CORE: fsw_dnode_resolve ... Leaving with Status: 'FSW_NOT_FOUND' (dno->parent==NULL)\n"
                 )
@@ -1152,7 +1152,7 @@ fsw_status_t fsw_dnode_resolve (
             goto errorexit;
         }
 
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_resolve ... Resolve Symlink:- 'Begin'\n"
             )
@@ -1174,7 +1174,7 @@ fsw_status_t fsw_dnode_resolve (
         fsw_strfree (&target_name);
 
         if (status) {
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_CORE: fsw_dnode_resolve ... Leaving with Status '%d' Error\n"
                 ), status
@@ -1183,7 +1183,7 @@ fsw_status_t fsw_dnode_resolve (
             goto errorexit;
         }
 
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_resolve ... Resolve Symlink:- 'Ended'\n"
             )
@@ -1195,7 +1195,7 @@ fsw_status_t fsw_dnode_resolve (
     }
 
     if (link_count == 0) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_resolve ... Leaving with Status: 'FSW_NOT_FOUND' (link_count==0)\n"
             )
@@ -1209,14 +1209,14 @@ errorexit:
 
     #if FSW_DEBUG_LEVEL >= 1
     if (status) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_resolve ... Leaving with Status '%d' Error\n"
             ), status
         ));
     }
     else {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_dnode_resolve ... Leaving with Status: FSW_SUCCESS\n"
             )
@@ -1252,7 +1252,7 @@ fsw_status_t fsw_shandle_open (
     // Read full dnode information into memory
     status = vol->fstype_table->dnode_fill(vol, dno);
     if (status) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_shandle_open ... Leaving with Status '%d' Error\n"
             ), status
@@ -1266,9 +1266,10 @@ fsw_status_t fsw_shandle_open (
 
     shand->dnode = dno;
     shand->pos = 0;
+    shand->extent.buffer = NULL;
     shand->extent.type = FSW_EXTENT_TYPE_INVALID;
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_CORE: fsw_shandle_open ... Leaving with Status: 'FSW_SUCCESS'\n"
         )
@@ -1345,7 +1346,7 @@ fsw_status_t fsw_shandle_read (
     while (buflen > 0) {
         void_hole = 0;
 
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_shandle_read ... buflen==%llu this_pos==%llu\n"
             ),
@@ -1355,7 +1356,7 @@ fsw_status_t fsw_shandle_read (
 
         // Get extent for current logical block
         log_bno = FSW_U64_DIV(pos, vol->log_blocksize);
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_CORE: fsw_shandle_read ... log_bno==%llu log_start==%llu\n"
             ),
@@ -1387,7 +1388,7 @@ fsw_status_t fsw_shandle_read (
                 if (!void_hole) {
                     shand->extent.type = FSW_EXTENT_TYPE_INVALID;
 
-                    FSW_MSG_LEVEL_1((
+                    FSW_MSG_L01((
                         FSW_MSG_STR(
                             "FSW_CORE: fsw_shandle_read ... Leaving with Status '%d' Error (Invalid Storage Handle Extents)\n"
                         ), status
@@ -1397,7 +1398,7 @@ fsw_status_t fsw_shandle_read (
                 }
 
                 // Got Sparse Hole
-                FSW_MSG_LEVEL_1((
+                FSW_MSG_L01((
                     FSW_MSG_STR(
                         "FSW_CORE: fsw_shandle_read ... Located Sparse Hole at log_start==%llu\n"
                     ), (unsigned long long) shand->extent.log_start
@@ -1421,7 +1422,7 @@ fsw_status_t fsw_shandle_read (
             copylen = vol->phys_blocksize - pos_in_physblock;
             if (copylen > buflen) copylen = buflen;
 
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_CORE: fsw_shandle_read ... phys_blocksize==%llu this_copylen==%llu pos_in_physblock==%llu\n"
                 ),
@@ -1437,7 +1438,7 @@ fsw_status_t fsw_shandle_read (
                 (void **) &block_buffer
             );
             if (status) {
-                FSW_MSG_LEVEL_1((
+                FSW_MSG_L01((
                     FSW_MSG_STR(
                         "FSW_CORE: fsw_shandle_read ... Leaving with Status '%d' Error ('fsw_block_get' failure)\n"
                     ), status
@@ -1477,7 +1478,7 @@ fsw_status_t fsw_shandle_read (
 
                 #if FSW_DEBUG_LEVEL >= 1
                 if (void_hole) {
-                    FSW_MSG_LEVEL_1((
+                    FSW_MSG_L01((
                         FSW_MSG_STR(
                             "FSW_CORE: fsw_shandle_read ... Plugged Sparse Hole at log_start==%llu (log_count==%llu)\n"
                         ),
@@ -1486,7 +1487,7 @@ fsw_status_t fsw_shandle_read (
                     ));
                 }
 
-                FSW_MSG_LEVEL_3((
+                FSW_MSG_L03((
                     FSW_MSG_STR(
                         "FSW_CORE: fsw_shandle_read ... this_copylen==%llu pos_in_extent==%llu\n"
                     ),
@@ -1506,12 +1507,12 @@ fsw_status_t fsw_shandle_read (
 
         #if FSW_DEBUG_LEVEL >= 2
         if (buflen > 0) {
-            FSW_MSG_LEVEL_2((
+            FSW_MSG_L02((
                 FSW_MSG_STR("****  *  *  *  ****\n\n")
             ));
         }
         else {
-            FSW_MSG_LEVEL_2((
+            FSW_MSG_L02((
                 FSW_MSG_STR("=======  *  =======\n\n")
             ));
         }

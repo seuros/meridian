@@ -932,7 +932,7 @@ fsw_status_t fsw_ntfs_volume_mount (
     vol->sctbits    = tobits (sector_size);
     vol->totalbytes = u64get (buffer, 0x28) << vol->sctbits;
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_NTFS: fsw_ntfs_volume_mount ... NTFS size=%ld M\n"
         ), vol->totalbytes>>20
@@ -1152,7 +1152,7 @@ static fsw_status_t fsw_ntfs_dnode_fill (
             &dno->rootsz
         );
         if (err != FSW_SUCCESS) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_NTFS: fsw_ntfs_dnode_fill ... dno_fill INDEX_ROOT:$I30 error==%d\n"
                 ), err
@@ -1172,7 +1172,7 @@ static fsw_status_t fsw_ntfs_dnode_fill (
             &dno->bmpsz
         );
         if (err != FSW_SUCCESS && err != FSW_NOT_FOUND) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_NTFS: fsw_ntfs_dnode_fill ... dno_fill $Bitmap:$I30 error==%d\n"
                 ), err
@@ -1200,7 +1200,7 @@ static fsw_status_t fsw_ntfs_dnode_fill (
             dno->finited = dno->fsize;
         }
         else if (err != FSW_NOT_FOUND) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_NTFS: fsw_ntfs_dnode_fill ... dno_fill $INDEX_ALLOCATION:$I30 error==%d\n"
                 ), err
@@ -1220,7 +1220,7 @@ static fsw_status_t fsw_ntfs_dnode_fill (
             &dno->attr, 0
         );
         if (err != FSW_SUCCESS) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_NTFS: fsw_ntfs_dnode_fill ... dno_fill AT_DATA error==%d\n"
                 ), err
@@ -1402,7 +1402,7 @@ static int fsw_ntfs_read_buffer (
     }
 
     if (!dno->attr.ptr || !dno->attr.len) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_NTFS: fsw_ntfs_read_buffer ... BAD--------: attr.ptr==%p attr.len==%x cleared\n"
             ), dno->attr.ptr, dno->attr.len
@@ -1634,7 +1634,7 @@ static fsw_status_t fsw_ntfs_get_extent_compressed (
             break;
         }
         else if (err != FSW_SUCCESS) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_NTFS: fsw_ntfs_get_extent_compressed ... BAD LCN\n"
                 )
@@ -1679,7 +1679,7 @@ static fsw_status_t fsw_ntfs_get_extent_compressed (
                 ) != FSW_SUCCESS
             ) {
                 dno->cperror = 1;
-                FSW_MSG_LEVEL_3((
+                FSW_MSG_L03((
                     FSW_MSG_STR(
                         "FSW_NTFS: fsw_ntfs_get_extent_compressed ... Read ERROR at block==%d\n"
                     ), i
@@ -1983,7 +1983,7 @@ static fsw_status_t fsw_ntfs_dir_lookup (
             if (flag & 2) {
                 /* End of index entry */
                 cmp = -1;
-                FSW_MSG_LEVEL_3((
+                FSW_MSG_L03((
                     FSW_MSG_STR(
                         "FSW_NTFS: fsw_ntfs_dir_lookup ... depth==%d len==%x off==%x flag==%x next==%x cmp==%d\n"
                     ), depth, len, off, flag, next, cmp
@@ -1996,7 +1996,7 @@ static fsw_status_t fsw_ntfs_dir_lookup (
                     vol, s.data, s.len,
                     name, nlen
                 );
-                FSW_MSG_LEVEL_3((
+                FSW_MSG_L03((
                     FSW_MSG_STR(
                         "FSW_NTFS: fsw_ntfs_dir_lookup ... depth==%d len==%x off==%x flag==%x next==%x cmp==%d\n"
                     ), depth, len, off, flag, next, cmp
@@ -2109,7 +2109,7 @@ static fsw_status_t fsw_ntfs_dir_read (
         if (u32get (buf, 4) < len) len = u32get (buf, 4);
         if (off == 0) off = u32get (buf, 0);
 
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_NTFS: fsw_ntfs_dir_lookup ... block==%d len==%x off==%x\n"
             ), block, len, off
@@ -2121,7 +2121,7 @@ static fsw_status_t fsw_ntfs_dir_read (
 
             int next = u16get (buf, off + 8) + off;
 
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_NTFS: fsw_ntfs_dir_lookup ... flag==%x next==%x nt==%x\n"
                 ), flag, next, u08get (buf, off + 0x51)

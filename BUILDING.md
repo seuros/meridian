@@ -5,10 +5,10 @@
        <div>
        <h2>Table of Contents</h2>
        <ul>
-           <li><a href="https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#remote-build-github">REMOTE BUILD (GITHUB)</a></li>
-           <li><a href="https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#local-build-docker">LOCAL BUILD (DOCKER)</a></li>
-           <li><a href="https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#local-build-mac-os">LOCAL BUILD (MAC OS)</a></li>
-           <li><a href="https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#repository-sync">REPOSITORY SYNC</a></li>
+           <li><a href="#remote-build-github">REMOTE BUILD (GITHUB)</a></li>
+           <li><a href="#local-build-docker">LOCAL BUILD (DOCKER)</a></li>
+           <li><a href="#local-build-mac-os">LOCAL BUILD (MAC OS)</a></li>
+           <li><a href="#repository-sync">REPOSITORY SYNC</a></li>
        </ul>
        </div>
    </td>
@@ -17,9 +17,11 @@
 
 ## Remote Build (GitHub)
 
-RefindPlus can be built by leveraging GitHub's `Workflow Artefact` creation and storage capabilities.\
+**General Overview** \
+RefindPlus can be built by leveraging GitHub's `Workflow Artefact` creation and storage capabilities. \
 A GitHub `Workflow Action` is included in this repository to facilitate this.
 
+**Activate Workflow Action**
 - Navigate to https://github.com/RefindPlusRepo/RefindPlus and fork the repository.
 - Navigate to `https://github.com/YOUR_GITHUB_USERNAME_GOES_HERE/RefindPlus.git`.
   - Enable Github Actions
@@ -31,16 +33,52 @@ A GitHub `Workflow Action` is included in this repository to facilitate this.
     - Select the `Build Artefacts` workflow option.
     - Trigger the workflow using the dropdown menu option.
 
-> [!NOTE]
->
-> Replace `YOUR_GITHUB_USERNAME_GOES_HERE` above with your actual GitHub User Name.
+Click the Workflow Action run instance when done, and look for `'Artifacts'` near the bottom of the page.
 
-Once the workflow run is completed, click on the action instance displayed and look for `"Artifacts"` near the bottom of the page for available builds to download.
+**Secure Boot Considerations** \
+The action will create a one-off private key and associated certificate by default. The created certificate is bundled with the generated artefacts for enrolment but the private key is not, as there is no way to securely transfer this (artefacts are publicly available).
 
-> [!TIP]
->
-> If your repository fork has `diverged from RefindPlusRepo`, refer to the [Repository Sync](https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BUILDING.md#repository-sync) section for sync options.
+Certificates are public keys and can therefore be shared along with the artefacts. Private keys cannot be disclosed on the other hand, and are therefore discarded after signing the binaries for the reason stated earlier. The outcome is that **`a new certificate must be enrolled for each build`**.
 
+This limitation can be avoided by providing the Workflow Action a certificate and private key instead.
+
+When Certificates/Keys are not provided, the Workflow Action will generate them each time as previously described and with the limitations described.
+
+<details>
+<summary><strong>Optionally Provide Certificate/Key</strong></summary>
+
+Save a private key as a `SIG_RP_KEY` repository secret in the repository fork along with the associated certificate data saved as a `SIG_RP_CRT` repository secret.
+
+These repository secrets will be used each time the Workflow Action is run on your fork with the option to sign selected. \
+Associated certificate files will always be bundled with artefacts generated but only need to be enrolled once.
+
+> A `SIG_RP_CER` repository secret can be optionally stored for speed. \
+> The `*.cer` data is derived from the `*.crt` data otherwise.
+
+**See documentation** on how to store [**GITHUB REPOSITORY SECRETS**](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets#creating-secrets-for-a-repository).
+
+Note: Saving certificate data without private key data or saving the `*.key` data without `*.crt` data is invalid. \
+Also, note that `SIG_RP_CRT`/`SIG_RP_CER` are public and could thus be stored as `repository variables` instead. \
+However, for simplicity, the Workflow Action expects them set as repository secrets along with `SIG_RP_KEY`.
+
+In summary, `SIG_RP_KEY` and `SIG_RP_CRT` repository secrets are needed as a minimum for this process. \
+However, the automated signing option can be skipped and binaries manually signed later if preferred. \
+Finally, the public certificates derived via the 'one-off' private keys may satisfy some use cases.
+
+<details>
+<summary><strong>Generate Public Certificate and Private Key</strong></summary>
+
+At a Terminal prompt and with `OpenSSL` installed, create 10-Year validity `MySig.key/crt/cer` files by running:
+```
+$ openssl req -new -x509 -nodes -newkey rsa:2048 -keyout MySig.key -out MySig.crt -days 3650 -subj "/CN=MyKeyCert/"
+$ openssl x509 -in MySig.crt -out MySig.cer -outform DER
+```
+Copy the three files to a secure location and adjust permissions to restrict read access to the `MySig.key` file. \
+Preserve these files as they are needed to sign binaries in future with details consistent with what is signed now.
+
+</details>
+
+</details>
 
 <br><br>
 
@@ -150,22 +188,26 @@ $ brew install acpica
 
 The ocmtoc utility converts the Mach-O image format generated on Mac OS to the PE/COFF format required by the UEFI specifications.
 
+<details>
+<summary><strong>Ocmtoc Notes</strong></summary>
+
+Building RefindPlus on Mac OS specifically requires `ocmtoc v1.0.4/newer`. \
+The `RefindPlusBuilder` script will use a copy bundled within `RefindPlusUDK` if missing.
+
+This technically means installing ocmtoc **IS NOT** compulsory. \
+It is preferable however, that such requirements are provided by the host system.
+
+`ocmtoc` is only available as an HomeBrew package and only for Mac OS 11.x Big Sur and newer. \
+However, pre-built `ocmtoc` files can be manually installed on Mac OS 10.9 Mavericks and newer.
+
+Pre-built files can be found here: https://github.com/acidanthera/ocmtoc/releases. \
+Save the file as `/usr/local/bin/mtoc` (Note `mtoc` name)
+
+</details>
+
 ```
 $ brew uninstall mtoc && brew install ocmtoc
 ```
-
-> [!NOTE]
->
-> Building RefindPlus on Mac OS specifically requires `ocmtoc v1.0.4/newer`.\
-> The `RefindPlusBuilder` script will use a copy bundled within `RefindPlusUDK` if missing.
->
-> This technically means installing ocmtoc **IS NOT** compulsory.\
-> It is preferable however, that such requirements are provided by the host system.
->
-> `ocmtoc` is only available as an HomeBrew package and only for Mac OS 11.x Big Sur and newer.\
-> However, pre-built `ocmtoc` files can be manually installed on Mac OS 10.9 Mavericks and newer.
->
-> Pre-built files can be found here: https://github.com/acidanthera/ocmtoc/releases.
 
 ### Prepare RefindPlus Environment
 
@@ -183,10 +225,6 @@ $ git clone https://github.com/YOUR_GITHUB_USERNAME_GOES_HERE/RefindPlus.git Wor
 $ cd ~/Documents/RefindPlus/Working && git checkout GOPFix
 $ git remote add upstream https://github.com/RefindPlusRepo/RefindPlus.git
 ```
-
-> [!NOTE]
->
-> Replace `YOUR_GITHUB_USERNAME_GOES_HERE` above with your actual GitHub User Name.
 
 Your local RefindPlus repository will be under `Documents/RefindPlus/Working`.
 
@@ -206,10 +244,6 @@ $ git clone https://github.com/YOUR_GITHUB_USERNAME_GOES_HERE/RefindPlusUDK.git 
 $ cd ~/Documents/RefindPlus/edk2 && git checkout rudk
 $ git remote add upstream https://github.com/RefindPlusRepo/RefindPlusUDK.git
 ```
-
-> [!NOTE]
->
-> Replace `YOUR_GITHUB_USERNAME_GOES_HERE` above with your actual GitHub User Name.
 
 Your local RefindPlusUDK repository will be under `Documents/RefindPlus/edk2`.
 

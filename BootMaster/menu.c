@@ -2501,6 +2501,7 @@ UINTN DrawMenuScreen (
             if (!HaveTimeout &&
                 GlobalConfig.ScreensaverTime < 1
             ) {
+                /* coverity[check_return: SUPPRESS] */
                 WaitForInput (0);
             }
             else {

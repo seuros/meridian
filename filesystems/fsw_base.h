@@ -61,21 +61,21 @@
 // message printing
 
 #if FSW_DEBUG_LEVEL >= 1
-#define FSW_MSG_LEVEL_1(params) FSW_MSG_FUNC params
+#define FSW_MSG_L01(params) FSW_MSG_OUT params
 #else
-#define FSW_MSG_LEVEL_1(params)
+#define FSW_MSG_L01(params)
 #endif
 
 #if FSW_DEBUG_LEVEL >= 2
-#define FSW_MSG_LEVEL_2(params) FSW_MSG_FUNC params
+#define FSW_MSG_L02(params) FSW_MSG_OUT params
 #else
-#define FSW_MSG_LEVEL_2(params)
+#define FSW_MSG_L02(params)
 #endif
 
 #if FSW_DEBUG_LEVEL >= 3
-#define FSW_MSG_LEVEL_3(params) FSW_MSG_FUNC params
+#define FSW_MSG_L03(params) FSW_MSG_OUT params
 #else
-#define FSW_MSG_LEVEL_3(params)
+#define FSW_MSG_L03(params)
 #endif
 
 

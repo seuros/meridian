@@ -58,7 +58,7 @@
 #include "install.h"
 #include "screenmgt.h"
 #include "mystrings.h"
-#include "badram_fix.h"
+#include "badram_tag.h"
 #include "launch_efi.h"
 #include "launch_legacy.h"
 #include "driver_support.h"
@@ -101,7 +101,7 @@ INT16 NowSecond = 0;
 REFIT_MENU_SCREEN *MainMenu = NULL;
 
 REFIT_CONFIG GlobalConfig = {
-    .BadRamFixWide             =                   FALSE,
+    .BadRamTagWide             =                   FALSE,
     .DirectBoot                =                   FALSE,
     .CustomScreenBG            =                   FALSE,
     .TextOnly                  =                   FALSE,
@@ -177,14 +177,14 @@ REFIT_CONFIG GlobalConfig = {
     .LogLevel                  =                       0,
     .IconRowMove               =                       0,
     .IconRowTune               =                       0,
-    .BadRamFixType             =                       0,
+    .BadRamTagType             =                       0,
     .ScreenR                   =                      -1,
     .ScreenG                   =                      -1,
     .ScreenB                   =                      -1,
     .DiscoveredRoot            =                    NULL,
     .SelfDevicePath            =                    NULL,
     .ScreenBackground          =                    NULL,
-    .BadRamFixList             =                    NULL,
+    .BadRamTagList             =                    NULL,
     .ToolLocations             =                    NULL,
     .ToolLocationsExtra        =                    NULL,
     .ConfigFilename            =                    NULL,
@@ -223,7 +223,7 @@ REFIT_CONFIG GlobalConfig = {
     }
 };
 
-#define RP_NVRAM_VARIABLES L"PreviousBoot,HiddenTags,HiddenTools,HiddenLegacy,HiddenFirmware,BadRamInfo"
+#define RP_NVRAM_VARIABLES L"PreviousBoot,HiddenTags,HiddenTools,HiddenLegacy,HiddenFirmware,BadRamTag"
 
 
 UINTN                  AppleFramebuffers    =                     0;
@@ -730,7 +730,7 @@ VOID EFIAPI HandleVirtualAddressChangeEvent (
         (VOID **) &OrigSetVariableRT
     );
     FlagKernelActive();
-} // static VOID EFIAPI HandleExitBootServicesEvent()
+} // static VOID EFIAPI HandleVirtualAddressChangeEvent()
 
 static
 VOID SetProtectNvram (
@@ -2927,12 +2927,15 @@ VOID AboutRefindPlus (VOID) {
     AddMenuInfoLine (AboutMenu, PoolPrint (L"Screen Mode/Output : %s", TmpStr), TRUE);
     MY_FREE_POOL(TmpStr);
 
-    AddMenuInfoLine (AboutMenu, L"",                                                         FALSE);
-    AddMenuInfoLine (AboutMenu, L"Copyright 2020-2026 Dayo Akanji & Contributors",           FALSE);
-    AddMenuInfoLine (AboutMenu, L"Copyright 2012-2024 Roderick W. Smith (Portions)",         FALSE);
-    AddMenuInfoLine (AboutMenu, L"Copyright 2006-2010 Christoph Pfisterer (Portions)",       FALSE);
-    AddMenuInfoLine (AboutMenu, L"Copyright The Intel Corporation and Others (Portions)",    FALSE);
-    AddMenuInfoLine (AboutMenu, L"Provided Under the GNU General Public License (v3/Later)", FALSE);
+    AddMenuInfoLine (AboutMenu, L"",                                                           FALSE);
+    AddMenuInfoLine (AboutMenu, L"Copyright 2020-2026 Dayo Akanji & Contributors",             FALSE);
+    AddMenuInfoLine (AboutMenu, L"Copyright 2012-2024 Roderick W. Smith (Portions)",           FALSE);
+    AddMenuInfoLine (AboutMenu, L"Copyright 2006-2010 Christoph Pfisterer (Portions)",         FALSE);
+    AddMenuInfoLine (AboutMenu, L"Copyright The Intel Corporation and Others (Portions)",      FALSE);
+    AddMenuInfoLine (AboutMenu, L"",                                                           FALSE);
+    AddMenuInfoLine (AboutMenu, L"Provided Under the GNU General Public License (v3/Later)",   FALSE);
+    AddMenuInfoLine (AboutMenu, L"www.github.com/RefindPlusRepo/RefindPlus.git (Source Code)", FALSE);
+    AddMenuInfoLine (AboutMenu, L"",                                                           FALSE);
 
     RetVal = GetMenuEntryReturn (&AboutMenu);
     if (RetVal) {
@@ -4131,16 +4134,18 @@ EFI_STATUS EFIAPI efi_main (
 
     /* Handle BadRam */
     Status = ManageBadRam (
-        GlobalConfig.BadRamFixType,
-        GlobalConfig.BadRamFixWide
+        GlobalConfig.BadRamTagList,
+        GlobalConfig.BadRamTagType,
+        GlobalConfig.BadRamTagWide
     );
     if (Status != EFI_SUCCESS      &&
         Status != EFI_NOT_STARTED  &&
         Status != EFI_ALREADY_STARTED
     ) {
         WarnTagBadRAM = TRUE;
-
-        ErrorTagBadRAM = PoolPrint (L"        Error Type:- '%r'", Status);
+        ErrorTagBadRAM = PoolPrint (
+            L"      Error Status:- '%r'", Status
+        );
     }
 
     /* Set Some Convenience Variables */
@@ -4218,7 +4223,7 @@ EFI_STATUS EFIAPI efi_main (
     LOG_MSG("%s      LogLevel:- '%d'",       TAG_ITEM_A(LogLevelConfig            ));
     LOG_MSG("%s      ScanDelay:- '%d'",      TAG_ITEM_A(GlobalConfig.ScanDelay    ));
     LOG_MSG("%s      SyncNVram:- '%d'",      TAG_ITEM_A(GlobalConfig.SyncNVram    ));
-    LOG_MSG("%s      TagBadRAM:- '%d'",      TAG_ITEM_A(GlobalConfig.BadRamFixType));
+    LOG_MSG("%s      TagBadRAM:- '%d'",      TAG_ITEM_A(GlobalConfig.BadRamTagType));
     LOG_MSG("%s      PreferUGA:- '%s'",      TAG_ITEM_B(GlobalConfig.PreferUGA    ));
     LOG_MSG("%s      ReloadGOP:- '%s'",      TAG_ITEM_B(GlobalConfig.ReloadGOP    ));
     LOG_MSG("%s      SyncTrust:- '%03d'",    TAG_ITEM_A(GlobalConfig.SyncTrust    ));
@@ -4855,6 +4860,7 @@ EFI_STATUS EFIAPI efi_main (
         ALT_LOG(1, LOG_LINE_THIN_SEP, L"Display %s Warning", MsgStr);
         LOG_MSG("\n");
         LOG_MSG("INFO: User Warning:- '%s'", MsgStr);
+        LOG_MSG("%s%s", OffsetNext, ErrorTagBadRAM);
         MY_FREE_POOL(MsgStr);
         #endif
 
@@ -4869,18 +4875,22 @@ EFI_STATUS EFIAPI efi_main (
             gST->ConOut->SetAttribute,
             gST->ConOut, ATTR_ERROR
         );
-        PrintUglyText (L"                                                          ", NEXTLINE);
-        PrintUglyText (L"                    Tag Bad RAM Error                     ", NEXTLINE);
-        PrintUglyText (L"                                                          ", NEXTLINE);
+        PrintUglyText (L"                                                      ", NEXTLINE);
+        PrintUglyText (L"                  Bad RAM Tag Error                   ", NEXTLINE);
 
         REFIT_CALL_2_WRAPPER(
             gST->ConOut->SetAttribute,
             gST->ConOut, ATTR_BASIC
         );
-        PrintUglyText (L"                                                          ", NEXTLINE);
-        PrintUglyText (L"        Could Not Tag Some or All Target Addresses        ", NEXTLINE);
-        PrintUglyText (ErrorTagBadRAM,                                                NEXTLINE);
-        PrintUglyText (L"                                                          ", NEXTLINE);
+        PrintUglyText (L"      Could Not Tag Some or All Target Addresses      ", NEXTLINE);
+        PrintUglyText (ErrorTagBadRAM,                                            NEXTLINE);
+        PrintUglyText (L"                                                      ", NEXTLINE);
+        #if REFIT_DEBUG > 0
+        PrintUglyText (L"              See Debug Log for Details               ", NEXTLINE);
+        #else
+        PrintUglyText (L"         Run 'DBG' File For Debug Log Output          ", NEXTLINE);
+        #endif
+        PrintUglyText (L"                                                      ", NEXTLINE);
         PauseForKey();
         #if REFIT_DEBUG > 0
         MY_MUTELOGGER_OFF;
@@ -5819,10 +5829,10 @@ EFI_STATUS EFIAPI efi_main (
                                     OurLoaderEntry->me.Title = StrDuplicate (
                                         TypeStr
                                     );
-                                    OurLoaderEntry->me.Tag  = TAG_RESET_NVRAM;
-                                    OurLoaderEntry->Volume  =      Volumes[i];
-                                    EntryPath               =          MsgStr;
-                                    FoundTool               =            TRUE;
+                                    OurLoaderEntry->me.Tag     = TAG_RESET_NVRAM;
+                                    OurLoaderEntry->Volume     =      Volumes[i];
+                                    OurLoaderEntry->LoaderPath =          MsgStr;
+                                    FoundTool                  =            TRUE;
                                 }
 
                                 // Break out of 'for' loop

@@ -24,13 +24,15 @@ RefindPlus is particularly useful for those with additional configuration needs 
 
 Some features:
 - Maintains feature and configuration parity with `Upstream v0.14.2` base.
-- Provides options to flag faulty RAM regions as unusable to extend useful life.
-- Provides protection against damage to vulnerable Mac nvRAM by UEFI Windows boot.
+- Provides options to [tag faulty RAM](https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BadRamTag.md) regions as unusable to extend useful life.
+- Provides protection against damage to vulnerable Mac nvRAM by UEFI Windows.
 - Provides mitigation against boot failures and related issues on T2/TPM chipped units.
 - Emulates UEFI 2.x on EFI 1.x units to permit running UEFI 2.x utilities on such units.
 - Provides Pre-Boot Configuration Screen on units running GPUs without native EFI on Macs.
 - Extensive memory management improvements with associated speed and stability gains.
 - Provides improved text display support for languages that require unicode text.
+- Provides option to block unwanted changes to the nvRAM `BootOrder` variable.
+  - These amendments often result in `Boot Coups` following system updates.
 - Identifies and automatically handles `Ventoy` instances if present.
   - Rationalises binaries displayed.
   - Displays an `os_ventoy` icon if available.
@@ -58,9 +60,9 @@ A simple and direct way is to manually make the RefindPlus efi file a `UEFI Fall
 
 > [!IMPORTANT]
 >
-> Only `X86_64` builds of RefindPlus are currently distributed and supported
+> Only `x86_64` builds of RefindPlus are currently distributed and supported.
 
-[MyBootMgr](https://www.dakanji.com/creations/index.html) is recommended to automate installing RefindPlus when running Mac OS on Intel-based Macs. Alternatively, as the RefindPlus efi file can function as a drop-in replacement for the upstream efi file, the [rEFInd package](https://www.rodsbooks.com/refind/installing.html) can be installed first and its efi file replaced with the RefindPlus efi file (rename RefindPlus file to match). This allows installing RefindPlus on other compatible operating systems supported upstream. See the [Divergence Section](https://github.com/RefindPlusRepo/RefindPlus#divergence) for how to enable `UEFI Secure Boot` (if required).
+[MyBootMgr](https://www.dakanji.com/creations/index.html) is recommended to automate installing RefindPlus when running Mac OS on Intel-based Macs. Alternatively, as the RefindPlus efi file can function as a drop-in replacement for the upstream efi file, [rEFInd](https://www.rodsbooks.com/refind/installing.html) can be installed first and its efi file replaced with the RefindPlus efi file (rename RefindPlus file to match). This allows installing RefindPlus on other compatible operating systems supported upstream. See the [Divergence](https://github.com/RefindPlusRepo/RefindPlus#divergence) section for how to enable `UEFI Secure Boot` (if required).
 
 > [!NOTE]
 >
@@ -86,15 +88,15 @@ When run without activating RefindPlus-specific configuration options, as will b
 
 ## Additional Functionality
 
-RefindPlus-specific functionality can be configured by using the options below.\
-Additional information is provided in the sample RefindPlus configuration file.\
+RefindPlus-specific functionality can be configured by using the tokens below.<br/>
+Additional information can be found in the sample RefindPlus configuration file.<br/>
 These settings make up `Section 1` of the sample RefindPlus configuration file.
 
 Token | Functionality
 ----- | -----
-badram_fix_list       |Allows providing a list of faulty memory regions to be marked as `unusable`
-badram_fix_type       |Controls whether and how faulty memory regions are managed by the program
-badram_fix_wide       |Allows lifting program limits on types of faulty memory regions managed
+badram_tag_list       |Allows providing a list of faulty memory regions to be marked as `unusable`
+badram_tag_mode       |Controls whether and how faulty memory regions are managed by the program
+badram_tag_wide       |Allows first trying a simpler, and faster, process for some tagging types.
 continue_on_warning   |Proceed as if a key was pressed after screen warnings (for unattended boot)
 csr_dynamic           |Actively sets or unsets Apple's `Configurable Security Restrictions (CSR)`
 csr_normalise         |Removes the `APPLE_INTERNAL` CSR bit, when present, to permit OTA updates
@@ -155,15 +157,15 @@ In addition to the new functionality listed above, the following upstream config
   - `SystemD`, `OpenCore`, and `Clover` can be set to load in graphics mode.
 - **"showtools":** Default setting changed and additional tool added:
   - `clean_nvram` : Allows resetting nvRAM directly from RefindPlus.
-    - When run on Apple firmware, RefindPlus will additionally trigger nvRAM garbage collection
+    - When run on Apple firmware, RefindPlus will additionally trigger nvRAM garbage collection.
 - **menuentry:** Additional `OSType` options added for manual stanzas:
-  - `RefitVariant`, `SystemD`, `OpenCore`, and `Clover` can be additionally defined
+  - `RefitVariant`, `SystemD`, `OpenCore`, and `Clover` can be additionally defined.
 - **"follow_symlinks":** Accepts optional additional parameters:
-    - `follow_symlinks`: Symlinks always followed
-    - `follow_symlinks ON`: Symlinks always followed
-    - `follow_symlinks OFF`: Symlinks always followed
-    - `follow_symlinks OFF "Vol_1,Vol_2"`: Symlinks followed unless on list
-    - `follow_symlinks ON "Vol_9,Vol_10"`: Symlinks followed only if listed
+    - `follow_symlinks`: Symlinks always followed.
+    - `follow_symlinks ON`: Symlinks always followed.
+    - `follow_symlinks OFF`: Symlinks never followed.
+    - `follow_symlinks OFF "Vol_1,Vol_2"`: Symlinks followed unless on list.
+    - `follow_symlinks ON "Vol_9,Vol_10"`: Symlinks followed only if listed.
 - **"csr_values":** A value of `0` can be set as the `Enabled` value to allow `Over The Air (OTA)` updates on Mac OS 11.x (Big Sur) or newer with SIP enabled.
   - This is equivalent to activating the `csr_normalise` token.
 - **"log_level":** Controls the native log format and an implementation of the upstream format.
@@ -201,19 +203,19 @@ Significant visible implementation differences vis-a-vis the upstream base are:
   - > Additionally, UI elements on extremely high resultion screens (greater than 5999px on the longest edge) receive a `4X scaling` as opposed to the `2X scaling` applied for standard HiDPI screens.
 - **Loader Icons:** RefindPlus prefers `os_windows`/`boot_windows` icon files, if present, over `os_win`/`boot_win` files (and `win8` variants). Separately, RefindPlus prefers generic OS icons over custom icons by default (improves load speed). The upstream icon search implementation involves loading generic OS icons only if a search for custom icons has returned empty.
   - > Activate the RefindPlus-specific `decline_help_icon` setting to keep the upstream implementation.
-- **GOP OptionROM Provision:** RefindPlus attempts to ensure that GOP is available, to permit using modern GPUs on on EFI 1.x units, by amending the `UEFI System Table` and attempting to reloading the GOP OptionROM. This is done using an inbuilt `ReloadGOP` feature.
+- **GOP OptionROM Provision:** RefindPlus attempts to ensure that GOP is available, to permit using modern GPUs on on EFI 1.x units, by amending the `UEFI System Table` and reloading the GOP OptionROM from the GPU. This is via an inbuilt `ReloadGOP` feature.
   - > Activate the RefindPlus-specific `disable_reload_gop` setting to switch this feature off.
-- **Apple Framebuffer Provision:** RefindPlus defaults to always providing Apple framebuffers on Macs, when not available under certain circumstances. This is done using an inbuilt `SetAppleFB` feature.
+- **Apple Framebuffer Provision:** RefindPlus defaults to always providing Apple framebuffers on Macs, when not available under certain circumstances. This is via an inbuilt `SetAppleFB` feature.
   - > Activate the RefindPlus-specific `disable_set_applefb` setting to switch this feature off.
-- **APFS Filesystem Provision:** RefindPlus defaults to always providing APFS filesystem capability, when not available but is required, without a need to load an APFS driver. This is done using an inbuilt `SupplyAPFS` feature.
+- **APFS Filesystem Provision:** RefindPlus defaults to always providing APFS filesystem capability, when not available but is required, without a need to load an APFS driver. This is via an inbuilt `SupplyAPFS` feature.
   - > Activate the RefindPlus-specific `disable_apfs_load` setting to switch this feature off.
-- **APFS PreBoot Volumes:** RefindPlus always synchronises APFS System and PreBoot partitions transparently such that the Preboot partitions of APFS volumes are always used to boot APFS formatted Mac OS. Hence, a single option for booting Mac OS on APFS volumes is presented in RefindPlus to provide maximum APFS compatibility. This is done using an inbuilt `SyncAPFS` feature.
+- **APFS PreBoot Volumes:** RefindPlus always synchronises APFS System and PreBoot partitions transparently such that the Preboot partitions of APFS volumes are always used to boot APFS formatted Mac OS. Hence, a single option for booting Mac OS on APFS volumes is presented in RefindPlus to provide maximum APFS compatibility. This is via an inbuilt `SyncAPFS` feature.
   - > Activate the RefindPlus-specific `disable_apfs_sync` setting to switch this feature off.
-- **Mac nvRAM Protection:** RefindPlus always prevents UEFI Windows Secure Boot from saving certificates to Mac nvRAM as this can result in damage and, ultimately, an inability to boot anything on some Macs (typically Pre 2013 Vintage). Blocking these certificates does not impact the operation of UEFI Windows on such Macs. This filtering only happens when Apple firmware is detected and is not applied to other types of firmware. This is done using an inbuilt `ProtectNVRAM` feature.
+- **Mac nvRAM Protection:** RefindPlus always prevents UEFI Windows Secure Boot from saving certificates to Mac nvRAM as this can result in damage and, ultimately, an inability to boot anything on some Macs (typically Pre 2013 Vintage). Blocking these certificates does not impact the operation of UEFI Windows on such Macs. This filtering only happens when Apple firmware is detected and is not applied to other types of firmware. This is via an inbuilt `ProtectNVRAM` feature.
   - > Activate the RefindPlus-specific `disable_nvram_protect` setting to switch this feature off.
 - **Mac Legacy BIOS Boot:** RefindPlus originally assumed all Macs were capable of legacy BIOS boot based on code that went in upstream back in 2012 when this was a reasonable default. However, some later Intel Macs do not support legacy BIOS boot and RefindPlus now attempts to categorise Macs to enable/disable legacy BIOS boot accordingly.
   - > Activate the RefindPlus-specific `disable_legacy_sync` setting to keep the old assumption.
-- **Secondary Configuration Files:** While the upstream documentation prohibits including tertiary configuration files from secondary configuration files, there is no mechanism enforcing this prohibition. Hence, tertiary, quaternary, quinary, and more, configuration files can in fact be included.
+- **Secondary Configuration Files:** While the upstream documentation prohibits including tertiary configuration files from secondary configuration files, there is no apparent mechanism enforcing this prohibition. Hence, tertiary and more configuration files can in fact be included.
   - > RefindPlus enforces the limitation for inclusion to secondary configuration files.
 - **Shortcut Keys:** RefindPlus does not allocate shortcut keys based on the operating system type/name as there is no way of knowing what would actually be loaded in many cases.
   - > Keys are allocated based on display position in the order of `Key 1` to `Key Z`.

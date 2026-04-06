@@ -32,7 +32,7 @@ on:
 jobs:
   make-binaries:
     name: Make Binaries
-    runs-on: macos-latest
+    runs-on: macos-26-intel
 
     steps:
       - name: List/Set Misc
@@ -51,7 +51,7 @@ jobs:
           echo "COMMIT_ID  : '${USE_COMMIT_ID}'"
           echo "ENV_COMMIT_ID=${USE_COMMIT_ID}" >> "${GITHUB_ENV}"
 
-          echo "BUILD_FLAG : '${SET_BUILD_TYPE}'"
+          echo "BUILD_TYPE : '${SET_BUILD_TYPE}'"
           echo "ENV_BUILD_TYPE=${SET_BUILD_TYPE}" >> "${GITHUB_ENV}"
 
           echo "SECURE_BOOT: '${SET_SIGN_OUTPUT}'"
@@ -92,7 +92,7 @@ jobs:
             fi
 
             # Fetch valid remote branches
-            git fetch origin --prune
+            git fetch origin --prune || exit 1
 
             # Get Candidate Branches
             BranchList=$(git branch -r --contains "${ENV_COMMIT_ID}" | grep 'origin/' | sed 's|origin/||')
@@ -112,8 +112,8 @@ jobs:
             fi
 
             # Set Target Branch to Commit ID
-            git checkout "${BRANCH}"
-            git reset --hard "${ENV_COMMIT_ID}"
+            git checkout "${BRANCH}" || exit 1
+            git reset --hard "${ENV_COMMIT_ID}" || exit 1
           fi
 
           echo "BRANCH=${BRANCH}" >> "${GITHUB_ENV}"
@@ -142,7 +142,7 @@ jobs:
           esac
 
           echo "BUILD_FLAG=${BUILD_FLAG}" >> "${GITHUB_ENV}"
-          echo "Build Type : '${BUILD_FLAG}'"
+          echo "Build Flag : '${BUILD_FLAG}'"
 
           # Set Type Flag
           FlagFind=0
@@ -171,7 +171,7 @@ jobs:
           # Install Final Python 2 Version
           PYTHON_VER='2.7.18'
           PYTHON_PKG="python-${PYTHON_VER}-macosx10.9.pkg"
-          EXPECT_MD5='ce98eeb7bdf806685adc265ec1444463'
+          EXPECTED_HASH='ce98eeb7bdf806685adc265ec1444463'
 
           PYTHON2_INSTALLER="${ENV_EDK2_DIR}/Conf/Blobs/${PYTHON_PKG}"
           if [[ -f "${PYTHON2_INSTALLER}" ]]; then
@@ -181,11 +181,11 @@ jobs:
           if [[ -f "${PYTHON_PKG}" ]]; then
             printf "\nUsing Bundled Python %s\n" "${PYTHON_VER}"
             printf "Verify Python %s File\n" "${PYTHON_VER}"
-            ACTUAL_MD5=$(md5 -q "${PYTHON_PKG}")
-            if [[ "${ACTUAL_MD5}" != "${EXPECT_MD5}" ]]; then
+            OBTAINED_HASH=$(md5 -q "${PYTHON_PKG}")
+            if [[ "${OBTAINED_HASH}" != "${EXPECTED_HASH}" ]]; then
               echo "ERROR: Python Bundle Checksum Check Failure"
-              echo "       Expect: ${EXPECT_MD5}"
-              echo "       Actual: ${ACTUAL_MD5}"
+              echo "       Expected: ${EXPECTED_HASH}"
+              echo "       Obtained: ${OBTAINED_HASH}"
 
               rm -f "${PYTHON_PKG}"
               printf "\n\nFetch From Project Page Instead"
@@ -201,11 +201,11 @@ jobs:
             }
 
             printf "Verify Python %s Download\n" "${PYTHON_VER}"
-            ACTUAL_MD5=$(md5 -q "${PYTHON_PKG}")
-            if [[ "${ACTUAL_MD5}" != "${EXPECT_MD5}" ]]; then
+            OBTAINED_HASH=$(md5 -q "${PYTHON_PKG}")
+            if [[ "${OBTAINED_HASH}" != "${EXPECTED_HASH}" ]]; then
               echo "ERROR: Python Download Checksum Check Failure"
-              echo "       Expect: ${EXPECT_MD5}"
-              echo "       Actual: ${ACTUAL_MD5}"
+              echo "       Expected: ${EXPECTED_HASH}"
+              echo "       Obtained: ${OBTAINED_HASH}"
               echo "       Exiting Now"
               exit 1
             fi
@@ -220,9 +220,11 @@ jobs:
         shell: bash
         run: |
           # Main Build Script
+          export END_NOTICE='1'
           cd "${ENV_BASE_DIR}/edk2/000-BuildScript" || exit 1
           chmod +x RefindPlusBuilder.sh
-          ./RefindPlusBuilder.sh "${BRANCH}" "${BUILD_FLAG}"
+          ./RefindPlusBuilder.sh --build-type="${BUILD_FLAG}"
+          unset END_NOTICE
 
 
         ###
@@ -234,21 +236,67 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: "${{ github.event.inputs.sign_output == 'NO' && 'x64_RefindPlus-Artefacts_REL' || 'NOT_SIGNED---x64_RefindPlus-Artefacts_REL' }}"
-          path: ~/Documents/RefindPlus/edk2/Build/RefindPlus/RELEASE_XCODE5/x64/*.efi
+          path: |
+              ~/Documents/RefindPlus/edk2/Build/RefindPlus/RELEASE_XCODE5/x64/*.efi
+              ~/Documents/RefindPlus/edk2/Build/RefindPlus/RELEASE_XCODE5/x64/*.txt
 
       - name: Upload Artefact (DBG)
         if: success() && contains(github.event.inputs.build_type, 'DBG')
         uses: actions/upload-artifact@v6
         with:
           name: "${{ github.event.inputs.sign_output == 'NO' && 'x64_RefindPlus-Artefacts_DBG' || 'NOT_SIGNED---x64_RefindPlus-Artefacts_DBG' }}"
-          path: ~/Documents/RefindPlus/edk2/Build/RefindPlus/DEBUG_XCODE5/x64/*.efi
+          path: |
+              ~/Documents/RefindPlus/edk2/Build/RefindPlus/DEBUG_XCODE5/x64/*.efi
+              ~/Documents/RefindPlus/edk2/Build/RefindPlus/DEBUG_XCODE5/x64/*.txt
 
       - name: Upload Artefact (NPT)
         if: success() && contains(github.event.inputs.build_type, 'NPT')
         uses: actions/upload-artifact@v6
         with:
           name: "${{ github.event.inputs.sign_output == 'NO' && 'x64_RefindPlus-Artefacts_NPT' || 'NOT_SIGNED---x64_RefindPlus-Artefacts_NPT' }}"
-          path: ~/Documents/RefindPlus/edk2/Build/RefindPlus/NOOPT_XCODE5/x64/*.efi
+          path: |
+              ~/Documents/RefindPlus/edk2/Build/RefindPlus/NOOPT_XCODE5/x64/*.efi
+              ~/Documents/RefindPlus/edk2/Build/RefindPlus/NOOPT_XCODE5/x64/*.txt
+
+
+      ###
+      # Advice on recommended action on file names
+      # Only display here if not signing artefacts
+      # Otherwise, display after signing artefacts
+      ###
+      - name: Build Notice
+        if: ${{ github.event.inputs.sign_output == 'NO' }}
+        shell: bash
+        run: |
+          # Wrap Up Notice
+          echo "# RefindPlus ... A Boot Manager for Mac and PC" > "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Copyright 2020-2026 Dayo Akanji" >> "${GITHUB_STEP_SUMMARY}"
+          echo "sf.net/u/dakanji/profile" >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Portions Copyright 2012-2024 Roderick W. Smith" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Portions Copyright 2006-2010 Christoph Pfisterer" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Portions Copyright The Intel Corporation & Others" >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "RefindPlus is free software. You can modify and/or redistribute it" >> "${GITHUB_STEP_SUMMARY}"
+          echo "under the terms of the GNU General Public License published by the" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Free Software Foundation. Either Version 3 of the license (GNU GPLv3)," >> "${GITHUB_STEP_SUMMARY}"
+          echo "or, at your option, any later version of the GNU General Public License." >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "GNU GPLv3 is supplied with this build." >> "${GITHUB_STEP_SUMMARY}"
+          echo "If missing, you can access a copy via this link:" >> "${GITHUB_STEP_SUMMARY}"
+          echo "<https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/LICENSE.txt>" >> "${GITHUB_STEP_SUMMARY}"
+
+          echo "<br><br>" >> "${GITHUB_STEP_SUMMARY}"
+          echo "---" >> "${GITHUB_STEP_SUMMARY}"
+          echo "<br><br>" >> "${GITHUB_STEP_SUMMARY}"
+
+          echo "> [!NOTE]" >> "${GITHUB_STEP_SUMMARY}"
+          echo "> Output files have the form: \`[METADATA]---[FILENAME].efi\`." >> "${GITHUB_STEP_SUMMARY}"
+          echo "> It is anticipated the metadata will be removed before use." >> "${GITHUB_STEP_SUMMARY}"
+          echo "<br><br>" >> "${GITHUB_STEP_SUMMARY}"
+          echo "---" >> "${GITHUB_STEP_SUMMARY}"
+          echo "<br><br>" >> "${GITHUB_STEP_SUMMARY}"
 
   sign-binaries:
     name: Sign Binaries
@@ -271,13 +319,31 @@ jobs:
           if (( NO_KEY || NO_CRT )); then
             echo "ERROR: Invalid Repository Secrets Setup for Secure Boot Signing"
 
-            (( NO_KEY )) && echo "       The required 'SIG_RP_KEY' repository secret is missing"
-            (( NO_CRT )) && echo "       The required 'SIG_RP_CRT' repository secret is missing"
+            (( NO_KEY )) && echo "       The required 'SIG_RP_KEY' repository secret is missing" || true
+            (( NO_CRT )) && echo "       The required 'SIG_RP_CRT' repository secret is missing" || true
 
             echo "       Unsigned Artefacts Saved with Prefix: 'NOT_SIGNED---'"
             echo "       Exiting Now"
             exit 1
           fi
+
+          echo "# RefindPlus ... A Boot Manager for Mac and PC" > "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Copyright 2020-2026 Dayo Akanji" >> "${GITHUB_STEP_SUMMARY}"
+          echo "sf.net/u/dakanji/profile" >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Portions Copyright 2012-2024 Roderick W. Smith" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Portions Copyright 2006-2010 Christoph Pfisterer" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Portions Copyright The Intel Corporation & Others" >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "RefindPlus is free software. You can modify and/or redistribute it" >> "${GITHUB_STEP_SUMMARY}"
+          echo "under the terms of the GNU General Public License published by the" >> "${GITHUB_STEP_SUMMARY}"
+          echo "Free Software Foundation. Either Version 3 of the license (GNU GPLv3)," >> "${GITHUB_STEP_SUMMARY}"
+          echo "or, at your option, any later version of the GNU General Public License." >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "GNU GPLv3 is supplied with this build." >> "${GITHUB_STEP_SUMMARY}"
+          echo "If missing, you can access a copy via this link:" >> "${GITHUB_STEP_SUMMARY}"
+          echo "<https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/LICENSE.txt>" >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Fetch Interim Artefact (REL)
         if: contains(github.event.inputs.build_type, 'REL')
@@ -337,9 +403,20 @@ jobs:
               -out "${ENV_USER_CRT}" \
               -days 3650 \
               -subj "/CN=RefindPlus Build Artefact ${NOW}/"
+
+            echo "<br><br>" >> "${GITHUB_STEP_SUMMARY}"
+            echo "---" >> "${GITHUB_STEP_SUMMARY}"
+            echo "<br><br>" >> "${GITHUB_STEP_SUMMARY}"
+
+            echo "> [!IMPORTANT]" >> "${GITHUB_STEP_SUMMARY}"
+            echo "> A one-off private key was used to sign artefacts.  " >> "${GITHUB_STEP_SUMMARY}"
+            echo "> This key was discarded as cannot be securely transferred.  " >> "${GITHUB_STEP_SUMMARY}"
+            echo "> Hence, the certificate can only be used for this specific build.  " >> "${GITHUB_STEP_SUMMARY}"
+            echo "" >> "${GITHUB_STEP_SUMMARY}"
+            echo "See [RefindPlus Documentation](https://github.com/RefindPlusRepos/RefindPlus/blob/GOPFix/BUILDING.md) on how to supply reusable credentials." >> "${GITHUB_STEP_SUMMARY}"
           fi
 
-          if [[ (-z "${ENV_USER_CER}" || ! -f "${ENV_USER_CER}")  && -f "${ENV_USER_CRT}" ]]; then
+          if [[ -f "${ENV_USER_CRT}" && (-z "${ENV_USER_CER}" || ! -f "${ENV_USER_CER}") ]]; then
             # Create '.cer' From '.crt' For UEFI Enrolment
             openssl x509 \
               -in "${ENV_USER_CRT}" \
@@ -358,121 +435,148 @@ jobs:
           ENV_TYPE: ${{ github.event.inputs.build_type }}
         shell: bash
         run: |
-          # Sign Files
-          sign_files() {
-            local target=$1
+          # Sign Artefacts
+
+          ###
+          # Apply signature to specified item
+          ###
+          sign_the_item() {
+            local file_in="${1}"
+            local file_out="${2}"
+
+            echo "[SIGN] '${file_in}' >>---> as >>---> '${file_out}'"
+            sbsign --key "${PATH_KEY}" \
+                   --cert "${PATH_CRT}" \
+                   --output "${file_out}" "${file_in}" || {
+              echo "ERROR: Failed While Signing ${file_in}"
+              echo "       Unsigned Artefacts Saved with Prefix: 'NOT_SIGNED---'"
+              echo "       Exiting Now"
+              exit 1
+            }
+          }
+
+          ###
+          # Apply signature to set of artefacts
+          ###
+          sign_artefacts() {
+            local target="${1}"
 
             local base=""
             local infile=""
             local outfile=""
-            local sign_item=0
+            local sign_item=1
+            local dir_in="Unsigned_${target}"
 
-            local outdir="${target}_signed_DIR"
-            mkdir -p "${outdir}"
+            local dir_out="${target}_signed_DIR"
+            mkdir -p "${dir_out}"
 
             printf "\n\n"
             echo "===== Signing Target: ${target} ====="
 
             # Sign Main Binary
-            echo "Sign Main Binary..."
-            prefix="x64_RefindPlus_${target}"
-            base="APP_xx_${target}---${prefix}"
-            infile="Unsigned_${target}/${base}.efi"
-            outfile="${outdir}/SIGNED_${FLAG_NOW}___${base}.efi"
+            printf 'Sign Main Binary...\n'
+            name_tag="RefindPlus_${target}"
+            base="APP_xx_000---x64_${name_tag}"
+            infile="${dir_in}/${base}.efi"
+            outfile="${dir_out}/SIGNED_${FLAG_NOW}-${base}.efi"
 
-            sign_item=0
-            if [[ -f "${infile}" ]]; then
-              sign_item=1
-            else
-              base="UEFI_APP---${prefix}"
-              infile="Unsigned_${target}/${base}.efi"
-              outfile="${outdir}/SIGNED_${FLAG_NOW}___${base}.efi"
+            sign_item=1
+            if [[ ! -f "${infile}" ]]; then
+              base="UEFI_APP---x64_${name_tag}"
+              infile="${dir_in}/${base}.efi"
+              outfile="${dir_out}/SIGNED_${FLAG_NOW}-${base}.efi"
 
-              if [[ -f "${infile}" ]]; then
-                sign_item=1
-              else
-                echo "ERROR: Main Binary Not Found: '${prefix}'"
+              if [[ ! -f "${infile}" ]]; then
+                echo "ERROR: Main Binary Not Found: 'x64_${name_tag}.efi'"
                 echo "       Unsigned Artefacts Saved with Prefix: 'NOT_SIGNED---'"
                 echo "       Exiting Now"
                 exit 1
               fi
             fi
+            (( sign_item )) && sign_the_item "${infile}" "${outfile}" || true
 
-            if (( sign_item )); then
-                echo "[SIGN] '${infile}' >>---> as >>---> '${outfile}'"
-                sbsign --key "${PATH_KEY}" \
-                       --cert "${PATH_CRT}" \
-                       --output "${outfile}" "${infile}" || {
-                  echo "ERROR: Failed While Signing ${infile}"
-                  echo "       Unsigned Artefacts Saved with Prefix: 'NOT_SIGNED---'"
-                  echo "       Exiting Now"
-                  exit 1
-                }
+            # Sign Main Tool
+            printf '\nSign Main Tool...\n'
+            name_tag="gptsync"
+            base="APP_xx_${target}---x64_${name_tag}"
+            infile="${dir_in}/${base}.efi"
+            outfile="${dir_out}/SIGNED_${FLAG_NOW}-${base}.efi"
+
+            sign_item=1
+            if [[ ! -f "${infile}" ]]; then
+              base="UEFI_APP---x64_${name_tag}"
+              infile="${dir_in}/${base}.efi"
+              outfile="${dir_out}/SIGNED_${FLAG_NOW}-${base}.efi"
+
+              if [[ ! -f "${infile}" ]]; then
+                sign_item=0
+                echo "[WARN] Not Found: 'x64_${name_tag}.efi' ... SKIPPED"
+              fi
             fi
+            (( sign_item )) && sign_the_item "${infile}" "${outfile}" || true
 
-            # Sign Misc Tools
-            echo ''
-            echo "Sign Misc Tools..."
-            for prefix in x64_shell x64_memtest86 x64_gptsync x64_gdisk x64_CleanNvram x64_ipxe; do
-              base="APP_xx_${target}---${prefix}"
-              infile="Unsigned_${target}/${base}.efi"
-              outfile="${outdir}/SIGNED_${FLAG_NOW}___${base}.efi"
+            # Sign Misc Blobs
+            printf '\nSign Misc Blobs...\n'
+            for name_tag in shell memtest86 gdisk CleanNvram ipxe; do
+              base="BLB_xx_${target}---x64_${name_tag}"
+              infile="${dir_in}/${base}.efi"
+              outfile="${dir_out}/SIGNED_${FLAG_NOW}-${base}.efi"
 
-              sign_item=0
-              if [[ -f "${infile}" ]]; then
-                sign_item=1
-              else
-                base="UEFI_APP---${prefix}_${target}"
-                infile="Unsigned_${target}/${base}.efi"
-                outfile="${outdir}/SIGNED_${FLAG_NOW}___${base}.efi"
+              sign_item=1
+              if [[ ! -f "${infile}" ]]; then
+                base="UEFI_APP---x64_${name_tag}_${target}"
+                infile="${dir_in}/${base}.efi"
+                outfile="${dir_out}/SIGNED_${FLAG_NOW}-${base}.efi"
 
-                if [[ -f "${infile}" ]]; then
-                  sign_item=1
-                else
-                  echo "[WARN] Not Found: '${infile}' ... SKIPPED"
+                if [[ ! -f "${infile}" ]]; then
+                  sign_item=0
+                  echo "[WARN] Not Found: 'x64_${name_tag}.efi' ... SKIPPED"
                 fi
               fi
-
-              if (( sign_item )); then
-                echo "[SIGN] '${infile}' >>---> as >>---> '${outfile}'"
-                sbsign --key "${PATH_KEY}" \
-                       --cert "${PATH_CRT}" \
-                       --output "${outfile}" "${infile}" || {
-                  echo "ERROR: Failed While Signing ${infile}"
-                  echo "       Unsigned Artefacts Saved with Prefix: 'NOT_SIGNED---'"
-                  echo "       Exiting Now"
-                  exit 1
-                }
-              fi
+              (( sign_item )) && sign_the_item "${infile}" "${outfile}" || true
             done
 
             # Sign Filesystem Drivers
-            echo ''
-            echo "Sign Filesystem Drivers..."
-            for fs in btrfs ext2 ext4 hfs iso9660 ntfs reiserfs; do
-              base="DRIVER_${target}---x64_${fs}"
-              infile="Unsigned_${target}/${base}.efi"
-              outfile="${outdir}/SIGNED_${FLAG_NOW}_${base}.efi"
+            printf '\nSign Filesystem Drivers...\n'
+            for name_tag in btrfs ext2 ext4 hfs iso9660 ntfs reiserfs; do
+              base="DRV_xx_${target}---x64_${name_tag}"
+              infile="${dir_in}/${base}.efi"
+              outfile="${dir_out}/SIGNED_${FLAG_NOW}-${base}.efi"
+
+              sign_item=1
+              if [[ ! -f "${infile}" ]]; then
+                base="DRIVER_${target}---x64_${name_tag}"
+                infile="${dir_in}/${base}.efi"
+                outfile="${dir_out}/SIGNED_${FLAG_NOW}-${base}.efi"
+
+                if [[ ! -f "${infile}" ]]; then
+                  sign_item=0
+                  echo "[WARN] Not Found: 'x64_${name_tag}.efi' ... SKIPPED"
+                fi
+              fi
+              (( sign_item )) && sign_the_item "${infile}" "${outfile}" || true
+            done
+
+            # Attach Licence Files
+            printf '\nAttach Licensing...\n'
+            for name_tag in INFO LICENSE; do
+              base="000_xx_000---${name_tag}"
+              infile="${dir_in}/${base}.txt"
+              outfile="${dir_out}/${base}.txt"
 
               if [[ ! -f "${infile}" ]]; then
-                echo "[WARN] Not Found: '${infile}' ... SKIPPED"
+                echo "[WARN] Could not find '${infile}'"
               else
-                echo "[SIGN] '${infile}' >>--> as >>--> '${outfile}'"
-                sbsign --key "${PATH_KEY}" \
-                       --cert "${PATH_CRT}" \
-                       --output "${outfile}" "${infile}" || {
-                  echo "ERROR: Failed While Signing ${infile}"
-                  echo "       Unsigned Artefacts Saved with Prefix: 'NOT_SIGNED---'"
-                  echo "       Exiting Now"
-                  exit 1
-                }
+                cp -f "${infile}" "${outfile}" || true
+                echo "[COPY] '${infile}' >>---> to >>---> '${outfile}'" || true
               fi
             done
 
+            printf "\n"
             echo "= = = = Signed Target = = = ="
           }
 
-          # Set Types
+          # Set Flag
           case "${ENV_TYPE}" in
             "REL and DBG") FLAG="TWO" ;;
             "REL Only")    FLAG="REL" ;;
@@ -482,15 +586,9 @@ jobs:
           esac
 
           # Sign Binaries
-          set +e  # Disable fail-fast
-          [[ "${FLAG}" == "REL" || "${FLAG}" == "ALL" || "${FLAG}" == "TWO" ]] && sign_files REL
-          [[ "${FLAG}" == "DBG" || "${FLAG}" == "ALL" || "${FLAG}" == "TWO" ]] && sign_files DBG
-          [[ "${FLAG}" == "NPT" || "${FLAG}" == "ALL" ]]                       && sign_files NPT
-          set -e  # Restore fail-fast
-
-          # Job Final Spacing
-          printf "\n\n"
-
+          [[ "${FLAG}" == "REL" || "${FLAG}" == "ALL" || "${FLAG}" == "TWO" ]] && sign_artefacts REL || true
+          [[ "${FLAG}" == "DBG" || "${FLAG}" == "ALL" || "${FLAG}" == "TWO" ]] && sign_artefacts DBG || true
+          [[ "${FLAG}" == "NPT" || "${FLAG}" == "ALL" ]]                       && sign_artefacts NPT || true
 
         ###
         # Handle interim artefacts, which are now deleted to leave
@@ -514,19 +612,30 @@ jobs:
             exit 0
           fi
 
-          FirstPass='True'
+          NotFirstPass=0
+          NoStepSummary=1
           while IFS=":" read -r artifact_id artifact_name; do
             echo "Found: ${artifact_name} (${artifact_id})"
-            CleanStrip='True'
-            [[ "${FirstPass}" == 'False' ]] && sleep 2
-            gh api --method DELETE repos/"${ENV_REPO}"/actions/artifacts/"${artifact_id}" || CleanStrip='False'
+            CleanStrip=1
+            (( NotFirstPass )) && sleep 2 || true
+            gh api --method DELETE repos/"${ENV_REPO}"/actions/artifacts/"${artifact_id}" || CleanStrip=0
 
-            if [[ "${CleanStrip}" == 'True' ]]; then
+            if (( CleanStrip )); then
               echo "Removed Interim Artefact: ${artifact_name} (ID: ${artifact_id})"
-              FirstPass='False'
+              NotFirstPass=1
             else
+              NotFirstPass=0
               echo "[WARN] Failed to Remove Interim Artefact: ${artifact_name} (ID: ${artifact_id})"
-              FirstPass='True'
+              if (( NoStepSummary )); then
+                NoStepSummary=0
+
+                echo "<br><br>" >> "${GITHUB_STEP_SUMMARY}"
+                echo "---" >> "${GITHUB_STEP_SUMMARY}"
+                echo "<br><br>" >> "${GITHUB_STEP_SUMMARY}"
+
+                echo "> [!CAUTION]" >> "${GITHUB_STEP_SUMMARY}"
+                echo "> Failed to remove one or more interim unsigned artefacts" >> "${GITHUB_STEP_SUMMARY}"
+              fi
             fi
           done <<< "${got_artefacts}"
 
@@ -544,6 +653,7 @@ jobs:
               ${{ env.PATH_CER }}
               ${{ env.PATH_CRT }}
               REL_signed_DIR/*.efi
+              REL_signed_DIR/*.txt
 
       - name: Upload Signed Binaries (DBG)
         if: contains(github.event.inputs.build_type, 'DBG')
@@ -554,6 +664,7 @@ jobs:
               ${{ env.PATH_CER }}
               ${{ env.PATH_CRT }}
               DBG_signed_DIR/*.efi
+              DBG_signed_DIR/*.txt
 
       - name: Upload Signed Binaries (NPT)
         if: contains(github.event.inputs.build_type, 'NPT')
@@ -564,3 +675,25 @@ jobs:
               ${{ env.PATH_CER }}
               ${{ env.PATH_CRT }}
               NPT_signed_DIR/*.efi
+              NPT_signed_DIR/*.txt
+
+
+      ###
+      # Advice on recommended action on file names
+      # Always displayed here if signing artefacts
+      ###
+      - name: Signature Notice
+        if: always()
+        shell: bash
+        run: |
+          # Wrap Up Notice
+          echo "<br><br>" >> "${GITHUB_STEP_SUMMARY}"
+          echo "---" >> "${GITHUB_STEP_SUMMARY}"
+          echo "<br><br>" >> "${GITHUB_STEP_SUMMARY}"
+
+          echo "> [!NOTE]" >> "${GITHUB_STEP_SUMMARY}"
+          echo "> Output files have the form: \`[METADATA]---[FILENAME].efi\`." >> "${GITHUB_STEP_SUMMARY}"
+          echo "> It is anticipated the metadata will be removed before use." >> "${GITHUB_STEP_SUMMARY}"
+          echo "<br><br>" >> "${GITHUB_STEP_SUMMARY}"
+          echo "---" >> "${GITHUB_STEP_SUMMARY}"
+          echo "<br><br>" >> "${GITHUB_STEP_SUMMARY}"

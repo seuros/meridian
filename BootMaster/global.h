@@ -492,7 +492,7 @@ typedef struct {
 } LEGACY_ENTRY;
 
 typedef struct {
-    BOOLEAN                     BadRamFixWide;
+    BOOLEAN                     BadRamTagWide;
     BOOLEAN                     DirectBoot;
     BOOLEAN                     CustomScreenBG;
     BOOLEAN                     TextOnly;
@@ -568,14 +568,14 @@ typedef struct {
     INTN                        LogLevel;
     INTN                        IconRowMove;
     INTN                        IconRowTune;
-    INTN                        BadRamFixType;
+    INTN                        BadRamTagType;
     INTN                        ScreenR;
     INTN                        ScreenG;
     INTN                        ScreenB;
     REFIT_VOLUME               *DiscoveredRoot;
     EFI_DEVICE_PATH_PROTOCOL   *SelfDevicePath;
     EG_IMAGE                   *ScreenBackground;
-    CHAR16                     *BadRamFixList;
+    CHAR16                     *BadRamTagList;
     CHAR16                     *ToolLocations;
     CHAR16                     *ToolLocationsExtra;
     CHAR16                     *ConfigFilename;
@@ -707,6 +707,26 @@ EFI_STATUS GetHardwareNvramVariable (
 #define LOG_LINE_EXIT        (15)
 #define LOG_LINE_BASE        (16)
 
+
+// Message Printing - START
+#define OUR_MSG_STR(s) L##s
+#define OUR_MSG_OUT Print
+
+#define OUR_MSG_L00(params) OUR_MSG_OUT params
+
+#if REFIT_DEBUG >= 1
+#define OUR_MSG_L01(params) OUR_MSG_OUT params
+#else
+#define OUR_MSG_L01(params)
+#endif
+
+#if REFIT_DEBUG >= 2
+#define OUR_MSG_L02(params) OUR_MSG_OUT params
+#else
+#define OUR_MSG_L02(params)
+#endif
+// Message Printing - CLOSE
+
 VOID DeepLoggger (
     IN  INTN     level,
     IN  INTN     type,
@@ -823,5 +843,3 @@ extern VOID EFIAPI DebugLog (
 
 
 #endif
-
-/* EOF */

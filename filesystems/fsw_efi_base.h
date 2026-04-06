@@ -82,7 +82,7 @@ typedef UINT64  fsw_u64;
 // message printing
 
 #define FSW_MSG_STR(s) L##s
-#define FSW_MSG_FUNC Print
+#define FSW_MSG_OUT Print
 
 // 64-bit hooks
 

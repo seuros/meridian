@@ -386,7 +386,7 @@ static fsw_status_t fsw_iso9660_volume_mount(struct fsw_iso9660_volume *vol)
             || pvoldesc->escape[2] == 0x43
             || pvoldesc->escape[2] == 0x45))
     {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_ISO9660: fsw_iso9660_volume_mount ... Success (joliet)\n"
             )
@@ -399,7 +399,7 @@ static fsw_status_t fsw_iso9660_volume_mount(struct fsw_iso9660_volume *vol)
     sua_pos = (sizeof (struct iso9660_dirrec)) +
             rootdir.file_identifier_length +
             (rootdir.file_identifier_length % 2) - 2;
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_ISO9660: fsw_iso9660_volume_mount ... Success (SUA Pos:%x)\n"
         ), sua_pos
@@ -420,7 +420,7 @@ static fsw_status_t fsw_iso9660_volume_mount(struct fsw_iso9660_volume *vol)
         if (sp->magic[0] == 0xbe && sp->magic[1] == 0xef) {
             vol->fRockRidge = 1;
         } else {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_ISO9660: fsw_iso9660_volume_mount: SP magic is not valid\n"
                 )
@@ -432,7 +432,7 @@ static fsw_status_t fsw_iso9660_volume_mount(struct fsw_iso9660_volume *vol)
     FSW_DO_FREE(vol->primary_voldesc);
     vol->primary_voldesc = NULL;
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_ISO9660: fsw_iso9660_volume_mount: success\n"
         )

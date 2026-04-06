@@ -77,7 +77,7 @@ fsw_status_t fsw_ext4_get_by_extent (
     buf_offset  = 0;
 
     if (dno->raw->i_flags & EXT4_INLINE_DATA_FL) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_EXT4: fsw_ext4_get_by_extent ... Leaving with Status: 'FSW_UNSUPPORTED' (Uses Inline Data)\n"
             )
@@ -96,7 +96,7 @@ fsw_status_t fsw_ext4_get_by_extent (
     while (1) {
         ext4_header = (struct ext4_extent_header *)((char *)buffer + buf_offset);
         if (ext4_header->eh_magic != EXT4_EXT_MAGIC) {
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_EXT4: fsw_ext4_get_by_extent ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (eh_magic != EXT4_EXT_MAGIC)\n"
                 )
@@ -165,7 +165,7 @@ fsw_status_t fsw_ext4_get_by_extent (
                 (void **)&buffer
             );
             if (status) {
-                FSW_MSG_LEVEL_1((
+                FSW_MSG_L01((
                     FSW_MSG_STR(
                         "FSW_EXT4: fsw_ext4_get_by_extent ... Leaving with Status '%d' Error ('fsw_block_get' Failure)\n"
                     ), status
@@ -179,7 +179,7 @@ fsw_status_t fsw_ext4_get_by_extent (
     } // while {Infinite}
 
 signal_sparse:
-    FSW_MSG_LEVEL_1((
+    FSW_MSG_L01((
         FSW_MSG_STR(
             "FSW_EXT4: fsw_ext4_get_by_extent ... Chunk Type:- 'Sparse'\n"
         )
@@ -199,13 +199,13 @@ exit:
 	if (!status) {
 		extent->type = FSW_EXTENT_TYPE_PHYSBLOCK;
 
-		FSW_MSG_LEVEL_2((
+		FSW_MSG_L02((
 			FSW_MSG_STR(
 				"FSW_EXT4: fsw_ext4_get_by_extent ... Chunk Type:- 'Physical'\n"
 			)
 		));
 
-		FSW_MSG_LEVEL_3((
+		FSW_MSG_L03((
 			FSW_MSG_STR(
 				"FSW_EXT4: fsw_ext4_get_by_extent ... Leaving with Status: 'FSW_SUCCESS'\n"
 			)
@@ -306,7 +306,7 @@ fsw_status_t fsw_ext4_get_by_blkaddr (
             (void **) &buffer
         );
         if (status) {
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_EXT4: fsw_ext4_get_by_blkaddr ... Leaving with Status '%d' Error ('fsw_block_get' Failure)\n"
                 ), status
@@ -346,7 +346,7 @@ check_sparse:
         goto exit;
     }
 
-    FSW_MSG_LEVEL_1((
+    FSW_MSG_L01((
         FSW_MSG_STR(
             "FSW_EXT4: fsw_ext4_get_by_blkaddr ... Chunk Type:- 'Sparse'\n"
         )
@@ -370,13 +370,13 @@ exit:
     if (!status) {
         extent->type = FSW_EXTENT_TYPE_PHYSBLOCK;
 
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_EXT4: fsw_ext4_get_by_blkaddr ... Chunk Type:- 'Physical'\n"
             )
         ));
 
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EXT4: fsw_ext4_get_by_blkaddr ... Leaving with Status: 'FSW_SUCCESS'\n"
             )
@@ -433,14 +433,14 @@ void fsw_ext4_log_vol_mount (
 ) {
     #if FSW_DEBUG_LEVEL > 0
     if (status == 12) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EXT4: fsw_ext4_log_vol_mount ... Leaving with Status: 'No Media' (Tag_%02u)\n"
             ), (unsigned) log_flag
         ));
     }
     else {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_EXT4: fsw_ext4_log_vol_mount ... Leaving with Status '%d' Error ('fsw_block_get' failure) ... Tag_01\n"
             ), status
@@ -479,7 +479,7 @@ fsw_status_t fsw_ext4_volume_mount (
         &vol->sb
     );
     if (status) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_EXT4: fsw_ext4_volume_mount ... Leaving with Status '%d' Error ('fsw_alloc' failure)\n"
             ), status
@@ -531,7 +531,7 @@ fsw_status_t fsw_ext4_volume_mount (
         return FSW_UNSUPPORTED;
     }
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_EXT4: fsw_ext4_volume_mount ... Incompat flag %x\n"
         ), vol->sb->s_feature_incompat
@@ -555,7 +555,7 @@ fsw_status_t fsw_ext4_volume_mount (
     if (vol->sb->s_rev_level == EXT4_DYNAMIC_REV &&
         vol->sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_RECOVER
     ) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EXT4: fsw_ext4_volume_mount ... This file system needs recovery, trying to use it anyway\n"
             )
@@ -678,7 +678,7 @@ fsw_status_t fsw_ext4_volume_mount (
         return status;
     }
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_EXT4: fsw_ext4_volume_mount ... success, blocksize %d\n"
         ), blocksize
@@ -782,12 +782,12 @@ fsw_status_t fsw_ext4_dnode_fill (
     else if (S_ISLNK(dno->raw->i_mode)) dno->g.type = FSW_DNODE_TYPE_SYMLINK;
     else                                dno->g.type = FSW_DNODE_TYPE_SPECIAL;
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_EXT4: fsw_ext4_dnode_fill ... inode flags %x\n"
         ), dno->raw->i_flags
     ));
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_EXT4: fsw_ext4_dnode_fill ... i_mode %x\n"
         ), dno->raw->i_mode
@@ -853,7 +853,7 @@ fsw_status_t fsw_ext4_get_extent (
 
     // Precondition: The dnode has complete information, i.e.
     // fsw_ext4_dnode_read_info has been called successfully.
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
 		FSW_MSG_STR(
 			"FSW_EXT4: fsw_ext4_get_extent ... inode %d, block %d\n"
 		), dno->g.dnode_id, extent->log_start
@@ -862,7 +862,7 @@ fsw_status_t fsw_ext4_get_extent (
 	extent->log_count = 1;
 
     if (dno->raw->i_flags & 1 << EXT4_INODE_EXTENTS) {
-      FSW_MSG_LEVEL_3((
+      FSW_MSG_L03((
 		  FSW_MSG_STR(
 			  "FSW_EXT4: fsw_ext4_get_extent ... Inode '%d' Uses Extents\n"
 		  ), dno->g.dnode_id
@@ -873,7 +873,7 @@ fsw_status_t fsw_ext4_get_extent (
 	  );
     }
 	else {
-		FSW_MSG_LEVEL_3((
+		FSW_MSG_L03((
 			FSW_MSG_STR(
 				"FSW_EXT4: fsw_ext4_get_extent ... Inode '%d' Uses Block Addressing\n"
 			), dno->g.dnode_id
@@ -885,7 +885,7 @@ fsw_status_t fsw_ext4_get_extent (
 	}
 
 	if (!status) {
-		FSW_MSG_LEVEL_3((
+		FSW_MSG_L03((
 			FSW_MSG_STR(
 				"FSW_EXT4: fsw_ext4_get_extent ... Leaving with Status: 'FSW_SUCCESS'\n"
 			)
@@ -893,14 +893,14 @@ fsw_status_t fsw_ext4_get_extent (
 	}
 	else {
 		if (status == FSW_IO_ERROR) {
-			FSW_MSG_LEVEL_2((
+			FSW_MSG_L02((
 				FSW_MSG_STR(
 					"FSW_EXT4: fsw_ext4_get_extent ... Leaving with Status: 'FSW_IO_ERROR' (Found Sparse Hole)\n"
 				)
 			));
 		}
 		else {
-			FSW_MSG_LEVEL_2((
+			FSW_MSG_L02((
 				FSW_MSG_STR(
 					"FSW_EXT4: fsw_ext4_get_extent ... Leaving with Status '%d' Error (Failed to Get Extent)\n"
 				), status
@@ -996,7 +996,7 @@ fsw_status_t fsw_ext4_dir_read (
     // Preconditions: The caller has checked that dno is a directory node.
     // The caller has opened a storage handle to the directory's storage
     // and keeps it around between calls.
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_EXT4: fsw_ext4_dir_read ... Started Reading Dir\n"
         )
@@ -1067,7 +1067,7 @@ fsw_status_t fsw_ext4_read_dentry (
             return FSW_SUCCESS;
         }
         if (entry->rec_len < 8) {
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_EXT4: fsw_ext4_read_dentry ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (rec_len < 8)\n"
                 )
@@ -1080,7 +1080,7 @@ fsw_status_t fsw_ext4_read_dentry (
         if (entry->inode != 0) {
             // This entry is used
             if (entry->rec_len < entry->name_len + 8) {
-                FSW_MSG_LEVEL_1((
+                FSW_MSG_L01((
                     FSW_MSG_STR(
                         "FSW_EXT4: fsw_ext4_read_dentry ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (rec_len < name_len + 8)\n"
                     )
@@ -1102,7 +1102,7 @@ fsw_status_t fsw_ext4_read_dentry (
         shand, &buffer_size, entry->name
     );
     if (status) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_EXT4: fsw_ext4_read_dentry ... Leaving with Status '%d' Error ('fsw_shandle_read' failure)\n"
             ), status
@@ -1112,7 +1112,7 @@ fsw_status_t fsw_ext4_read_dentry (
     }
 
     if (buffer_size < entry->name_len) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_EXT4: fsw_ext4_read_dentry ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (buffer_size < name_len)\n"
             )
@@ -1148,7 +1148,7 @@ fsw_status_t fsw_ext4_readlink (
     struct fsw_string s;
 
     if (dno->g.size > FSW_PATH_MAX)  {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_EXT4: fsw_ext4_readlink ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (g.size > FSW_PATH_MAX)\n"
             )
@@ -1168,7 +1168,7 @@ fsw_status_t fsw_ext4_readlink (
     }
     else {
         if (dno->g.size > sizeof (dno->raw->i_block)) {
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_EXT4: fsw_ext4_readlink ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (g.size > sizeof i_block)\n"
                 )

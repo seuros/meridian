@@ -132,7 +132,7 @@ fsw_status_t fsw_ext2_volume_mount (
     if (status)
         return status;
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_EXT2: fsw_ext2_volume_mount ... Success (blocksize %d)\n"
         ), blocksize
@@ -188,7 +188,7 @@ fsw_status_t fsw_ext2_dnode_fill (
     if (dno->raw)
         return FSW_SUCCESS;
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_EXT2: fsw_ext2_dnode_fill ... inode %d\n"
         ), dno->g.dnode_id

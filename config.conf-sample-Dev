@@ -12,74 +12,102 @@
 # faulty memory regions to be flagged as unusable by RefindPlus.
 # Such flagged regions will not be used by the firmware after.
 # This will also extend to UEFI compliant operating systems.
-# Each Start/End address must be separated by a colon (:).
+#
+# Each start/end address must be separated by colons (:).
 # Addresses can be determined via tools such as MemTest.
-# MemTest can be run as RefindPlus tool via showtools.
-#
-# Inactive when commented out (No addresses flagged)
-#
-#badram_fix_list 0xKLM:0xQPR,0xSUV:0xTXY
-
-# Define whether, and how if so, memory regions are to be tagged.
-#
-# The applicable flags are:
-#   0   - Nothing Done About Defective RAM (Default)
-#
-#   1   - Tags User Defined RAM Regions as "UnusableMemory"
-#         Regardless of whether already in use or not
-#
-#   2   - Tags User Defined RAM Regions as "ReservedMemory"
-#         Regardless of whether already in use or not
-#
-#   3   - Tags User Defined RAM Regions as "UnusableMemory"
-#         Any already fully/partially used region is completely skipped
-#
-#   4   - Tags User Defined RAM Regions as "UnusableMemory"
-#         Any fully/partially used region is tagged as "ReservedMemory"
-#
-#   5   - Tags User Defined RAM Regions as "UnusableMemory"
-#         Produces a hybrid in partially-in-use regions:
-#         * Unused pages are tagged as "UnusableMemory"
-#         * Pages in use are skipped
-#
-#   6   - Tags User Defined RAM Regions as "UnusableMemory"
-#         Produces a hybrid in partially-in-use regions:
-#         * Unused pages are tagged as "UnusableMemory"
-#         * Pages in use are tagged as "ReservedMemory"
-#
-#   7   - Tags Auto Defined RAM Regions as "UnusableMemory"
-#         Works like '5' but regions are determined by RefindPlus
-#         * The 'badram_fix_list' token is ignored if defined
-#
-#   8   - Tags Auto Defined RAM Regions as "UnusableMemory"
-#         Works like '6' but regions are determined by RefindPlus
-#         * The 'badram_fix_list' token is ignored if defined
-#
+# This can be set as a RefindPlus tool via 'showtools'.
+# RefindPlus can also check for Bad RAM automatically.
+# This token is not used for the automatic scan mode.
 #
 # NOTES:
-# 1. The auto detection of faulty RAM regions via '7' and '8' is basic.
-#    Tools such as 'MemTest' should be used instead whenever possible.
+# 1. A screen notice is shown on boot when errors were met.
 #
-# Defaults to '0' when commented out (Does not tag Bad RAM)
+# 2. The maximum allowable number of address range entries is 20.
+#    Supplied address range entries above this limit are ignored.
 #
-#badram_fix_type 2
+# 3. The maximum allowable individual address range entry size is 1.0GB.
+#    However, a limit of 4.0GB is applied when 'badram_tag_mode' is '1'.
+#    The 4.0GB limit is attempted for 'Modes-2to9-with-badram_tag_wide'.
+#    Individual address regions greater than the size limit are ignored.
+#
+# Inactive When Commented Out (No Addresses Flagged - Except Auto Scan)
+#
+#badram_tag_list 0xKLM:0xQPR,0xSUV:0xTXY
 
-# When 'badram_fix_type' is set to values greater than 1, only memory regions of types
-# such as 'EfiConventionalMemory', 'EfiRuntimeServicesCode', 'EfiRuntimeServicesData'
-# 'EfiBootServicesCode', 'EfiBootServicesData', 'EfiLoaderCode', and 'EfiLoaderData'
-# are processed with reserved regions left as they are. This is to avoid impacting
-# upon critical memory. When this token is active, all memory types are processed.
+# Defines how defective RAM should be handled.
 #
-# Inactive when commented out (Does not remove limits)
+# The available settings are:
+#   0  - Nothing is Done Regarding Defective RAM (Default)
 #
-#badram_fix_wide
+#   1  - Runs 'AllocatePages' on User Defined RAM Regions
+#        Regardless of whether already in use or not.
+#
+#   2  - Tags User Defined RAM Regions as 'UnusableMemory'
+#        Regardless of whether already in use or not.
+#
+#   3  - Tags User Defined RAM Regions as 'ReservedMemory'
+#        Regardless of whether already in use or not.
+#
+#   4  - Tags User Defined RAM Regions as 'UnusableMemory'
+#        All used regions are completely skipped.
+#
+#   5  - Tags User Defined RAM Regions as 'UnusableMemory'
+#        All used regions are tagged as 'ReservedMemory'
+#
+#   6  - Tags User Defined RAM Regions as 'UnusableMemory'
+#        Produces a hybrid in partially-in-use regions:
+#        * Unused pages are tagged as 'UnusableMemory'
+#        * Any pages in use are skipped and ignored.
+#
+#   7  - Tags User Defined RAM Regions as 'UnusableMemory'
+#        Produces a hybrid in partially-in-use regions:
+#        * Unused pages are tagged as 'UnusableMemory'
+#        * Pages in use are tagged as 'ReservedMemory'
+#
+#   8  - Tags Auto Defined Bad RAM Regions as 'UnusableMemory'
+#        As with '6' but regions are determined by RefindPlus.
+#        * The 'badram_tag_list' option is ignored if defined.
+#
+#   9  - Tags Auto Defined Bad RAM Regions as 'UnusableMemory'
+#        As with '7' but regions are determined by RefindPlus.
+#        * The 'badram_tag_list' option is ignored if defined.
+#
+# NOTES:
+# 1. The auto detection of faulty RAM regions via '8' and '9' is basic.
+#    Hence, tools such as 'MemTest' may therefore be considered instead.
+#    However, the output often needs conversion before use in RefindPlus.
+#    The basic program auto scan modes are functional without extra steps.
+#    Refer: www.github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BadRam.md.
+#
+# 2. The auto detection of faulty RAM regions via Mode '8/9' is cached on first run.
+#    Subsequent runs will leverage this cached data, if present, to reduce run times.
+#    The cached data can be cleared by running the 'CleanNvram' tool to allow rescans.
+#    Alternatively, this token can be temporarily set to '-1' to clear the saved cache.
+#
+# Defaults to '0' When Commented Out (Does Not Tag Bad RAM)
+#
+#badram_tag_mode 4
+
+# When 'badram_tag_mode' is set to Modes 2 to 9, run speed can increased by
+# first attempting to use 'AllocatePages' to block memory regions like when
+# on Mode 1. If this single pass operation is successful, the process ends.
+# If not, RefindPlus falls back to tagging the defined regions page-by-page
+# as described for the specific mode setting. BadRAM is handled regardless.
+#
+# Settings are:
+#    0  - Always Try 'Mode 1' First Before Running Modes 2 to 9: OFF
+#    1  - Always Try 'Mode 1' First Before Running Modes 2 to 9:  ON (Default)
+#
+# Active When Commented Out (Optimises Marking Modes 2 to 9)
+#
+#badram_tag_wide 0
 
 # Proceed automatically when on-screen notices
 # are shown. When this option is active, RefindPlus
 # will pause for nine (9) seconds when on-screen notices
 # are shown, and then proceed as if a key has been pressed.
 #
-# Inactive when commented out (Does not proceed automatically)
+# Inactive When Commented Out (Does Not Proceed Automatically)
 # NB: This token is temporarily activated by certain notices.
 #
 #continue_on_warning
@@ -88,7 +116,7 @@
 # Sealed System Volume (SSV) settings defined under the "csr_values" option.
 # When active, RefindPlus will actively set the CSR Policy as defined. This
 # is done when RefindPlus is loaded but users can manually toggle the set
-# values "ON" or "OFF" by using the "Rotate CSR" tool on the main menu.
+# values "ON" or "OFF" by using the "CSR Rotate" tool on the main menu.
 # The following options are available:
 #   1    - Always Enable SIP/SSV
 #   0    - Take no Action
@@ -100,7 +128,7 @@
 # 3. That token must therefore contain values to both 'Enable' and 'Disable' CSR.
 # 4. This token is essentially disabled whenever 'csr_values' is not active/set.
 #
-# Inactive when commented out (Takes no action on SIP and/or SSV)
+# Inactive When Commented Out (Takes No Action on SIP and/or SSV)
 #
 #csr_dynamic 1
 
@@ -113,7 +141,7 @@
 # When this token is set, RefindPlus will remove this bit from the saved CSR bits
 # when booting into MacOS, similar to the process done by MacOS v11.x and later.
 #
-# Inactive when commented out (Takes no action on SIP/SSV settings)
+# Inactive When Commented Out (Takes No Action on SIP/SSV Settings)
 #
 #csr_normalise
 
@@ -126,7 +154,7 @@
 # Icons placed in bootloader directories are skipped when "HelpIcon" is active;
 # except ".VolumeXYZ" images when the "hidden_icons_prefer" setting is active.
 #
-# The "HelpIcon" feature is active when commented out
+# The "HelpIcon" Feature Is Active When Commented Out
 #
 #decline_help_icon
 
@@ -139,7 +167,7 @@
 # NB: The forced screen resolution feature typically requires an ultimate boot
 # into operating systems that support the graphics setup for proper operation.
 #
-# The "HelpSize" feature is active when commented out
+# The "HelpSize" Feature Is Active When Commented Out
 #
 #decline_help_size
 
@@ -154,7 +182,7 @@
 # title banners and complementary colours are always used for text when using the
 # default RefindPlus title banner, as this always has a single solid colour.
 #
-# The "HelpText" feature is active when commented out
+# The "HelpText" Feature Is Active When Commented Out
 #
 #decline_help_text
 
@@ -165,7 +193,7 @@
 # As installed as drivers, such tools typically allow screenshots
 # from external screens that the inbuilt feature does not cover.
 #
-# Inactive when commented out (Does not decouple the F10 key)
+# Inactive When Commented Out (Does Not Decouple the F10 Key)
 #
 #decouple_key_f10
 
@@ -177,7 +205,7 @@
 # MacOS version is being loaded. This default is deactivated whenever this token is set.
 # NB: This functionality is only available on TianoCore builds.
 #
-# APFS filesystem capability is provided (if required) via "SupplyAPFS" when commented out
+# APFS Filesystem Capability Is Provided (If Required) via "SupplyAPFS" When Commented Out
 #
 #disable_apfs_load
 
@@ -196,7 +224,7 @@
 # names to alphanumeric characters. Dashes, underscores and/or spaces can
 # be used in combination with alphanumeric characters without issue.
 #
-# APFS partition synchronisation is provided (if required) when commented out
+# APFS Partition Synchronisation Is Provided (If Required) When Commented Out
 #
 #disable_apfs_sync
 
@@ -209,7 +237,7 @@
 # will remain active until it is explicitly cleared, even
 # if this setting is subsequently deactivated.
 #
-# Inactive when commented out (Does not stop AMFI checks)
+# Inactive When Commented Out (Does Not Stop AMFI Checks)
 #
 #disable_check_amfi
 
@@ -222,7 +250,7 @@
 # boot argument will remain active until it is explicitly cleared, even if
 # this setting is subsequently deactivated.
 #
-# Inactive when commented out (Does not stop MacOS compatibility checks)
+# Inactive When Commented Out (Does Not Stop Mac OS Compatibility Checks)
 #
 #disable_check_compat
 
@@ -233,7 +261,7 @@
 # NOTES:
 # 1. See 'disable_exitlogo_image' and 'disable_exitlogo_scale'
 #
-# Exit logo images are cleared, after being shown, when commented out
+# Exit Logo Images Are Cleared, After Being Shown, When Commented Out
 #
 #disable_exitlogo_clear
 
@@ -257,7 +285,7 @@
 # 2. The 'OFF' option takes precedence over every other setting
 # 3. See 'disable_exitlogo_clear' and 'disable_exitlogo_scale'
 #
-# Exit logo images are shown, if applicable, when commented out
+# Exit Logo Images Are Shown, If Applicable, When Commented Out
 #
 #disable_exitlogo_image WIN
 
@@ -268,7 +296,7 @@
 # NOTES:
 # 1. See 'disable_exitlogo_image' and 'disable_exitlogo_clear'
 #
-# Exit logo images are scaled, if shown, when commented out
+# Exit Logo Images Are Scaled, If Shown, When Commented Out
 #
 #disable_exitlogo_scale
 
@@ -277,7 +305,7 @@
 # devices that do not support legacy BIOS boot. The "LegacySync" feature
 # attempts to categorise Intel Macs to allow/disallow legacy BIOS boot.
 #
-# The "LegacySync" feature is active when commented out
+# The "LegacySync" Feature Is Active When Commented Out
 #
 #disable_legacy_sync
 
@@ -290,7 +318,7 @@
 # is triggered which will remain active until explicitly cleared,
 # even if this setting is subsequently deactivated.
 #
-# Inactive when commented out (Does not stop MacOS panic log writes to nvRAM)
+# Inactive When Commented Out (Does Not Stop Mac OS Panic Log Writes to nvRAM)
 #
 #disable_nvram_paniclog
 
@@ -301,7 +329,7 @@
 # results in an inability to boot. This token is only activated on Apple firmware.
 # NB: Auto disabled whenever RefindPlus is loaded from OpenCore on Apple firmware.
 #
-# The "NvramProtect" feature is active when commented out
+# The "NvramProtect" Feature Is Active When Commented Out
 #
 #disable_nvram_protect
 
@@ -309,7 +337,7 @@
 # allow some graphics displays on newer operating systems with legacy GPUs
 # NB: This functionality is only available on TianoCore Builds.
 #
-# GOP is added to UGA (if required) when commented out
+# GOP Is Added to UGA (If Required) When Commented Out
 #
 #disable_pass_gop_thru
 
@@ -327,7 +355,7 @@
 # is longer required to allow GPU activation except when the related
 # "supply_uefi" setting is activate, as this overrides this revert.
 #
-# GPU OptionROMs are reinstalled (if required) when commented out
+# GPU OptionROMs Are Reinstalled (If Required) When Commented Out
 #
 #disable_reload_gop
 
@@ -340,7 +368,7 @@
 # while not being required on some types of firmware. Hence, an option
 # to skip the process *MAY* be desirable on affected types of firmware.
 #
-# Inactive when commented out (Does not stop rescans for DXE drivers)
+# Inactive When Commented Out (Does Not Stop Rescans for DXE Drivers)
 #
 #disable_rescan_dxe
 
@@ -349,7 +377,7 @@
 # when missing on Macs. This feature can be disabled by activating this token.
 # NB: This functionality is only available on TianoCore builds.
 #
-# Apple FramebufferInfo protocol is provided (if required) when commented out
+# Apple FramebufferInfo Protocol Is Provided (If Required) When Commented Out
 #
 #disable_set_applefb
 
@@ -365,7 +393,7 @@
 # running capable GPUs that are not supported by system firmware.
 # NB: This functionality is only available on TianoCore builds.
 #
-# The "SetConsoleGOP" feature is active when commented out
+# The "SetConsoleGOP" Feature Is Active When Commented Out
 #
 #disable_set_consolegop
 
@@ -387,7 +415,7 @@
 # on may significantly increase boot times and that enabling TRIM on
 # non-Apple SSDs may affect the integrity of data on such SSDs.
 #
-# Inactive when commented out (Does not forcefully set TRIM)
+# Inactive When Commented Out (Does Not Forcefully Set TRIM)
 #
 #force_trim
 
@@ -409,7 +437,7 @@
 # 1. This token overrides the "hidden_icons_external" and
 #    the "hidden_icons_prefer" tokens when it is active.
 #
-# Scans for ".VolumeIcon" icons when commented out
+# Scans for ".VolumeIcon" Icons When Commented Out
 #
 #hidden_icons_ignore
 
@@ -424,7 +452,7 @@
 # NB: ".VolumeIcon" icon files can be in any supported format ...
 # ICNS (*.icns), BMP (*.bmp), PNG (*.png), or JPG (*.jpg/jpeg).
 #
-# Does not prioritise ".VolumeIcon" images when commented out
+# Does Not Prioritise ".VolumeIcon" Images When Commented Out
 #
 #hidden_icons_prefer
 
@@ -438,7 +466,7 @@
 #   0    - Maintain default icon row position (mid screen)
 #  -1    - Move icon rows to the lower third of the screen
 #
-# Defaults to zero when commented out (Does not move the icon rows)
+# Defaults to Zero When Commented Out (Does Not Move the Icon Rows)
 #
 #icon_row_move -1
 
@@ -447,7 +475,7 @@
 # position of icon rows on the main RefindPlus screen. This adjustment may
 # be needed to finetune the 'icon_row_move' outcome upwards or downwards.
 #
-# Defaults to zero when commented out (Does not adjust the icon rows)
+# Defaults to Zero When Commented Out (Does Not Adjust the Icon Rows)
 #
 #icon_row_tune 5
 
@@ -465,7 +493,7 @@
 # RefindPlus spontaneously starting up default selections when it is loaded.
 # NB: This feature does not operate on Apple firmware even when set here.
 #
-# Inactive when commented out (Does not increase base threshold interval)
+# Inactive When Commented Out (Does Not Increase Base Threshold Interval)
 #
 #mitigate_primed_buffer
 
@@ -474,7 +502,7 @@
 # NB: This feature is disabled when RefindPlus is loaded from OpenCore.
 #     This setting is only active, if set, on Apple firmware.
 #
-# Inactive when commented out (Does not extend NvramProtect)
+# Inactive When Commented Out (Does Not Extend NvramProtect)
 #
 #nvram_protect_ex
 
@@ -488,7 +516,7 @@
 # that it is disabled when it is set to a value lower than 1024 bytes.
 # Additionally, this option is only activated on direct MacOS boots.
 #
-# Inactive when commented out (Does not filter nvRAM writes by size)
+# Inactive When Commented Out (Does Not Filter nvRAM Writes by Size)
 #
 #nvram_variable_limit 2048
 
@@ -497,7 +525,7 @@
 # or with "EFIBoot-Only" operating systems like MacOS v10.4 (Tiger).
 # NB: This functionality is only available on TianoCore Builds.
 #
-# Inactive when commented out (Does not add UGA to GOP)
+# Inactive When Commented Out (Does Not Add UGA to GOP)
 #
 #pass_uga_through
 
@@ -512,7 +540,7 @@
 # such to the nvRAM flash chip is preferred instead.
 # NB: This is only relevant for booting into MacOS.
 #
-# Inactive when commented out (boot args are not persisted)
+# Inactive When Commented Out (Boot Args Are Not Persisted)
 #
 #persist_boot_args
 
@@ -522,7 +550,7 @@
 # it will instead always use UGA when available and will not consider GOP.
 # This may also improve RefindPlus loading speed on legacy UGA-only GPUs.
 #
-# Inactive when commented out (Does not prefer UGA over GOP)
+# Inactive When Commented Out (Does Not Prefer UGA over GOP)
 #
 #prefer_uga
 
@@ -537,7 +565,7 @@
 # NB: This token is always disabled when Apple firmware is detected.
 #     This functionality is only available on TianoCore builds.
 #
-# Inactive when commented out (Does not handle such partitions)
+# Inactive When Commented Out (Does Not Handle Such Partitions)
 #
 #ransom_drives
 
@@ -549,7 +577,7 @@
 # slow scrolling response on booting into the operating system.
 # NB: This functionality is only available on TianoCore builds.
 #
-# Inactive when commented out (Does not use the built-in GOP)
+# Inactive When Commented Out (Does Not Use the Built-In GOP)
 #
 #renderer_direct_gop
 
@@ -564,7 +592,7 @@
 # text mode as part of its operations (mainly to show error messages).
 # NB: This functionality is only available on TianoCore builds.
 #
-# Inactive when commented out (Does not use a custom text renderer)
+# Inactive When Commented Out (Does Not Use a Custom Text Renderer)
 #
 #renderer_text
 
@@ -579,7 +607,7 @@
 #   0    - Scale UI elements, or not, based on screen resolution
 #  -1    - Always scale UI elements down
 #
-# Scales UI elements based on screen resolution when commented out
+# Scales UI Elements Based on Screen Resolution When Commented Out
 #
 #scale_ui 1
 
@@ -590,7 +618,7 @@
 # be overridden by providing three (3) values, between 0 and 255,
 # representing the desired RGB value for the background colour.
 #
-# Uses the default colour selection process when commented out
+# Uses the Default Colour Selection Process When Commented Out
 #
 #screen_rgb 250 150 50
 
@@ -603,7 +631,7 @@
 # will remain active until it is explicitly cleared, even if this
 # setting is subsequently deactivated.
 #
-# Inactive when commented out or set to "-none" (Does not change boot arguments)
+# Inactive When Commented Out or Set to "-none" (Does Not Change Boot Args)
 #
 #set_boot_args "-v"
 
@@ -613,7 +641,7 @@
 # NB: This functionality is disabled if UEFI SecureBoot is detected.
 #     This functionality is only available on TianoCore builds.
 #
-# Inactive when commented out (Does not supply NVMe support)
+# Inactive When Commented Out (Does Not Supply NVMe Support)
 #
 #supply_nvme
 
@@ -624,7 +652,7 @@
 # as Legacy Macs as several such tools only require CreateEventEx to work.
 # NB: This functionality is only available on TianoCore builds.
 #
-# Inactive when commented out (Does not emulate UEFI 2.x)
+# Inactive When Commented Out (Does Not Emulate UEFI 2.x)
 #
 #supply_uefi
 
@@ -649,7 +677,7 @@
 # 3. Option '2' is as '3' when 'transient_boot' is active
 # 4. Qualifying boots are MacOS, OpenCore or Clover boots
 #
-# Inactive when commented out (Does not sync nvRAM)
+# Inactive When Commented Out (Does Not Sync nvRAM)
 #
 #sync_nvram 1
 
@@ -673,7 +701,7 @@
 # 2. The 'none' option takes precedence over every other setting
 # 3. The 'DirectBoot' feature is disabled by this token
 #
-# Inactive when commented out or set to 'none' (Does not trigger reboots)
+# Inactive When Commented Out or Set to 'none' (Does Not Trigger Reboots)
 #
 #sync_trust macos verify
 
@@ -686,7 +714,7 @@
 # writes are not required to start with and when the "transient_boot" setting is
 # activated, RefindPlus will not store the "PreviousBoot" variable anywhere.
 #
-# Always saves the "PreviousBoot" variable when commented out
+# Always Saves the "PreviousBoot" Variable When Commented Out
 #
 #transient_boot
 
@@ -697,7 +725,7 @@
 # the English language. This has now been implemented.
 # NB: This functionality is only fully available on TianoCore builds.
 #
-# Inactive when commented out (Does not look for Unicode English support)
+# Inactive When Commented Out (Does Not Look for Unicode English Support)
 #
 #unicode_collation
 
@@ -746,7 +774,7 @@
 # values. Hence, three (3) or more values can be defined
 # which will be rotated in turn in a loop by CSR Rotate.
 #
-# Inactive when commented out (CSR values cannot be set)
+# Inactive When Commented Out (CSR Values Cannot Be Set)
 #
 #csr_values 10,77
 
@@ -758,7 +786,7 @@
 # is mutually exclusive with the "enable_touch" feature and if both
 # settings are active, the "enable_touch" token will take precedence.
 #
-# Inactive when commented out (Does not enable mouse support)
+# Inactive When Commented Out (Does Not Enable Mouse Support)
 #
 #enable_mouse
 
@@ -771,7 +799,7 @@
 # This option is mutually exclusive with the "enable_mouse" feature and
 # the "enable_touch" option will take precedence when both are active.
 #
-# Inactive when commented out (Does not enable touch screen support)
+# Inactive When Commented Out (Does Not Enable Touch Screen Support)
 #
 #enable_touch
 
@@ -790,7 +818,7 @@
 # Refer to 'dont_scan_volumes' entry
 # for options on identifying volumes.
 #
-# Inactive when commented out (Symlinks never followed)
+# Inactive When Commented Out (Symlinks Never Followed)
 #
 #follow_symlinks ON "Volume_A,Volume_B,Volume_C"
 
@@ -812,7 +840,7 @@
 # 1. The 'all' option takes precedence over others apart from 'none'
 # 2. The 'none' option takes precedence over every other setting
 #
-# Inactive when commented out or set to 'none' (Does not hide UI elements)
+# Inactive When Commented Out or Set to 'none' (Does Not Hide UI Elements)
 #
 #hideui label badges
 
@@ -825,8 +853,8 @@
 # only active when running DEBUG builds and the logging process, particularly higher
 # levels, can noticeably slow RefindPlus operation and time must be given as needed.
 #
-# The native format is used when commented out (DEBUG and NOOPT builds only)
-# Logging *IS NOT* active on RELEASE builds
+# The Native Format Is Used When Commented Out (DEBUG and NOOPT Builds Only)
+# Logging *IS NOT* Active on RELEASE Builds
 #
 #log_level 1
 
@@ -841,7 +869,7 @@
 # are unavailable results in the default resolution being used.
 # NB: A forcefully set mode is considered an available mode.
 #
-# Uses the maximum screen resolution when commented out
+# Uses the Maximum Screen Resolution When Commented Out
 #
 #resolution 1024 768
 #resolution 1440 900
@@ -874,7 +902,7 @@
 # (Excluding keys such as "Shift", "Control", "Alt", and "Option").
 # "-1" causes RefindPlus to start up with the screensaver active.
 #
-# Inactive when commented out (screensaver is disabled)
+# Inactive When Commented Out (Screensaver Is Disabled)
 #
 #screensaver 300
 
@@ -915,8 +943,8 @@
 #  fwupdate         - A tag to update the firmware; launches the fwupx64.efi (or similar) program
 #  netboot          - Launch the ipxe.efi tool for network (PXE) booting
 #
-# Activates default options when commented out
-# Default options are: about,hidden_tags,csr_rotate,bootorder,shutdown
+# Activates Default Options When Commented Out
+# Default Options Are: about,hidden_tags,csr_rotate,bootorder,shutdown
 # NB: Setting "showtools" alone, without any options, disables all tools
 #
 #showtools about,csr_rotate,shell,clean_nvram,hidden_tags,bootorder,reboot,shutdown
@@ -929,7 +957,7 @@
 # into RefindPlus and is unnecessary on x86 and on x86_64 systems, only a stub
 # implementation that logs the situation is currently provided by RefindPlus.
 #
-# Inactive when commented out (The "GZippedLoaders" Feature is disabled)
+# Inactive When Commented Out (the "GZippedLoaders" Feature Is Disabled)
 #
 #support_gzipped_loaders
 
@@ -942,7 +970,7 @@
 # main menu screen displayed as normal. If a shortcut key cannot be
 # matched to a valid shortcut, the main menu is displayed instead.
 #
-# Inactive when commented out or set to "0" (timeout is disabled)
+# Inactive When Commented Out or Set to "0" (Timeout Is Disabled)
 #
 #timeout 20
 
@@ -972,7 +1000,7 @@
 # 1. The 'everything' option takes precedence over others apart from 'none'
 # 2. The 'none' option takes precedence over every other setting
 #
-# Defaults to 'osx' when commented out
+# Defaults to 'osx' When Commented Out
 #
 #use_graphics_for osx linux windows
 
@@ -989,7 +1017,7 @@
 # HiddenTools, and HiddenLegacy variables and does not apply to any variables from
 # other processes/libraries (These are always written to the motherboard's nvRAM).
 #
-# Stores RefindPlus-specific variables on the filesystem when commented out
+# Stores RefindPlus-Specific Variables on the Filesystem When Commented Out
 #
 #use_nvram
 
@@ -1013,7 +1041,7 @@
 # to scan the "somedir" directory only on the filesystem named "myvol". If
 # a specified directory does not exist, it is ignored (no error message).
 #
-# Always scans "boot" and "@\boot" whether commented out or not
+# Always Scans "boot" and "@\boot" Whether Commented Out or Not
 #
 #also_scan_dirs ESP2:EFI/linux/kernels
 #also_scan_dirs @/kernels,@/root/boot
@@ -1034,7 +1062,7 @@
 # poor choices for this purpose. Some PNG and JPEG features are not supported
 # and some file formats, such as "progressive" JPEG files, are not supported.
 #
-# Uses the default title banner when commented out
+# Uses the Default Title Banner When Commented Out
 #
 #banner hostname.bmp
 #banner mybanner.jpg
@@ -1044,7 +1072,7 @@
 #     noscale     - Crop if too big or show with border if too small
 #     fillscreen  - Fill the screen
 #
-# Uses "noscale" when commented out
+# Uses "noscale" When Commented Out
 #
 #banner_scale fillscreen
 
@@ -1068,7 +1096,7 @@
 # set followed by one or more that include times to set different
 # defaults for different times of day.
 #
-# Defaults to "+" when commented out (Selects the last run loader)
+# Defaults to "+" When Commented Out (Selects the Last Run Loader)
 #
 #default_selection 1
 #default_selection Microsoft
@@ -1090,7 +1118,7 @@
 #
 # The default is the "SelfDir" path.
 #
-# Uses default setting when commented out
+# Uses Default Setting When Commented Out
 #
 #dont_scan_dirs ESP:/EFI/boot,EFI/Dell,EFI/memtest86
 
@@ -1113,7 +1141,7 @@
 # TextMode.efi,ebounce.efi,GraphicsConsole.efi,bootmgr.efi,shim.efi,fb.efi,
 # shim{arch}.efi,fb{arch}.efi" ("{arch}" is the architecture, such as "x64").
 #
-# Uses default setting when commented out
+# Uses Default Setting When Commented Out
 #
 #dont_scan_files shim.efi,MokManager.efi
 
@@ -1126,7 +1154,7 @@
 # Specifying "shell" will override the automatic inclusion of
 # built-in uEFI shells.
 #
-# Has an empty list (nothing is excluded) when commented out
+# Has an Empty List (Nothing Is Excluded) When Commented Out
 #
 #dont_scan_firmware HARDDISK,shell,"Removable Device"
 
@@ -1138,7 +1166,7 @@
 # label, partition name, or partition GUID) along with a full
 # pathname can be specified.
 #
-# Has an empty list (nothing is excluded) when commented out
+# Has an Empty List (Nothing Is Excluded) When Commented Out
 #
 #dont_scan_tools ESP2:/EFI/ubuntu/mmx64.efi,gptsync_x64.efi
 
@@ -1156,7 +1184,7 @@
 #
 # The default setting is "LRS_ESP"
 #
-# Uses default setting when commented out
+# Uses Default Setting When Commented Out
 #
 #dont_scan_volumes "Boot OS X"
 
@@ -1169,7 +1197,7 @@
 # Refer to the link below for more on this subject:
 # www.thomas-krenn.com/en/wiki/Activating_the_Intel_VT_Virtualization_Feature
 #
-# Inactive when commented out (Does not try to enable and lock the MSR)
+# Inactive When Commented Out (Does Not Try to Enable and Lock the MSR)
 #
 #enable_and_lock_vmx
 
@@ -1187,7 +1215,7 @@
 # (say, the kernel filename includes "linux" but the initrd filename does
 # not), set the option to an empty string (or comment out) to disable.
 #
-# Inactive when commented out (No extra version strings are used)
+# Inactive When Commented Out (No Extra Version Strings Are Used)
 #
 #extra_kernel_version_strings linux-lts,linux
 
@@ -1201,7 +1229,7 @@
 #       0    - Combine Linux kernel entries: OFF
 #       1    - Combine Linux kernel entries: ON
 #
-# Active when commented out (Combines Linux kernel entries)
+# Active When Commented Out (Combines Linux Kernel Entries)
 #
 #fold_linux_kernels 0
 
@@ -1213,7 +1241,7 @@
 # fonts are supported. Fonts may be of any size, although large fonts can
 # produce display irregularities.
 #
-# Uses the built-in font, Luxi Mono Regular 12 point, when commented out
+# Uses the Built-In Font, Luxi Mono Regular 12 Point, When Commented Out
 #
 #font myfont.png
 
@@ -1228,7 +1256,7 @@
 # BMP and JPEG  implementations do not support transparency,
 # which is highly desirable in icons.
 #
-# Loads icons from the "icons" folder when commented out
+# Loads Icons from the "icons" Folder When Commented Out
 #
 #icons_dir myicons
 #icons_dir icons/snowy
@@ -1246,7 +1274,7 @@
 # to handle, it is reduced to the value that the screen can manage. If this
 # value is set to "0", it is adjusted to a number the screen can handle.
 #
-# Adjusts displayed boot loaders to screen width when commented out
+# Adjusts Displayed Boot Loaders to Screen Width When Commented Out
 #
 #max_tags 0
 
@@ -1260,7 +1288,7 @@
 # mouse movement. This option requires "enable_mouse" to
 # be uncommented. Valid values are 1 to 32 (inclusive).
 #
-# Uses a mouse speed of 4 when commented out
+# Uses a Mouse Speed of 4 When Commented Out
 #
 #mouse_speed 6
 
@@ -1276,14 +1304,14 @@
 # a text mode and uncommenting the "textonly" option without specifying
 # a resolution may result in an unusable operating system display.
 #
-# Uses Mode 1024 when commented out
+# Uses Mode 1024 When Commented Out
 #
 #textmode 2
 
 # Use text screen mode. When enabled, this option sets the RefindPlus
 # screen mode to text mode. Graphics screen mode is used otherwise.
 #
-# Uses graphics screen mode when commented out
+# Uses Graphics Screen Mode When Commented Out
 #
 #textonly
 
@@ -1295,14 +1323,14 @@
 # directories with names that begin with "vmlinuz", "bzImage", or "kernel"
 # be included as loaders (even if they do not have ".efi" extensions).
 #
-# Inactive when commented out (Only scans for kernels with ".efi" extensions)
+# Inactive When Commented Out (Only Scans for Kernels with ".efi" Extensions)
 #
 #scan_all_linux_kernels
 
 # Delay for the specified number of seconds before scanning disks.
 # This may help when disks are not detected until "ESC" is pressed.
 #
-# Inactive when commented out (Does not wait before scanning disks)
+# Inactive When Commented Out (Does Not Wait Before Scanning Disks)
 #
 #scan_delay 2
 
@@ -1315,7 +1343,7 @@
 # (NOTE: {arch} = architecture code). This option specifies other
 # *ADDITIONAL* directories to scan along with these defaults.
 #
-# Inactive when commented out (Does not scan additional directories)
+# Inactive When Commented Out (Does Not Scan Extra Folders)
 #
 #scan_driver_dirs EFI/tools/drivers,drivers
 
@@ -1338,7 +1366,7 @@
 # Custom selection images larger these thresholds
 # will be replaced with default embedded images.
 #
-# Uses default selection images when commented out
+# Uses Default Selection Images When Commented Out
 #
 #selection_big icons/selection-big.png
 #selection_small icons/selection-small.png
@@ -1350,7 +1378,7 @@
 # !!!*** MANY COMPUTERS WILL HANG OR REBOOT INSTEAD ***!!!
 # Macs and recent UEFI-PCs are most likely to work with this feature.
 #
-# Boots the default selection on timeout when commented out
+# Boots the Default Selection on Timeout When Commented Out
 #
 #shutdown_after_timeout
 
@@ -1360,7 +1388,7 @@
 # of the big icons. Legal values are 32 and above. If the icon files do not
 # hold icons of the proper size, the icons are scaled to the specified size.
 #
-# Uses 48 and 128 for small and big icons respectively when commented out
+# Uses 48 and 128 for Small and Big Icons Respectively When Commented Out
 #
 #small_icon_size 96
 #big_icon_size 256
@@ -1377,7 +1405,7 @@
 # needed, a value of "10.9" usually works, but other values may
 # also work. This option has no effect on non-Apple computers.
 #
-# Inactive when commented out (No MacOS version spoofing)
+# Inactive When Commented Out (No Mac OS Version Spoofing)
 #
 #spoof_osx_version 10.9
 
@@ -1387,7 +1415,7 @@
 # of nvRAM variables on each boot. This option has no effect on Macs
 # or when legacy BIOS boot options are not set in the 'scanfor' token.
 #
-# Inactive when commented out (Does not result in a forced scan)
+# Inactive When Commented Out (Does Not Result in a Forced Scan)
 #
 #uefi_deep_legacy_scan
 
@@ -1403,7 +1431,7 @@
 # causes SystemD to mount the ESP as '/boot' *IF* that directory
 # is empty and nothing else has been mounted there earlier.
 #
-# Inactive when commented out (variable is not set)
+# Inactive When Commented Out (Variable Is Not Set)
 #
 #write_systemd_vars
 
@@ -1428,7 +1456,7 @@
 # described above. NB: Included manual configuration stanza files cannot
 # "include" tertiary, or other manual configuration stanza, files.
 #
-# Inactive when commented out (secondary file is not loaded)
+# Inactive When Commented Out (Secondary File Is Not Loaded)
 #
 #include manual.conf
 #include stanza-01.conf

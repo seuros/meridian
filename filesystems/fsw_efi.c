@@ -549,7 +549,7 @@ fsw_status_t EFIAPI fsw_efi_read_block (
    UINT64           StartRead = (UINT64) phys_bno * (UINT64) vol->phys_blocksize;
 
    if (buffer == NULL) {
-       FSW_MSG_LEVEL_3((
+       FSW_MSG_L03((
            FSW_MSG_STR(
                "FSW_EFI: fsw_efi_read_block ... Leaving with Status: 'EFI_BAD_BUFFER_SIZE'\n"
            )
@@ -642,7 +642,7 @@ fsw_status_t EFIAPI fsw_efi_read_block (
 
    Volume->LastIOStatus = Status;
 
-   FSW_MSG_LEVEL_3((
+   FSW_MSG_L03((
        FSW_MSG_STR(
            "FSW_EFI: fsw_efi_read_block ... Leaving with Status: '%r'\n"
        ), Status
@@ -709,14 +709,14 @@ EFI_STATUS EFIAPI fsw_efi_filehandle_open (
     EFI_STATUS          Status;
     FSW_FILE_DATA      *File = FSW_FILE_FROM_FILE_HANDLE(This);
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_EFI: fsw_efi_filehandle_open ... Open File Handle: '%s'\n"
         ), FileName
     ));
 
     if (File->Type != FSW_EFI_FILE_TYPE_DIR) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_filehandle_open ... Error: 'File->Type != FSW_EFI_FILE_TYPE_DIR'\n"
             )
@@ -732,7 +732,7 @@ EFI_STATUS EFIAPI fsw_efi_filehandle_open (
         );
     }
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_EFI: fsw_efi_filehandle_open ... Leaving with Status: '%r'\n"
         ), Status
@@ -790,7 +790,7 @@ EFI_STATUS EFIAPI fsw_efi_filehandle_read (
     FSW_FILE_DATA      *File = FSW_FILE_FROM_FILE_HANDLE(This);
 
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_EFI: fsw_efi_filehandle_read ... Read File Handle: '%s'\n"
         ), File->shand.dnode->name.data
@@ -808,14 +808,14 @@ EFI_STATUS EFIAPI fsw_efi_filehandle_read (
 
     #if FSW_DEBUG_LEVEL >= 2
     if (EFI_ERROR(Status)) {
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_filehandle_read ... Leaving with Status: '%r'\n"
             ), Status
         ));
     }
     else {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_filehandle_read ... Leaving with Status: 'SUCCESS'\n"
             )
@@ -945,7 +945,7 @@ EFI_STATUS fsw_efi_dnode_to_filehandle (
         (FSW_VOLUME_DATA *) dno->vol->host_data
     );
     if (EFI_ERROR(Status)) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dnode_to_filehandle ... Leaving with Status: '%r'\n"
             ), Status
@@ -959,7 +959,7 @@ EFI_STATUS fsw_efi_dnode_to_filehandle (
         dno->type != FSW_DNODE_TYPE_FILE
 
     ) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dnode_to_filehandle ... Leaving with Status: 'EFI_UNSUPPORTED'\n"
             )
@@ -971,7 +971,7 @@ EFI_STATUS fsw_efi_dnode_to_filehandle (
     // Allocate file structure
     File = AllocateZeroPool (sizeof (FSW_FILE_DATA));
     if (File == NULL) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dnode_to_filehandle ... Leaving with Status: 'EFI_BUFFER_TOO_SMALL'\n"
             )
@@ -998,7 +998,7 @@ EFI_STATUS fsw_efi_dnode_to_filehandle (
         (FSW_VOLUME_DATA *) dno->vol->host_data
     );
     if (EFI_ERROR(Status)) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dnode_to_filehandle ... Leaving with Status: '%r'\n"
             ), Status
@@ -1023,7 +1023,7 @@ EFI_STATUS fsw_efi_dnode_to_filehandle (
 
     *NewFileHandle = &File->FileHandle;
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_EFI: fsw_efi_dnode_to_filehandle ... Leaving with Status: 'EFI_SUCCESS'\n"
         )
@@ -1046,7 +1046,7 @@ EFI_STATUS fsw_efi_file_read (
     fsw_status_t        fsw_status;
 
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_EFI: fsw_efi_file_read ... Read File: '%s'\n"
         ), File->shand.dnode->name.data
@@ -1065,14 +1065,14 @@ EFI_STATUS fsw_efi_file_read (
 
     #if FSW_DEBUG_LEVEL >= 1
     if (EFI_ERROR(Status)) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_file_read ... Leaving with Status: '%r'\n"
             ), Status
         ));
     }
     else {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_file_read ... Leaving with Status: 'SUCCESS'\n"
             )
@@ -1135,7 +1135,7 @@ EFI_STATUS fsw_efi_dir_open (
 
 
     if (OpenMode != EFI_FILE_MODE_READ) {
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dir_open ... Leaving with Status: '%r'\n"
             ), EFI_WRITE_PROTECTED
@@ -1162,7 +1162,7 @@ EFI_STATUS fsw_efi_dir_open (
         Volume
     );
     if (EFI_ERROR(Status)) {
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dir_open ... Leaving with Status: '%r'\n"
             ), Status
@@ -1180,7 +1180,7 @@ EFI_STATUS fsw_efi_dir_open (
     );
     fsw_dnode_release (dno);
     if (EFI_ERROR(Status)) {
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dir_open ... Leaving with Status: '%r'\n"
             ), Status
@@ -1221,7 +1221,7 @@ EFI_STATUS fsw_efi_dir_read (
         // End of directory
         *BufferSize = 0;
 
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dir_read ... No More Entries\n"
             )
@@ -1230,7 +1230,7 @@ EFI_STATUS fsw_efi_dir_read (
         return EFI_SUCCESS;
     }
     if (EFI_ERROR(Status)) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dir_read ... Leaving with Status: '%r'\n"
             ), Status
@@ -1249,14 +1249,14 @@ EFI_STATUS fsw_efi_dir_read (
 
     #if FSW_DEBUG_LEVEL >= 1
     if (EFI_ERROR(Status)) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dir_read ... Leaving with Status: '%r'\n"
             ), Status
         ));
     }
     else {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dir_read ... Leaving with Status: 'SUCCESS'\n"
             )
@@ -1318,7 +1318,7 @@ EFI_STATUS fsw_efi_dnode_getinfo (
             &gMyEfiFileSystemInfoGuid
         )
     ) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dnode_getinfo ... FILE_SYSTEM_INFO\n"
             )
@@ -1349,7 +1349,7 @@ EFI_STATUS fsw_efi_dnode_getinfo (
             Volume
         );
         if (EFI_ERROR(Status)) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_EFI: fsw_efi_dnode_getinfo ... Leaving with Status: '%r'\n"
                 ), Status
@@ -1372,7 +1372,7 @@ EFI_STATUS fsw_efi_dnode_getinfo (
             &gMyEfiFileSystemVolumeLabelInfoIdGuid
         )
     ) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dnode_getinfo ... FILE_SYSTEM_VOLUME_LABEL\n"
             )
@@ -1469,7 +1469,7 @@ EFI_STATUS fsw_efi_dnode_fill_FileInfo (
         fsw_dnode_fill (dno), Volume
     );
     if (EFI_ERROR(Status)) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dnode_fill_FileInfo ... Leaving with Status: '%r'\n"
             ), Status
@@ -1487,7 +1487,7 @@ EFI_STATUS fsw_efi_dnode_fill_FileInfo (
     if (*BufferSize < RequiredSize) {
         Status = EFI_BUFFER_TOO_SMALL;
 
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dnode_fill_FileInfo ... Leaving with Status: '%r'\n"
             ), Status
@@ -1521,7 +1521,7 @@ EFI_STATUS fsw_efi_dnode_fill_FileInfo (
         Volume
     );
     if (EFI_ERROR(Status)) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_EFI: fsw_efi_dnode_fill_FileInfo ... Leaving with Status: '%r'\n"
             ), Status
@@ -1534,7 +1534,7 @@ EFI_STATUS fsw_efi_dnode_fill_FileInfo (
 
     // Prepare for return
     *BufferSize = RequiredSize;
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_EFI: fsw_efi_dnode_fill_FileInfo ... Returning '%s'\n"
         ), FileInfo->FileName

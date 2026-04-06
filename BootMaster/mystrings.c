@@ -23,21 +23,17 @@
 
 BOOLEAN NestedStrStr = FALSE;
 
-
-/*
- * Routine Description:
- *
- *  Confirms FirstString is shorter than or equal to SecondString.
- *
- * Arguments:
- *
- *  String1  - Null-terminated string to check length of.
- *  String2  - Null-terminated string to check against.
- *
- * Returns:
- *  False if String1 is longer than String2 or
- *  True if String1 is shorter than or equal to String2.
- */
+/**
+** Confirms FirstString is shorter than or equal to SecondString.
+**
+** Arguments:
+** - String1 : Null-terminated string to check length of.
+** - String2 : Null-terminated string to check against.
+**
+** Returns:
+** - False if String1 is longer than String2
+** - True if String1 is shorter than or equal to String2.
+**/
 static
 BOOLEAN IsValidStrComp (
     IN CHAR16  *String1,
@@ -64,19 +60,16 @@ BOOLEAN IsValidStrComp (
     return TRUE;
 } // static BOOLEAN IsValidStrComp()
 
-/*
- * Routine Description:
- *
- *  Starts each word in string with uppercase character.
- *
- * Arguments:
- *
- *  InputString  - Null-terminated string to process.
- *  SpecialCases - Change output for 'rEFIt-linux' files.
- *
- * Returns:
- *  Converted string
- */
+/**
+** Starts each word in string with uppercase character.
+**
+** Arguments:
+** - InputString  : Null-terminated string to process.
+** - SpecialCases : Change output for 'rEFIt-linux' files.
+**
+** Returns:
+** - Converted string
+**/
 CHAR16 * CapitalisedCase (
     IN CHAR16  *InputString,
     IN BOOLEAN  SpecialCases
@@ -199,7 +192,9 @@ CHAR16 * CapitalisedCase (
             IndexIn += 1;
 
             StringChar = InputString[IndexIn];
-        } // while
+        } // while inner
+
+        /* coverity[dead_error_line: SUPPRESS] */
         if (WordLen == 0) continue;
 
         WordBuffer[WordLen] = L'\0';
@@ -299,20 +294,17 @@ CHAR16 * CapitalisedCase (
     return ResultString;
 } // CHAR16 * CapitalisedCase()
 
-/*
- * Routine Description:
- *
- *  Return the substring after a supplied delimiter.
- *
- * Arguments:
- *
- *  Delimiter  - Null-terminated string to search for as delimiter.
- *  String     - Null-terminated string to search for a Substring.
- *
- * Returns:
- *  The address of the matching substring after the delimiter
- *  or the original string if the delimiter was not found.
- */
+/**
+** Return the substring after a supplied delimiter.
+**
+** Arguments:
+** - Delimiter :  Null-terminated string to search for as delimiter.
+** - String    : Null-terminated string to search for a Substring.
+**
+** Returns:
+** - The address of the matching substring after the delimiter
+**   or the original string if the delimiter was not found.
+**/
 CHAR16 * GetSubStrAfter (
     IN CHAR16 *InputDelimiter,
     IN CHAR16 *String
@@ -326,6 +318,9 @@ CHAR16 * GetSubStrAfter (
     }
 
     // Handle Deprecated 'INITIAL_STRING_DELIM' = L" @@ "
+    // DA-TAG: When 'InputDelimiter' is 'DEFAULT_STRING_DELIM', this also
+    //         checks for the deprecated 'INITIAL_STRING_DELIM' as fallback.
+    //         For all other delimiters, 'InputDelimiter' is used as is.
     if (!MyStriCmp (InputDelimiter, DEFAULT_STRING_DELIM)) {
         Delimiter = InputDelimiter;
     }
@@ -352,21 +347,18 @@ CHAR16 * GetSubStrAfter (
     return Substring;
 } // CHAR16 * GetSubStrAfter()
 
-/*
- * Routine Description:
- *
- *  Return the substring before a supplied delimiter.
- *  The calling function must free any memory allocated.
- *
- * Arguments:
- *
- *  Delimiter  - Null-terminated string to search for as delimiter.
- *  String     - Null-terminated string to search for a Substring.
- *
- * Returns:
- *  The address of the matching substring before the delimiter
- *  or the original string if the delimiter was not found.
- */
+/**
+** Return the substring before a supplied delimiter.
+** The calling function must free any memory allocated.
+**
+** Arguments:
+** - Delimiter :  Null-terminated string to search for as delimiter.
+** - String    : Null-terminated string to search for a Substring.
+**
+** Returns:
+** - The address of the matching substring before the delimiter
+**   or the original string if the delimiter was not found.
+**/
 CHAR16 * GetSubStrBefore (
     IN CHAR16 *InputDelimiter,
     IN CHAR16 *String
@@ -382,6 +374,9 @@ CHAR16 * GetSubStrBefore (
     }
 
     // Handle Deprecated 'INITIAL_STRING_DELIM' = L" @@ "
+    // DA-TAG: When 'InputDelimiter' is 'DEFAULT_STRING_DELIM', this also
+    //         checks for the deprecated 'INITIAL_STRING_DELIM' as fallback.
+    //         For all other delimiters, 'InputDelimiter' is used as is.
     if (!MyStriCmp (InputDelimiter, DEFAULT_STRING_DELIM)) {
         Delimiter = InputDelimiter;
     }
@@ -419,7 +414,9 @@ CHAR16 * GetSubStrBefore (
     return Result;
 } // CHAR16 * GetSubStrBefore()
 
-// DestSize is size in CHAR16s (including null terminator)
+/**
+** DestSize is size in CHAR16s (including null terminator)
+**/
 EFI_STATUS SafeStrCat (
     OUT       CHAR16 *Dest,
     IN        UINTN   DestSize,
@@ -458,10 +455,12 @@ EFI_STATUS SafeStrCat (
     return Status;
 } // EFI_STATUS SafeStrCat()
 
-// Performs a case-insensitive string comparison.
-// This function is needed because some StriCmp()
-// implementations are atually case-sensitive.
-// Returns TRUE if strings are identical or FALSE.
+/**
+** Performs a case-insensitive string comparison.
+** This function is needed because some StriCmp()
+** implementations are atually case-sensitive.
+** Returns TRUE if strings are identical, or FALSE.
+**/
 BOOLEAN MyStriCmp (
     IN CHAR16 *String1,
     IN CHAR16 *String2
@@ -491,14 +490,19 @@ BOOLEAN MyStriCmp (
     return (*String1 == *String2);
 } // BOOLEAN MyStriCmp()
 
-// Checks whether String2 starts with String1
-// Returns TRUE on match or FALSE.
+/**
+** Checks whether String2 starts with String1
+**
+** Returns:
+** - TRUE on match, or FALSE.
+**/
 BOOLEAN MyStrBegins (
     IN CHAR16 *String1,
     IN CHAR16 *String2
 ) {
     UINTN        i;
     UINTN     Len1;
+    CHAR16  c1, c2;
     BOOLEAN IsGood;
 
 
@@ -514,9 +518,12 @@ BOOLEAN MyStrBegins (
     // Compare from the start of each string
     // 'IsGood' is curently 'TRUE'
     for (i = 0; i < Len1; i++) {
-        if ((CHAR16)(String1[i] | 0x20) !=
-            (CHAR16)(String2[i] | 0x20)
-        ) {
+        c1 = String1[i];
+        c2 = String2[i];
+
+        if (c1 >= L'A' && c1 <= L'Z') c1 += 32;
+        if (c2 >= L'A' && c2 <= L'Z') c2 += 32;
+        if (c1 != c2) {
             // Exit ... Mismatch found
             IsGood = FALSE;
 
@@ -527,8 +534,12 @@ BOOLEAN MyStrBegins (
     return IsGood;
 } // BOOLEAN MyStrBegins()
 
-// Checks whether String2 ends with String1
-// Returns TRUE on match or FALSE.
+/**
+** Checks whether String2 ends with String1
+**
+** Returns:
+** - TRUE on match, or FALSE.
+**/
 BOOLEAN MyStrEnds (
     IN CHAR16 *String1,
     IN CHAR16 *String2
@@ -536,6 +547,7 @@ BOOLEAN MyStrEnds (
     UINTN        i;
     UINTN     Len1;
     UINTN     Len2;
+    CHAR16  c1, c2;
     BOOLEAN IsGood;
 
 
@@ -552,9 +564,12 @@ BOOLEAN MyStrEnds (
     // Compare from the end of each string
     // 'IsGood' is curently 'TRUE'
     for (i = 0; i < Len1; i++) {
-        if ((String1[Len1 - 1 - i] | 0x20) !=
-            (String2[Len2 - 1 - i] | 0x20)
-        ) {
+        c1 = String1[Len1 - 1 - i];
+        c2 = String2[Len2 - 1 - i];
+
+        if (c1 >= L'A' && c1 <= L'Z') c1 += 32;
+        if (c2 >= L'A' && c2 <= L'Z') c2 += 32;
+        if (c1 != c2) {
             // Exit ... Mismatch found
             IsGood = FALSE;
 
@@ -565,19 +580,16 @@ BOOLEAN MyStrEnds (
     return IsGood;
 } // BOOLEAN MyStrEnds()
 
-/*
- * Routine Description:
- *
- *  Find a substring (Case Sensitive).
- *
- * Arguments:
- *
- *  String      - Null-terminated string to search.
- *  StrCharSet  - Null-terminated string to search for.
- *
- * Returns:
- *  Address of first occurrence of the matching substring or NULL.
- */
+/**
+** Find a substring (Case Sensitive).
+**
+** Arguments:
+** - String     : Null-terminated string to search.
+** - StrCharSet : Null-terminated string to search for.
+**
+** Returns:
+** - Address of first occurrence of the matching substring or NULL.
+**/
 CHAR16 * MyStrStr (
     IN CHAR16  *String,
     IN CHAR16  *StrCharSet
@@ -629,75 +641,88 @@ CHAR16 * MyStrStr (
     return NULL;
 } // CHAR16 * MyStrStr()
 
-/*
- * Routine Description:
- *
- *  As 'MyStrStr' but case insensitive and returns a BOOLEAN.
- *
- * Arguments:
- *
- *  BigStr    - Null-terminated string to search.
- *  SmallStr  - Null-terminated string to search for.
- *
- * Returns:
- *  TRUE if successful or FALSE.
- */
+/**
+** As 'MyStrStr' but is case insensitive and returns a BOOLEAN.
+**
+** Arguments:
+** - BigStr   : Null-terminated string to search.
+** - SmallStr : Null-terminated string to search for.
+**
+** Returns:
+** - TRUE if successful, or FALSE.
+**/
 BOOLEAN IsStriStr (
     IN CHAR16 *BigStr,
     IN CHAR16 *SmallStr
 ) {
-    UINTN   BigStart;
-    UINTN   BigIndex;
-    UINTN   SmallIndex;
-    BOOLEAN Terminate;
-    BOOLEAN Found;
+    CHAR16 c1;
+    CHAR16 c2;
+
+    UINTN  BigIndex;
+    UINTN  SmallIndex;
+    UINTN  BigStart = 0;
 
 
-    if (SmallStr == NULL || BigStr == NULL) {
+    if (BigStr   == NULL ||
+        SmallStr == NULL
+    ) {
         return FALSE;
     }
 
-    Found = Terminate = FALSE;
-    BigIndex = SmallIndex = BigStart = 0;
-    while (!Terminate) {
-        if (BigStr[BigIndex] == '\0') {
-            Terminate = TRUE;
-        }
+    if (*BigStr   == L'\0' &&
+        *SmallStr == L'\0'
+    ) {
+        return TRUE;
+    }
 
-        if (SmallStr[SmallIndex] == '\0') {
-            Found     = TRUE;
-            Terminate = TRUE;
-        }
+    if (*BigStr   == L'\0' ||
+        *SmallStr == L'\0'
+    ) {
+        return FALSE;
+    }
 
-        if ((SmallStr[SmallIndex] | 0x20) == (BigStr[BigIndex] | 0x20)) {
+    while (BigStr[BigStart] != L'\0') {
+        BigIndex = BigStart;
+        SmallIndex = 0;
+
+        while (1) {
+            if (SmallStr[SmallIndex] == L'\0') {
+                return TRUE;
+            }
+
+            if (BigStr[BigIndex] == L'\0') {
+                return FALSE;
+            }
+
+            c1 = SmallStr[SmallIndex];
+            c2 = BigStr[BigIndex];
+
+            if (c1 >= L'A' && c1 <= L'Z') c1 += 32;
+            if (c2 >= L'A' && c2 <= L'Z') c2 += 32;
+            if (c1 != c2) break;
+
             SmallIndex++;
             BigIndex++;
-        }
-        else {
-            SmallIndex = 0;
-            BigStart++;
-            BigIndex = BigStart;
-        }
-    } // while
+        } // while {Infinite}
 
-    return Found;
+        BigStart++;
+    }
+
+    return FALSE;
 } // BOOLEAN IsStriStr()
 
-/*
- * Routine Description:
- *
- *  As 'MyStrStr' but case insensitive and returns a BOOLEAN.
- *  For debugging ... Duplicates 'IsStriStr'
- *  Remove later
- *
- * Arguments:
- *
- *  RawString      - Null-terminated string to search.
- *  RawStrCharSet  - Null-terminated string to search for.
- *
- * Returns:
- *  TRUE if successful or FALSE.
- */
+/**
+** As 'MyStrStr' but case insensitive and returns a BOOLEAN.
+** For debugging ... Duplicates 'IsStriStr'
+** Remove later
+**
+** Arguments:
+** - RawString     : Null-terminated string to search.
+** - RawStrCharSet : Null-terminated string to search for.
+**
+** Returns:
+** - TRUE if successful, or FALSE.
+**/
 BOOLEAN FindSubStr (
     IN CHAR16  *RawString,
     IN CHAR16  *RawStrCharSet
@@ -732,28 +757,28 @@ BOOLEAN FindSubStr (
 } // BOOLEAN FindSubStr()
 
 /**
-  Returns the first occurrence of a Null-terminated ASCII sub-string
-  in a Null-terminated ASCII string.
-
-  This function scans the contents of the ASCII string specified by String
-  and returns the first occurrence of SearchString. If SearchString is not
-  found in String, then NULL is returned. If the length of SearchString is zero,
-  then String is returned.
-
-  If String is NULL, then ASSERT().
-  If SearchString is NULL, then ASSERT().
-
-  If PcdMaximumAsciiStringLength is not zero, and SearchString or
-  String contains more than PcdMaximumAsciiStringLength Unicode characters
-  not including the Null-terminator, then ASSERT().
-
-  @param  String          A pointer to a Null-terminated ASCII string.
-  @param  SearchString    A pointer to a Null-terminated ASCII string to search for.
-
-  @retval NULL            If the SearchString does not appear in String.
-  @retval others          If there is a match return the first occurrence of SearchingString.
-                          If the length of SearchString is zero,return String.
-
+** Returns the first occurrence of a Null-terminated ASCII sub-string
+** in a Null-terminated ASCII string.
+**
+** This function scans the contents of the ASCII string specified by String
+** and returns the first occurrence of SearchString. If SearchString is not
+** found in String, then NULL is returned. If the length of SearchString is zero,
+** then String is returned.
+**
+** If String is NULL, then ASSERT().
+** If SearchString is NULL, then ASSERT().
+**
+** If PcdMaximumAsciiStringLength is not zero, and SearchString or
+** String contains more than PcdMaximumAsciiStringLength Unicode characters
+** not including the Null-terminator, then ASSERT().
+**
+** @param  String          A pointer to a Null-terminated ASCII string.
+** @param  SearchString    A pointer to a Null-terminated ASCII string to search for.
+**
+** @retval NULL            If the SearchString does not appear in String.
+** @retval others          If there is a match return the first occurrence of SearchingString.
+**                         If the length of SearchString is zero,return String.
+**
 **/
 CHAR8 * MyAsciiStrStr (
     IN const CHAR8 *String,
@@ -796,8 +821,10 @@ CHAR8 * MyAsciiStrStr (
     return NULL;
 } // CHAR16 * MyAsciiStrStr()
 
-// Convert input string to all-lowercase.
-// DO NOT USE the standard StrLwr() function, as it is broken on some EFIs!
+/**
+** Convert input string to all-lowercase.
+** DO NOT USE the standard StrLwr() function, as it is broken on some EFIs!
+**/
 VOID ToLower (
     IN OUT CHAR16 *MyString
 ) {
@@ -817,7 +844,9 @@ VOID ToLower (
     } // while
 } // VOID ToLower()
 
-// Convert input string to all-uppercase.
+/**
+** Convert input string to all-uppercase.
+**/
 VOID ToUpper (
     IN OUT CHAR16 *MyString
 ) {
@@ -837,6 +866,9 @@ VOID ToUpper (
     } // while
 } // VOID ToUpper()
 
+/**
+**
+**/
 static
 VOID MergeStringsHelper (
     IN OUT CHAR16  **First,
@@ -934,15 +966,17 @@ VOID MergeStringsHelper (
     *First = NewString;
 } // static VOID MergeStringsHelper()
 
-// Merges two strings, creating a new one and returning a pointer to it.
-// If AddChar != 0, the specified character is placed between the two original
-// strings (unless the first string is NULL or empty). The original input
-// string *First is de-allocated and replaced by the new merged string.
-// This is similar to StrCat, but safer and more flexible because
-// MergeStrings allocates memory that is the correct size for the
-// new merged string, so it can take a NULL *First and it cleans
-// up the old memory. It should *NOT* be used with a constant
-// *First, though.
+/**
+** Merges two strings, creating a new one and returning a pointer to it.
+** If AddChar != 0, the specified character is placed between the two original
+** strings (unless the first string is NULL or empty). The original input
+** string *First is de-allocated and replaced by the new merged string.
+** This is similar to StrCat, but safer and more flexible because
+** MergeStrings allocates memory that is the correct size for the
+** new merged string, so it can take a NULL *First and it cleans
+** up the old memory. It should *NOT* be used with a constant
+** *First, though.
+**/
 VOID MergeStrings (
     IN OUT CHAR16 **First,
     IN     CHAR16  *Second,
@@ -962,7 +996,9 @@ VOID MergeStrings (
     LOG_SEP(L"X");
 } // VOID MergeStrings()
 
-// As MergeStrings but does not repeat substrings.
+/**
+** As MergeStrings but does not repeat substrings.
+**/
 VOID MergeUniqueStrings (
     IN OUT CHAR16 **First,
     IN     CHAR16  *Second,
@@ -982,6 +1018,9 @@ VOID MergeUniqueStrings (
     LOG_SEP(L"X");
 } // VOID MergeUniqueStrings()
 
+/**
+**
+**/
 static
 VOID MergeWordsHelper (
     CHAR16  **MergeTo,
@@ -1045,9 +1084,11 @@ VOID MergeWordsHelper (
     }
 } // static VOID MergeWordsHelper()
 
-// Similar to MergeStrings, but breaks the input string into word chunks
-// then merges each separately. Words are defined as string fragments
-// separated by ' ', ':', '_', '\', '/', or '-'.
+/**
+** Similar to MergeStrings, but breaks the input string into word chunks
+** then merges each separately. Words are defined as string fragments
+** separated by ' ', ':', '_', '\', '/', or '-'.
+**/
 VOID MergeWords (
     CHAR16 **MergeTo,
     CHAR16  *InString,
@@ -1059,7 +1100,9 @@ VOID MergeWords (
     );
 } // VOID MergeWords()
 
-// As MergeWords, but only unique words are merged
+/**
+** As MergeWords, but only unique words are merged
+**/
 VOID MergeUniqueWords (
     CHAR16 **MergeTo,
     CHAR16  *InString,
@@ -1071,7 +1114,9 @@ VOID MergeUniqueWords (
     );
 } // VOID MergeUniqueWords()
 
-// As MergeUniqueWords, but items are separated by ','
+/**
+** As MergeUniqueWords, but items are separated by ','
+**/
 VOID MergeUniqueItems (
     CHAR16 **MergeTo,
     CHAR16  *InString,
@@ -1101,7 +1146,9 @@ VOID MergeUniqueItems (
     } // while {Infinite}
 } // VOID MergeUniqueItems()
 
-// Replaces special characters in the input string with a space.
+/**
+** Replaces special characters in the input string with a space.
+**/
 CHAR16 * SanitiseString (
     CHAR16  *InString
 ) {
@@ -1161,14 +1208,18 @@ CHAR16 * SanitiseString (
     return OutString;
 } // CHAR16 * SanitiseString()
 
-// Restrict 'TheString' to no more than 'Limit' characters.
-// Does this in two steps:
-//   - Compresses blocks of two or more spaces down to one.
-//   - Truncates 'TheString' if still longer than 'Limit'.
-// Returns TRUE if changes were made or FALSE.
+/**
+** Restrict 'TheString' to no more than 'Limit' characters.
+** Does this in two steps:
+**   - Compresses blocks of two or more spaces down to one.
+**   - Truncates 'TheString' if still longer than 'Limit'.
+**
+** Returns:
+** - TRUE if changes were made, or FALSE.
+**/
 BOOLEAN LimitStringLength (
-    CHAR16 *TheString,
-    UINTN    Limit
+    IN CHAR16 *TheString,
+    IN UINTN    Limit
 ) {
     UINTN     i;
     UINTN     DestSize;
@@ -1253,11 +1304,15 @@ BOOLEAN LimitStringLength (
     return HasChanged;
 } // BOOLEAN LimitStringLength()
 
-// Truncate 'TheString' to 'Limit' characters if longer.
-// Returns TRUE if truncated or FALSE.
+/**
+** Truncate 'TheString' to 'Limit' characters if longer.
+**
+** Returns:
+** - TRUE if truncated, or FALSE.
+**/
 BOOLEAN TruncateString (
-    CHAR16 *TheString,
-    UINTN   Limit
+    IN CHAR16 *TheString,
+    IN UINTN   Limit
 ) {
     BOOLEAN WasTruncated;
 
@@ -1273,11 +1328,13 @@ BOOLEAN TruncateString (
     return WasTruncated;
 } // BOOLEAN TruncateString()
 
-// Returns all the digits in the input string, including intervening
-// non-digit characters. For instance, if InString is "foo-3.3.4-7.img",
-// this function returns "3.3.4-7". The GlobalConfig.ExtraKernelVersionStrings
-// variable specifies extra strings that may be treated as numbers. If InString
-// contains no digits or ExtraKernelVersionStrings, the return value is NULL.
+/**
+** Returns all the digits in the input string, including intervening
+** non-digit characters. For instance, if InString is "foo-3.3.4-7.img",
+** this function returns "3.3.4-7". The GlobalConfig.ExtraKernelVersionStrings
+** variable specifies extra strings that may be treated as numbers. If InString
+** contains no digits or ExtraKernelVersionStrings, the return value is NULL.
+**/
 CHAR16 * FindNumbers (
     IN CHAR16 *InString
 ) {
@@ -1340,10 +1397,12 @@ CHAR16 * FindNumbers (
     return (Found);
 } // CHAR16 *FindNumbers()
 
-// Returns the number of characters that are in common between
-// String1 and String2 before they diverge. For instance, if
-// String1 is "FooBar" and String2 is "FoodiesBar", this function
-// will return "3", since they both start with "Foo".
+/**
+** Returns the number of characters that are in common between
+** String1 and String2 before they diverge. For instance, if
+** String1 is "FooBar" and String2 is "FoodiesBar", this function
+** will return "3", since they both start with "Foo".
+**/
 UINTN NumCharsInCommon (
     IN CHAR16 *String1,
     IN CHAR16 *String2
@@ -1367,177 +1426,272 @@ UINTN NumCharsInCommon (
     return Count;
 } // UINTN NumCharsInCommon()
 
-// Find the #Index element (numbered from 0) in a comma-delimited string.
-// The calling function must free any memory allocated.
-// Returns the found element or NULL.
-//
-// DA-TAG: Updated for 'ABC, 123, XYZ, 456'
-//         That is, ignores leading spaces
-//         'Internal' spaces not affected
-//         'A B C, XYZ' = 'A B C' & 'XYZ'
+/**
+** Finds the Nth non-empty element in a comma-delimited string,
+** respecting quotes and trimming surrounding whitespace.
+**
+** @param[in] InString  The comma-delimited string to parse.
+** @param[in] Index     The 0-based index of the valid element to retrieve.
+**
+** @return A pointer to the allocated string element, or NULL.
+**         The caller is responsible for freeing the returned memory.
+**/
 CHAR16 * FindCommaDelimited (
     IN CHAR16 *InString,
     IN UINTN   Index
 ) {
-    UINTN     CurPos;
-    UINTN     StartPos;
-    UINTN     InLength;
-    BOOLEAN   Found;
-    BOOLEAN   LeadingSpace;
-    CHAR16   *FoundString;
-
+    UINTN      CurPos;
+    UINTN      EndPos;
+    UINTN      StartPos;
+    UINTN      InLength;
+    UINTN      ElemIndex;
+    BOOLEAN    HasContent;
+    BOOLEAN    InQuotes;
+    BOOLEAN    Found;
+    CHAR16    *FoundString;
 
     if (InString == NULL) {
         return NULL;
     }
 
-    StartPos = CurPos = 0;
-    InLength = StrLen (InString);
+    CurPos     = 0;
+    StartPos   = 0;
+    EndPos     = 0;
+    ElemIndex  = 0;
+    InQuotes   = FALSE;
+    HasContent = FALSE;
+    Found      = FALSE;
 
-    // After while() loop, StartPos marks start of item #Index
-    while (Index > 0 && CurPos < InLength) {
-        if (InString[CurPos] == L',') {
-            Index--;
-            StartPos = CurPos + 1;
+    while (InString[CurPos] != L'\0') {
+        if (InString[CurPos] == L'"') {
+            /*  Handle Quotes: Toggle state and mark as valid content */
+            if (!HasContent) {
+                StartPos = CurPos;
+            }
+            InQuotes = !InQuotes;
+            HasContent = TRUE;
+            EndPos = CurPos + 1; // Mark current end (just after the quote)
         }
-
+        else if (InString[CurPos] == L',' && !InQuotes) {
+            /* Handle Delimiter: Only if not within quoted block */
+            if (HasContent) {
+                if (ElemIndex == Index) {
+                    Found = TRUE;
+                    break;
+                }
+                ElemIndex++;
+                HasContent = FALSE;
+            }
+        }
+        else {
+            /* Handle Text/Whitespace */
+            // If within quotes, everything (including spaces) is content.
+            // If outside, only non-space characters trigger "content".
+            if (InQuotes || InString[CurPos] != L' ') {
+                if (!HasContent) {
+                    StartPos = CurPos;
+                }
+                HasContent = TRUE;
+                EndPos = CurPos + 1; // Mark current end (excluding trailing spaces)
+            }
+        }
         CurPos++;
     } // while
 
-    Found        = FALSE;
-    LeadingSpace =  TRUE;
-
-    // After while() loop, CurPos is one past the end of the element
-    while (!Found && CurPos < InLength) {
-        if (InString[CurPos] == L',') {
-            Found = TRUE;
-        }
-        else {
-            // Move Current Position
-            CurPos++;
-
-            if (LeadingSpace) {
-                if (InString[CurPos] == L' ') {
-                    // Ignore Leading Space ... Move Start Position
-                    ++StartPos;
-                }
-                else {
-                    // No Leading Space
-                    LeadingSpace = FALSE;
-                }
-            }
-        }
-    } // while
-
-    FoundString = NULL;
-    if (Index == 0)  {
-        FoundString = StrDuplicate (
-            &InString[StartPos]
-        );
+    // Check final segment if InString does not end with a comma
+    if (!Found     &&
+        HasContent &&
+        ElemIndex  == Index
+    ) {
+        Found = TRUE;
     }
 
-    if (FoundString != NULL) {
-        FoundString[CurPos - StartPos] = 0;
+    // Extract substring between StartPos and EndPos (if found)
+    FoundString = NULL;
+    if (Found) {
+        InLength = EndPos - StartPos;
+        // Allocate space for substring + null terminator
+        FoundString = AllocateZeroPool (
+            (InLength + 1) * sizeof (CHAR16)
+        );
+        if (FoundString != NULL) {
+            REFIT_CALL_3_WRAPPER(
+                gBS->CopyMem, FoundString,
+                &InString[StartPos], InLength * sizeof (CHAR16)
+            );
+            FoundString[InLength] = L'\0';
+        }
     }
 
     return FoundString;
-} // CHAR16 * FindCommaDelimited()
+}
 
-// Delete an element from a list of comma separated values.
-// Modifies the *List string, but not the *ToDelete string.
-// Returns TRUE if the item was deleted, FALSE otherwise.
-BOOLEAN DeleteItemFromCsvList (
-    CHAR16  *ToDelete,
-    CHAR16 **List
+/**
+** Counts the number of elements in a comma-delimited string.
+** Respects quotes and ignores any empty whitespace segments.
+**
+** @param[in] InString  The comma-delimited string to parse.
+**
+** @return The number of elements found.
+** Returns 0 if InString is NULL or empty.
+**/
+UINTN CountListItems (
+    IN CHAR16 *InString
 ) {
-    CHAR16  *Found;
-    CHAR16  *Comma;
-    CHAR16  *PartA;   // Do *NOT* Free
-    CHAR16  *PartB;   // Do *NOT* Free
+    UINTN      Count;
+    UINTN      Index;
+    BOOLEAN    InQuotes;
+    BOOLEAN    HasContent;
+
+    if (InString == NULL || InString[0] == L'\0') {
+        return 0;
+    }
+
+    Count      =     0;
+    Index      =     0;
+    InQuotes   = FALSE;
+    HasContent = FALSE;
+
+    while (InString[Index] != L'\0') {
+        if (InString[Index] == L'"') {
+            // Handle Quotes
+            InQuotes = !InQuotes;
+            HasContent = TRUE; // All quoted strings counted (including empty)
+        }
+        else if (InString[Index] == L',' && !InQuotes) {
+            // Handle Delimiters (if outside quotes)
+            if (HasContent) {
+                Count++;
+                HasContent = FALSE;
+            }
+        }
+        else {
+            // If inside quotes, everything is content.
+            // If outside, only non-space characters "start" an element.
+            if (InQuotes || InString[Index] != L' ') {
+                HasContent = TRUE;
+            }
+        }
+
+        Index++;
+    } // while
+
+    // Count final element if string does not end in a comma
+    if (HasContent) {
+        Count++;
+    }
+
+    return Count;
+} // UINTN CountListItems()
+
+/**
+** Delete an element from a list of comma separated values.
+** Modifies the *List string but not the *ToDelete string.
+**
+** Returns:
+** - TRUE if the item was deleted, or FALSE.
+**/
+BOOLEAN DeleteItemFromCsvList (
+    IN CHAR16  *ToDelete,
+    IN CHAR16 **List
+) {
     CHAR16  *TmpStr;
-    BOOLEAN  Retval;
+    CHAR16  *PartA;
+    CHAR16  *PartB;   // Do *NOT* Free (mid-buf pointer into *List)
+    CHAR16  *Found;   // Do *NOT* Free (mid-buf pointer into *List)
+    CHAR16  *Comma;   // Do *NOT* Free (mid-buf pointer into Found)
 
 
     if (ToDelete == NULL || *List == NULL) {
         return FALSE;
     }
 
-    Retval = FALSE;
     Found = MyStrStr (*List, ToDelete);
-    if (Found != NULL) {
-        Comma = MyStrStr (Found, L",");
-        if (Comma == NULL) {
-            // 'Found' is final element
-            if (Found == *List) {
-                // 'Found' is ONLY element
-                *List[0] = L'\0';
-            }
-            else {
-                // Delete the comma preceding 'Found'.
-                Found--;
-                Found[0] = L'\0';
-            }
+    if (Found == NULL) return FALSE;
+
+    Comma = MyStrStr (Found, L",");
+    if (Comma == NULL) {
+        // 'Found' is FINAL element.
+        if (Found == *List) {
+            // 'Found' is ONLY element.
+            *List[0] = L'\0';
         }
         else {
-            // 'Found' is NOT the final element
-            TmpStr = PoolPrint (L",%s", ToDelete);
-            PartA = GetSubStrBefore (
-                TmpStr, *List
-            );
-            if (PartA == *List) {
-                PartA = GetSubStrBefore (
-                    ToDelete, *List
-                );
-                if (MyStriCmp (PartA, *List)) {
-                    PartA = NULL;
-                }
-            }
-            MY_FREE_POOL(TmpStr);
-
-            TmpStr = PoolPrint (L"%s,", ToDelete);
-            PartB = GetSubStrAfter (
-                TmpStr, *List
-            );
-            if (PartB == *List) {
-                PartB = GetSubStrAfter (
-                    ToDelete, *List
-                );
-                if (MyStriCmp (PartB, *List)) {
-                    PartB = NULL;
-                }
-            }
-            MY_FREE_POOL(TmpStr);
-
-            if (PartA != NULL || PartB != NULL) {
-                MY_FREE_POOL(*List);
-
-                if (PartA != NULL && PartB != NULL) {
-                    *List = PoolPrint (
-                        L"%s,%s",
-                        PartA, PartB
-                    );
-                }
-                else if (PartA != NULL) {
-                    *List = StrDuplicate (
-                        PartA
-                    );
-                }
-                else {
-                    *List = StrDuplicate (
-                        PartB
-                    );
-                }
-            }
+            // Delete comma preceding 'Found'.
+            Found--;
+            Found[0] = L'\0';
         }
 
-        Retval = TRUE;
+        return TRUE;
     }
 
-    return Retval;
+    // 'Found' IS NOT final element.
+    TmpStr = PoolPrint (L",%s", ToDelete);
+    PartA = GetSubStrBefore (
+        TmpStr, *List
+    );
+    if (MyStriCmp (PartA, *List)) {
+        // Delimiter was NOT found.
+        // Search for alt delimiter.
+        // Set to NULL if not found.
+        PartA = GetSubStrBefore (
+            ToDelete, *List
+        );
+        if (MyStriCmp (PartA, *List)) {
+            PartA = NULL;
+        }
+    }
+    MY_FREE_POOL(TmpStr);
+
+    TmpStr = PoolPrint (L"%s,", ToDelete);
+    PartB = GetSubStrAfter (
+        TmpStr, *List
+    );
+    if (MyStriCmp (PartB, *List)) {
+        // Delimiter was NOT found.
+        // Search for alt delimiter.
+        // Set to NULL if not found.
+        PartB = GetSubStrAfter (
+            ToDelete, *List
+        );
+        if (MyStriCmp (PartB, *List)) {
+            PartB = NULL;
+        }
+    }
+    MY_FREE_POOL(TmpStr);
+
+    if (PartA == NULL && PartB == NULL) {
+        // Should not happen.
+        // Treat as removed.
+        return TRUE;
+    }
+
+    MY_FREE_POOL(*List);
+    if (PartA != NULL && PartB != NULL) {
+        *List = PoolPrint (
+            L"%s,%s",
+            PartA, PartB
+        );
+    }
+    else if (PartA != NULL) {
+        *List = StrDuplicate (
+            PartA
+        );
+    }
+    else {
+        *List = StrDuplicate (
+            PartB
+        );
+    }
+    MY_FREE_POOL(PartA);
+
+    return TRUE;
 } // BOOLEAN DeleteItemFromCsvList()
 
-// Replaced by IsListItem.
-// Kept for upstream compatibility.
+/**
+** Replaced by IsListItem.
+** Kept for upstream compatibility.
+**/
 BOOLEAN IsIn (
     IN CHAR16 *SmallString,
     IN CHAR16 *List
@@ -1551,8 +1705,10 @@ BOOLEAN IsIn (
     );
 } // BOOLEAN IsIn()
 
-// Replaced by IsListItemSubstringIn.
-// Kept for upstream compatibility.
+/**
+** Replaced by IsListItemSubstringIn.
+** Kept for upstream compatibility.
+**/
 BOOLEAN IsInSubstring (
     IN CHAR16 *BigString,
     IN CHAR16 *List
@@ -1566,8 +1722,10 @@ BOOLEAN IsInSubstring (
     );
 } // BOOLEAN IsInSubstring()
 
-// Returns TRUE if TestString matches a pattern in the comma-delimited List,
-// FALSE otherwise.
+/**
+** Returns:
+** - TRUE if TestString matches a pattern in the comma-delimited List, or FALSE.
+**/
 BOOLEAN IsListMatch (
     IN CHAR16 *TestString,
     IN CHAR16 *List
@@ -1598,8 +1756,13 @@ BOOLEAN IsListMatch (
    return Found;
 } // BOOLEAN IsListMatch()
 
-// Returns TRUE if SmallString is an element in the comma-delimited List,
-// FALSE otherwise. Performs comparison case-insensitively.
+/**
+** Checks if SmallString is an element in the comma-delimited List.
+** Performs comparison case-insensitively.
+**
+** Returns:
+** - TRUE if found, or FALSE.
+**/
 BOOLEAN IsListItem (
     IN CHAR16 *SmallString,
     IN CHAR16 *List
@@ -1631,8 +1794,13 @@ BOOLEAN IsListItem (
    return Found;
 } // BOOLEAN IsListItem()
 
-// Returns TRUE if any element of List can be found as a substring of
-// BigString or FALSE. Performs comparisons case-insensitively.
+/**
+** Checks if any element of List can be found as a substring of BigString.
+** Performs comparison case-insensitively.
+**
+** Returns:
+** - TRUE if found, or FALSE.
+**/
 BOOLEAN IsListItemSubstringIn (
     IN CHAR16 *BigString,
     IN CHAR16 *List
@@ -1675,9 +1843,13 @@ BOOLEAN IsListItemSubstringIn (
     return Found;
 } // BOOLEAN IsListItemSubstringIn()
 
-// Replace *SearchString in **MainString with *ReplString -- but if *SearchString
-// is preceded by "%", instead remove that character.
-// Returns TRUE if replacement was done or FALSE.
+/**
+** Replaces SearchString in MainString with ReplString, but if
+** SearchString is preceded by "%", removes that character instead.
+**
+** Returns:
+** - TRUE if replacement was done, or FALSE.
+**/
 BOOLEAN ReplaceSubstring (
     IN OUT CHAR16 **MainString,
     IN     CHAR16  *SearchString,
@@ -1762,51 +1934,74 @@ BOOLEAN ReplaceSubstring (
     return TRUE;
 } // BOOLEAN ReplaceSubstring()
 
-// Returns TRUE if *Input contains nothing but valid hexadecimal characters,
-// FALSE otherwise.
-// NB: Exclude leading "0x" from input!
+/**
+** Confirms 'Input' only contains valid hex.
+** Leading '0x' permitted
+**
+** Returns:
+** - TRUE if valid, or FALSE.
+**/
 BOOLEAN IsValidHex (
-    CHAR16 *Input
+    IN CHAR16 *Input
 ) {
-    UINTN   i;
-    BOOLEAN IsHex;
+    UINTN         i;
+    BOOLEAN GoodHex;
 
+
+    if (Input == NULL || Input[0] == L'\0') {
+        return FALSE;
+    }
+
+    if (MyStriCmp (Input, L"0x")) {
+        return FALSE;
+    }
 
     i = 0;
-    IsHex = TRUE;
-    while (IsHex && (Input[i] != L'\0')) {
-        if (
-            !(
-                ((Input[i] >= L'0') && (Input[i] <= L'9')) ||
-                ((Input[i] >= L'A') && (Input[i] <= L'F')) ||
-                ((Input[i] >= L'a') && (Input[i] <= L'f'))
-            )
+    GoodHex = TRUE;
+    while (GoodHex &&  Input[i] != L'\0') {
+        if (i == 0 &&  Input[i] == L'0') { i++; continue; }
+        if (i == 1 && (Input[i] == L'x' || Input[i] == L'X')) {
+            if (Input[0] != L'0') {
+                GoodHex = FALSE;
+                break;
+            }
+
+            i++;
+            continue;
+        }
+
+        if ((Input[i] < L'0' || Input[i] > L'9') &&
+            (Input[i] < L'A' || Input[i] > L'F') &&
+            (Input[i] < L'a' || Input[i] > L'f')
         ) {
-            IsHex = FALSE;
+            GoodHex = FALSE;
+            break;
         }
 
         i++;
     } // while
 
-    return IsHex;
+    return GoodHex;
 } // BOOLEAN IsValidHex()
 
-// Converts consecutive characters in the input string into a
-// number, interpreting the string as a hexadecimal number, starting
-// at the specified position and continuing for the specified number
-// of characters or until the end of the string, whichever is first.
-// NumChars must be between 1 and 16 (Excluding the "0x" notation).
-// The "0x" notation is optional in OurStr (makes no difference).
-// Invalid characters are handled without 'fouling' the result.
+/**
+** Converts consecutive characters in the input string into a
+** number, interpreting the string as a hexadecimal number, starting
+** at the specified position and continuing for the specified number
+** of characters or until the end of the string, whichever is first.
+** NumChars must be between 1 and 16 (Excluding the "0x" notation).
+** The "0x" notation is optional in OurStr (makes no difference).
+** Invalid characters are handled without 'fouling' the result.
+**/
 UINT64 StrToHex (
-    CHAR16 *OurStr,
-    UINTN   Pos,
-    UINTN   NumChars
+    IN CHAR16 *OurStr,
+    IN UINTN   Pos,
+    IN UINTN   NumChars
 ) {
     UINTN   InputLength;
     UINTN   NumDone;
     UINT64  retval;
-    CHAR16 *Input;   // Do *NOT* Free
+    CHAR16 *Input;       // Do *NOT* Free
     CHAR16  a;
 
 
@@ -1853,12 +2048,14 @@ UINT64 StrToHex (
     return retval;
 } // StrToHex()
 
-// Returns TRUE if UnknownString can be interpreted as a GUID or FALSE.
-// Note that the input string must have no extraneous spaces and must be
-// conventionally formatted as a 36-character GUID, complete with dashes in
-// appropriate places.
+/**
+** Returns TRUE if UnknownString can be interpreted as a GUID, or FALSE.
+** Note that the input string must have no extraneous spaces and must be
+** conventionally formatted as a 36-character GUID, complete with dashes in
+** appropriate places.
+**/
 BOOLEAN IsGuid (
-    CHAR16 *UnknownString
+    IN CHAR16 *UnknownString
 ) {
     UINTN   Length, i;
     CHAR16  a;
@@ -1903,8 +2100,10 @@ BOOLEAN IsGuid (
     return retval;
 } // BOOLEAN IsGuid()
 
-// Return the GUID as a string, suitable for display to the user.
-// The calling function must free any allocated memory.
+/**
+** Return the GUID as a string, suitable for display to the user.
+** The calling function must free any allocated memory.
+**/
 CHAR16 * GuidAsString (
     EFI_GUID *GuidData
 ) {
@@ -1942,6 +2141,9 @@ CHAR16 * GuidAsString (
     return TheString;
 } // CHAR16 * GuidAsString()
 
+/**
+**
+**/
 EFI_GUID StringAsGuid (
     CHAR16 *InString
 ) {
@@ -1967,7 +2169,9 @@ EFI_GUID StringAsGuid (
     return Guid;
 } // EFI_GUID StringAsGuid()
 
-// Delete the STRING_LIST pointed to by *StringList.
+/**
+** Delete the STRING_LIST pointed to by *StringList.
+**/
 VOID DeleteStringList (
     STRING_LIST *StringList
 ) {
@@ -1987,12 +2191,13 @@ VOID DeleteStringList (
     }
 } // VOID DeleteStringList()
 
-/** Convert null terminated ascii string to unicode.
-
-  @param[in]  String1  A pointer to the ascii string to convert to unicode.
-  @param[in]  Length   Length or 0 to calculate the length of the ascii string to convert.
-
-  @retval  A pointer to the converted unicode string allocated from pool.
+/**
+** Convert null terminated ascii string to unicode.
+**
+** @param[in]  String1  A pointer to the ascii string to convert to unicode.
+** @param[in]  Length   Length or 0 to calculate the length of the ascii string to convert.
+**
+** @retval  A pointer to the converted unicode string allocated from pool.
 **/
 CHAR16 * MyAsciiStrCopyToUnicode (
     IN  CHAR8   *AsciiString,
@@ -2025,6 +2230,9 @@ CHAR16 * MyAsciiStrCopyToUnicode (
     return UnicodeString;
 } // CHAR16 * MyAsciiStrCopyToUnicode()
 
+/**
+**
+**/
 VOID MyUnicodeFilterString (
     IN OUT CHAR16   *String,
     IN     BOOLEAN   SingleLine

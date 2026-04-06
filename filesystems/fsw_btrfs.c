@@ -234,7 +234,7 @@ fsw_status_t fsw_btrfs_read_superblock (
 
     #if FSW_DEBUG_LEVEL >= 3
     if (err == FSW_SUCCESS) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_read_superblock ... UUID: %08x-%08x-%08x-%08x - device id: %d\n"
             ),
@@ -417,7 +417,7 @@ fsw_status_t fsw_btrfs_lower_bound (
         return FSW_VOLUME_CORRUPTED;
     }
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_BTRFS: fsw_btrfs_lower_bound ... retrieving %llx %x %llx\n"
         ),
@@ -453,7 +453,7 @@ reiter:
                 );
                 if (err) return err;
 
-                FSW_MSG_LEVEL_3((
+                FSW_MSG_L03((
                     FSW_MSG_STR(
                         "FSW_BTRFS: fsw_btrfs_lower_bound ... internal node %llx %x %llx\n"
                     ),
@@ -519,7 +519,7 @@ reiter:
                     DEPTH_2_CACHE(rdepth)
                 );
                 if (err) {
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_BTRFS: fsw_btrfs_lower_bound ... Failed to Read Logical Nodes\n"
                         )
@@ -528,7 +528,7 @@ reiter:
                     return err;
                 }
 
-                FSW_MSG_LEVEL_3((
+                FSW_MSG_L03((
                     FSW_MSG_STR(
                         "FSW_BTRFS: fsw_btrfs_lower_bound ... Leaf %llx %x %llx\n"
                     ),
@@ -607,7 +607,7 @@ int fsw_btrfs_add_multi_device (
 
     for (i = 0; i < master->n_devices_attached; i++) {
         if (sb->this_device.device_id == master->devices_attached[i].id) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_add_multi_device ... Returned FSW_UNSUPPORTED on Device: %d\n"
                 ), sb->this_device.device_id
@@ -619,7 +619,7 @@ int fsw_btrfs_add_multi_device (
 
     slave = dsk_btrfs_clone_dummy_volume (slave);
     if (slave == NULL) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_add_multi_device ... Returned FSW_OUT_OF_MEMORY\n"
             )
@@ -638,7 +638,7 @@ int fsw_btrfs_add_multi_device (
     master->devices_attached[i].dev = slave;
     master->n_devices_attached++;
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_BTRFS: fsw_btrfs_add_multi_device ... Found Device: %d\n"
         ), sb->this_device.device_id
@@ -665,7 +665,7 @@ int fsw_btrfs_scan_disks_hook (
         slave, &sb
     );
     if (err) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_scan_disks_hook ... Could Not Read Superblock\n"
             )
@@ -714,7 +714,7 @@ struct fsw_volume * fsw_btrfs_find_device (
         }
     }
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_BTRFS: fsw_btrfs_find_device ... Device '%d' Not Found\n"
         ), id
@@ -979,7 +979,7 @@ chunk_found:
 
             // gnu-efi has no DivU64x64Remainder, limited to DivU64x32
             uint64_t type_check = chunk_type & ~GRUB_BTRFS_CHUNK_TYPE_BITS_DONTCARE;
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_read_logical ... btrfs chunk 0x%llx+0x%llx %d stripes (%d substripes) of %llx\n"
                 ),
@@ -998,7 +998,7 @@ chunk_found:
                     stripen = DivU64x32(off, (uint32_t)stripe_length, &stripe_offset);
                     csize = (stripen + 1) * stripe_length - off;
 
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_BTRFS: fsw_btrfs_read_logical ... Line#: %d chunk_found single csize==%d\n"
                         ), __LINE__, csize
@@ -1016,7 +1016,7 @@ chunk_found:
                     csize = chunk_len - off;
                     redundancy += 1;
 
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_BTRFS: fsw_btrfs_read_logical ... Line#: %d chunk_found dup/raid1 off==%llx csize==%d redundancy==%d\n"
                         ), __LINE__, (unsigned long long) stripe_offset, csize, redundancy
@@ -1034,7 +1034,7 @@ chunk_found:
                     stripe_offset = low + stripe_length * high;
                     csize         = stripe_length - low;
 
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_BTRFS: fsw_btrfs_read_logical ... Line#: %d chunk_found raid0 csize==%d\n"
                         ), __LINE__, csize
@@ -1061,7 +1061,7 @@ chunk_found:
                     stripe_offset = low + stripe_length * high;
                     csize         =       stripe_length - low;
 
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_BTRFS: fsw_btrfs_read_logical ... Line#: %d chunk_found raid01 csize==%d\n"
                         ), __LINE__, csize
@@ -1093,7 +1093,7 @@ chunk_found:
                     stripe_offset = low + stripe_length * high;
                     csize = stripe_length - low;
 
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_BTRFS: fsw_btrfs_read_logical ... Line#: %d chunk_found raid01 csize==%d\n"
                         ), __LINE__, csize
@@ -1103,7 +1103,7 @@ chunk_found:
                 }
 
                 default: {
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_BTRFS: fsw_btrfs_read_logical ... Unsupported RAID\n"
                         )
@@ -1131,7 +1131,7 @@ begin_direct_read:
 
                     paddr = FSW_U64_LE_SWAP(stripe->offset) + stripe_offset;
 
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_BTRFS: fsw_btrfs_read_logical ... chunk 0x%llx+0x%llx (%d stripes (%d substripes) of %llx) stripe %llx maps to 0x%llx\n"
                         ),
@@ -1144,7 +1144,7 @@ begin_direct_read:
                         (unsigned long long) stripe->offset
                     ));
 
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_BTRFS: fsw_btrfs_read_logical ... reading paddr 0x%llx for laddr 0x%llx\n"
                         ), (unsigned long long) paddr, (unsigned long long) addr
@@ -1180,7 +1180,7 @@ begin_direct_read:
                         paddr++;
                     }
 
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_BTRFS: fsw_btrfs_read_logical ... err %d, csize %d, got %d\n"
                         ), err, csize, n
@@ -1438,7 +1438,7 @@ begin_direct_read:
                     n += used_bytes;
                     stripe_offset++;
 
-                    FSW_MSG_LEVEL_3((
+                    FSW_MSG_L03((
                         FSW_MSG_STR(
                             "FSW_BTRFS: fsw_btrfs_read_logical ... err %d, csize %d, got %d\n"
                         ), err, csize, n
@@ -1461,7 +1461,7 @@ begin_direct_read:
     return FSW_SUCCESS;
 
 volume_corrupted:
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_BTRFS: fsw_btrfs_read_logical ... Volume Corrupted\n"
         )
@@ -1469,7 +1469,7 @@ volume_corrupted:
     err = FSW_VOLUME_CORRUPTED;
 
 io_error:
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_BTRFS: fsw_btrfs_read_logical ... Return on Error\n"
         )
@@ -1570,7 +1570,7 @@ fsw_status_t fsw_btrfs_volume_mount (
         vol, sblock.root_dir_objectid
     );
     if (err) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_volume_mount ... Root not Found!\n"
             )
@@ -1866,7 +1866,7 @@ fsw_status_t fsw_btrfs_log_inflate (
     #if FSW_DEBUG_LEVEL >= 2
     switch (vol->extent->compression) {
         case GRUB_BTRFS_COMPRESSION_NONE: {
-            FSW_MSG_LEVEL_2((
+            FSW_MSG_L02((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_log_inflate ... Compression Type:- 'None'\n"
                 )
@@ -1876,7 +1876,7 @@ fsw_status_t fsw_btrfs_log_inflate (
         }   // Type 0
 
         case GRUB_BTRFS_COMPRESSION_ZLIB: {
-            FSW_MSG_LEVEL_2((
+            FSW_MSG_L02((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_log_inflate ... Compression Type:- 'ZLIB'\n"
                 )
@@ -1886,7 +1886,7 @@ fsw_status_t fsw_btrfs_log_inflate (
         }   // Type 1
 
         case GRUB_BTRFS_COMPRESSION_LZO: {
-            FSW_MSG_LEVEL_2((
+            FSW_MSG_L02((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_log_inflate ... Compression Type:- 'LZO'\n"
                 )
@@ -1896,7 +1896,7 @@ fsw_status_t fsw_btrfs_log_inflate (
         }   // Type 2
 
         case GRUB_BTRFS_COMPRESSION_ZSTD: {
-            FSW_MSG_LEVEL_2((
+            FSW_MSG_L02((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_log_inflate ... Compression Type:- 'ZSTD'\n"
                 )
@@ -1906,7 +1906,7 @@ fsw_status_t fsw_btrfs_log_inflate (
         }   // Type 3
 
         default: {
-            FSW_MSG_LEVEL_2((
+            FSW_MSG_L02((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_log_inflate ... Compression Type:- 'Other'\n"
                 )
@@ -1920,7 +1920,7 @@ fsw_status_t fsw_btrfs_log_inflate (
     }
 
     if (ret == (fsw_ssize_t) csize) {
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_log_inflate ... Decompression Status:- 'Success' (Tag_%02u)\n"
             ), (unsigned) log_flag
@@ -1931,7 +1931,7 @@ fsw_status_t fsw_btrfs_log_inflate (
 
     #if FSW_DEBUG_LEVEL >= 2
     if (ret < 0) {
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_log_inflate ... Decompression Status:- Bad Input (Type '%d' Error ... Tag_%02u)\n"
             ), ret, (unsigned) log_flag
@@ -1939,7 +1939,7 @@ fsw_status_t fsw_btrfs_log_inflate (
     }
     #endif
 
-    FSW_MSG_LEVEL_1((
+    FSW_MSG_L01((
         FSW_MSG_STR(
             "FSW_BTRFS: fsw_btrfs_log_inflate ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (Tag_%02u)\n"
         ), (unsigned) log_flag
@@ -1985,7 +1985,7 @@ fsw_status_t fsw_btrfs_get_extent (
 
     // Slave Device ... Exit
     if (!vol->is_master) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_NOT_FOUND' (Slave Device)\n"
             )
@@ -2023,7 +2023,7 @@ fsw_status_t fsw_btrfs_get_extent (
             &elemaddr, &elemsize, NULL, 0
         );
         if (err) {
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' ('fsw_btrfs_lower_bound' Failure ... Tag_01)\n"
                 )
@@ -2033,7 +2033,7 @@ fsw_status_t fsw_btrfs_get_extent (
         }
 
         if (key_out.object_id != ino) {
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (key_out.object_id != ino)\n"
                 )
@@ -2043,7 +2043,7 @@ fsw_status_t fsw_btrfs_get_extent (
         }
 
         if (key_out.type != GRUB_BTRFS_ITEM_TYPE_EXTENT_ITEM) {
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (key_out.type != TYPE_EXTENT_ITEM)\n"
                 )
@@ -2056,7 +2056,7 @@ fsw_status_t fsw_btrfs_get_extent (
             struct btrfs_extent_data, inl
         );
         if (elemsize < inl_need) {
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (elemsize < inline header)\n"
                 )
@@ -2067,7 +2067,7 @@ fsw_status_t fsw_btrfs_get_extent (
 
         vol->extent = AllocatePool (elemsize);
         if (!vol->extent) {
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_OUT_OF_MEMORY' ('vol->extent' Memory Allocation Failure)\n"
                 )
@@ -2080,7 +2080,7 @@ fsw_status_t fsw_btrfs_get_extent (
             key_out.offset
         );
         if (pos < vol->extstart) {
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (Cache Corruption ... Tag_01)\n"
                 )
@@ -2099,7 +2099,7 @@ fsw_status_t fsw_btrfs_get_extent (
             elemsize, 0, 1
         );
         if (err) {
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status '%d' Error ('fsw_btrfs_read_logical' Failure ... Tag_01)\n"
                 ), err
@@ -2111,7 +2111,7 @@ fsw_status_t fsw_btrfs_get_extent (
         if (vol->extent->type != GRUB_BTRFS_EXTENT_INLINE &&
             vol->extent->type != GRUB_BTRFS_EXTENT_REGULAR
         ) {
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_UNSUPPORTED' (Bad Extent Type)\n"
                 )
@@ -2142,7 +2142,7 @@ fsw_status_t fsw_btrfs_get_extent (
             vol->extent->size
         );
 
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_get_extent ... elemsize==%llu filled_present==%u\n"
             ),
@@ -2150,7 +2150,7 @@ fsw_status_t fsw_btrfs_get_extent (
             (unsigned) filled_present
         ));
 
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_get_extent ... extsize_physical==%llu extsize_filled==%llu\n"
             ),
@@ -2159,7 +2159,7 @@ fsw_status_t fsw_btrfs_get_extent (
         ));
 
         if (vol->extent->type == GRUB_BTRFS_EXTENT_INLINE) {
-            FSW_MSG_LEVEL_2((
+            FSW_MSG_L02((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_get_extent ... Extent Type:- 'Inline'\n"
                 )
@@ -2168,7 +2168,7 @@ fsw_status_t fsw_btrfs_get_extent (
             UseSizePhys = 1;
 
             if (pos != vol->extstart) {
-                FSW_MSG_LEVEL_2((
+                FSW_MSG_L02((
                     FSW_MSG_STR(
                         "FSW_BTRFS: fsw_btrfs_get_extent ... Reset 'pos' from %llu to %llu\n"
                     ),
@@ -2181,7 +2181,7 @@ fsw_status_t fsw_btrfs_get_extent (
         }
         else {
             // GRUB_BTRFS_EXTENT_REGULAR
-            FSW_MSG_LEVEL_2((
+            FSW_MSG_L02((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_get_extent ... Extent Type:- 'Regular'\n"
                 )
@@ -2197,7 +2197,7 @@ fsw_status_t fsw_btrfs_get_extent (
                     UseSizePhys = 1;
                 }
                 else {
-                    FSW_MSG_LEVEL_2((
+                    FSW_MSG_L02((
                         FSW_MSG_STR(
                             "FSW_BTRFS: fsw_btrfs_get_extent ... Use Size:- 'Filled'\n"
                         )
@@ -2208,14 +2208,14 @@ fsw_status_t fsw_btrfs_get_extent (
         }
 
         if (UseSizePhys) {
-            FSW_MSG_LEVEL_2((
+            FSW_MSG_L02((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_get_extent ... Use Size:- 'Physical'\n"
                 )
             ));
 
             if (extsize_physical > UINTN_MAX - vol->extstart) {
-                FSW_MSG_LEVEL_1((
+                FSW_MSG_L01((
                     FSW_MSG_STR(
                         "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (extsize_physical > Max)\n"
                     )
@@ -2227,7 +2227,7 @@ fsw_status_t fsw_btrfs_get_extent (
             vol->extend = vol->extstart + extsize_physical;
         }
 
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_get_extent ... extend==%llu extstart==%llu\n"
             ),
@@ -2237,7 +2237,7 @@ fsw_status_t fsw_btrfs_get_extent (
     }
 
     if (pos < vol->extstart) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (Cache Corruption ... Tag_02)\n"
             )
@@ -2247,7 +2247,7 @@ fsw_status_t fsw_btrfs_get_extent (
     }
 
     if (pos >= vol->extend) {
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_get_extent ... Chunk Type:- 'Void'\n"
             )
@@ -2257,7 +2257,7 @@ fsw_status_t fsw_btrfs_get_extent (
         if (no_cache) {
             uint64_t swap_offset = FSW_U64_LE_SWAP(key_out.offset);
 
-            FSW_MSG_LEVEL_2((
+            FSW_MSG_L02((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_get_extent ... ('%llu'>'%llu') && ('%llu'=='%llu')??\n"
                 ),
@@ -2276,7 +2276,7 @@ fsw_status_t fsw_btrfs_get_extent (
 
                 if (extent->log_count < 1) extent->log_count = 1;
                 if (extent->log_count > 1) {
-                    FSW_MSG_LEVEL_2((
+                    FSW_MSG_L02((
                         FSW_MSG_STR(
                             "FSW_BTRFS: fsw_btrfs_get_extent ... Aggregated %llu Void Blocks\n"
                         ), (unsigned long long) extent->log_count
@@ -2294,7 +2294,7 @@ fsw_status_t fsw_btrfs_get_extent (
 
     csize = vol->extend - pos;
     if (csize > (UINTN_MAX >> vol->sectorshift)) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (Invalid Chunk Size)\n"
             )
@@ -2304,7 +2304,7 @@ fsw_status_t fsw_btrfs_get_extent (
     }
 
     if (vol->extent->encryption) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_UNSUPPORTED' (Encrypted)\n"
             )
@@ -2314,7 +2314,7 @@ fsw_status_t fsw_btrfs_get_extent (
     }
 
     if (vol->extent->encoding) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_UNSUPPORTED' (Encoded)\n"
             )
@@ -2331,7 +2331,7 @@ fsw_status_t fsw_btrfs_get_extent (
             break;
 
         default: {
-            FSW_MSG_LEVEL_1((
+            FSW_MSG_L01((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_UNSUPPORTED' (Bad Compression Type ... Tag_01)\n"
                 )
@@ -2346,7 +2346,7 @@ fsw_status_t fsw_btrfs_get_extent (
 
     buf = AllocatePool (count << vol->sectorshift);
     if (!buf) {
-        FSW_MSG_LEVEL_1((
+        FSW_MSG_L01((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_OUT_OF_MEMORY' ('buf' Memory Allocation Failure)\n"
             )
@@ -2403,7 +2403,7 @@ fsw_status_t fsw_btrfs_get_extent (
             if (!vol->extent->laddr) break;
 
             if (vol->extent->compression > GRUB_BTRFS_COMPRESSION_MAX) {
-                FSW_MSG_LEVEL_1((
+                FSW_MSG_L01((
                     FSW_MSG_STR(
                         "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (Bad Compression Type ... Tag_02)\n"
                     )
@@ -2419,7 +2419,7 @@ fsw_status_t fsw_btrfs_get_extent (
             if (phys_off > UINTN_MAX -  phys_base ||
                 extoff   > UINTN_MAX - (phys_base + phys_off)
             ) {
-                FSW_MSG_LEVEL_1((
+                FSW_MSG_L01((
                     FSW_MSG_STR(
                         "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' ('Invalid Extent Offset)\n"
                     )
@@ -2445,7 +2445,7 @@ fsw_status_t fsw_btrfs_get_extent (
                     buf, csize, 0, 0
                 );
                 if (err) {
-                    FSW_MSG_LEVEL_1((
+                    FSW_MSG_L01((
                         FSW_MSG_STR(
                             "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status '%d' Error ('fsw_btrfs_read_logical' Failure ... Tag_02)\n"
                         ), err
@@ -2464,7 +2464,7 @@ fsw_status_t fsw_btrfs_get_extent (
 
             tmp = AllocatePool (zsize);
             if (!tmp) {
-                FSW_MSG_LEVEL_1((
+                FSW_MSG_L01((
                     FSW_MSG_STR(
                         "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_OUT_OF_MEMORY' ('tmp' Memory Allocation Failure)\n"
                     )
@@ -2480,7 +2480,7 @@ fsw_status_t fsw_btrfs_get_extent (
                 tmp, zsize, 0, 0
             );
             if (err) {
-                FSW_MSG_LEVEL_1((
+                FSW_MSG_L01((
                     FSW_MSG_STR(
                         "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' ('fsw_btrfs_read_logical' Failure ... Tag_03)\n"
                     )
@@ -2492,7 +2492,7 @@ fsw_status_t fsw_btrfs_get_extent (
             }
 
             if (extoff > UINTN_MAX - phys_off) {
-                FSW_MSG_LEVEL_1((
+                FSW_MSG_L01((
                     FSW_MSG_STR(
                         "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_VOLUME_CORRUPTED' (Path Offset Overflow)\n"
                     )
@@ -2537,7 +2537,7 @@ fsw_status_t fsw_btrfs_get_extent (
             );
         }
 
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_get_extent ... Chunk Type:- 'Buffer'\n"
             )
@@ -2546,14 +2546,14 @@ fsw_status_t fsw_btrfs_get_extent (
     else {
         extent->type = FSW_EXTENT_TYPE_SPARSE;
 
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_get_extent ... Chunk Type:- 'Sparse'\n"
             )
         ));
     }
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_BTRFS: fsw_btrfs_get_extent ... Leaving with Status: 'FSW_SUCCESS'\n"
         )
@@ -2587,6 +2587,11 @@ fsw_status_t fsw_btrfs_readlink (
     i = 0;
     do {
         struct fsw_extent extent;
+        extent.type       =    0;
+        extent.log_start  =    0;
+        extent.log_count  =    0;
+        extent.phys_start =    0;
+        extent.buffer     = NULL;
         status = fsw_btrfs_get_extent (
             volg, dnog, &extent
         );
@@ -2657,7 +2662,7 @@ fsw_status_t fsw_btrfs_lookup_dir_item (
         &elemaddr, &elemsize, NULL, 0
     );
     if (err) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_lookup_dir_item ... Returned 'FSW_NOT_FOUND' at Main Check 01\n"
             )
@@ -2667,7 +2672,7 @@ fsw_status_t fsw_btrfs_lookup_dir_item (
     }
 
     if (elemsize == 0) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_lookup_dir_item ... Returned 'FSW_NOT_FOUND' at Main Check 02 (Zero Element Size)\n"
             )
@@ -2677,7 +2682,7 @@ fsw_status_t fsw_btrfs_lookup_dir_item (
     }
 
     if (fsw_btrfs_key_cmp (&key, &key_out) != 0) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_lookup_dir_item ... Returned 'FSW_NOT_FOUND' at Main Check 03\n"
             )
@@ -2690,7 +2695,7 @@ fsw_status_t fsw_btrfs_lookup_dir_item (
     if (*direl_buf) FreePool(*direl_buf);
     *direl_buf = AllocatePool (allocated + 1);
     if (!*direl_buf) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_lookup_dir_item ... Returned 'FSW_OUT_OF_MEMORY' at Main Check 04\n"
             )
@@ -2704,7 +2709,7 @@ fsw_status_t fsw_btrfs_lookup_dir_item (
         elemsize, 0, 1
     );
     if (err) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_lookup_dir_item ... Returned with Error at Main Check 05 (Failed to Read Leaf Data)\n"
             )
@@ -2731,7 +2736,7 @@ fsw_status_t fsw_btrfs_lookup_dir_item (
         if (n == 0 ||
             entry_size > (size_t)((uint8_t *) *direl_buf - (uint8_t *)cdirel + elemsize)
         ) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_lookup_dir_item ... Returned 'FSW_NOT_FOUND' from Main Loop (Malformed/Overflow)\n"
                 )
@@ -2747,7 +2752,7 @@ fsw_status_t fsw_btrfs_lookup_dir_item (
                 lookup_name->size
             )
         ) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_lookup_dir_item ... Found Entry\n"
                 )
@@ -2758,7 +2763,7 @@ fsw_status_t fsw_btrfs_lookup_dir_item (
     } // for
 
     if ((uint8_t *)cdirel - (uint8_t *) *direl_buf >= (fsw_ssize_t)elemsize) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_lookup_dir_item ... Returned 'FSW_NOT_FOUND' at Main Check 06 (Invalid Entry Size)\n"
             )
@@ -2767,7 +2772,7 @@ fsw_status_t fsw_btrfs_lookup_dir_item (
         return FSW_NOT_FOUND;
     }
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_BTRFS: fsw_btrfs_lookup_dir_item ... Leaving with Status: FSW_SUCCESS\n"
         )
@@ -2831,7 +2836,7 @@ fsw_status_t fsw_btrfs_get_sub_dnode (
                 vol, &cdirel->key, &tree_id
             );
             if (err) {
-                FSW_MSG_LEVEL_3((
+                FSW_MSG_L03((
                     FSW_MSG_STR(
                         "FSW_BTRFS: fsw_btrfs_get_sub_dnode ... Exit Func with Err:- '%d'\n"
                     ), err
@@ -2856,7 +2861,7 @@ fsw_status_t fsw_btrfs_get_sub_dnode (
         }
 
         default: {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_get_sub_dnode ... Exit Func with FSW_VOLUME_CORRUPTED\n"
                 ), cdirel->key.type
@@ -3017,7 +3022,7 @@ fsw_status_t fsw_btrfs_dir_read (
 
     // Slave Device ... Exit
     if (!vol->is_master) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_dir_read ... Returned 'FSW_NOT_FOUND' at Main Check 01\n"
             )
@@ -3031,7 +3036,7 @@ fsw_status_t fsw_btrfs_dir_read (
     key_in.offset = shand->pos;
 
     if ((int64_t) key_in.offset == -1LL) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_dir_read ... Returned 'FSW_NOT_FOUND' at Main Check 02\n"
             )
@@ -3047,7 +3052,7 @@ fsw_status_t fsw_btrfs_dir_read (
         &elemaddr, &elemsize, &desc, 0
     );
     if (err) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_dir_read ... Returned '%llu' at Main Check 03\n"
             ), (unsigned long long) err
@@ -3057,7 +3062,7 @@ fsw_status_t fsw_btrfs_dir_read (
     }
 
     if (elemsize == 0) {
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_dir_read ... Returned 'FSW_NOT_FOUND' at Main Check 04 (Zero Element Size)\n"
             )
@@ -3066,7 +3071,7 @@ fsw_status_t fsw_btrfs_dir_read (
         return FSW_NOT_FOUND;
     }
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "FSW_BTRFS: fsw_btrfs_dir_read ... KEY IN==%llx:%x:%llx OUT==%llx:%x:%llx ELEM==%llu+%llu\n"
         ),
@@ -3087,7 +3092,7 @@ fsw_status_t fsw_btrfs_dir_read (
             &elemsize, &key_out
         );
         if (r <= 0) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_dir_read ... Hit 'goto out' at Main Check 05\n"
                 )
@@ -3096,7 +3101,7 @@ fsw_status_t fsw_btrfs_dir_read (
             goto out;
         }
 
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_dir_read ... NEXT OUT==%llx:%x:%llx ELEM==%llu+%llu\n"
             ),
@@ -3115,7 +3120,7 @@ fsw_status_t fsw_btrfs_dir_read (
             &elemsize, &key_out
         );
         if (r <= 0) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_dir_read ... Hit 'goto out' at Main Check 06\n"
                 )
@@ -3124,7 +3129,7 @@ fsw_status_t fsw_btrfs_dir_read (
             goto out;
         }
 
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_dir_read ... NEXT_2A OUT==%llx:%x:%llx ELEM==%llu+%llu\n"
             ),
@@ -3140,7 +3145,7 @@ fsw_status_t fsw_btrfs_dir_read (
         if (key_out.object_id != key_in.object_id ||
             key_out.type != GRUB_BTRFS_ITEM_TYPE_DIR_ITEM
         ) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_dir_read ... Break at Outer Loop Check 01 (Beyond Dir Item Range)\n"
                 )
@@ -3156,7 +3161,7 @@ fsw_status_t fsw_btrfs_dir_read (
             if (direl) FreePool(direl);
             direl = AllocatePool (allocated + 1);
             if (!direl) {
-                FSW_MSG_LEVEL_3((
+                FSW_MSG_L03((
                     FSW_MSG_STR(
                         "FSW_BTRFS: fsw_btrfs_dir_read ... Break at Outer Loop Check 02 (Out of Memory)\n"
                     )
@@ -3173,7 +3178,7 @@ fsw_status_t fsw_btrfs_dir_read (
             elemsize, 0, 1
         );
         if (err) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_dir_read ... Break at Outer Loop Check 03 (Failed to Read Leaf Data)\n"
                 )
@@ -3197,7 +3202,7 @@ fsw_status_t fsw_btrfs_dir_read (
             if (shand->pos != 0 &&
                 shand->pos == cdirel->key.offset
             ) {
-                FSW_MSG_LEVEL_3((
+                FSW_MSG_L03((
                     FSW_MSG_STR(
                         "FSW_BTRFS: fsw_btrfs_dir_read ... Skip Previously Returned Entry at LE Offset %llx\n"
                     ), (unsigned long long) cdirel->key.offset
@@ -3211,7 +3216,7 @@ fsw_status_t fsw_btrfs_dir_read (
             s.size = s.len = FSW_U16_LE_SWAP(cdirel->n);
             s.data = cdirel->name;
 
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_BTRFS: fsw_btrfs_dir_read ... ITEM KEY==%llx:%x:%llx TYPE==%llx, NAME_LEN==%u\n"
                 ),
@@ -3231,7 +3236,7 @@ fsw_status_t fsw_btrfs_dir_read (
 
                 shand->pos = key_out.offset;
 
-                FSW_MSG_LEVEL_3((
+                FSW_MSG_L03((
                     FSW_MSG_STR(
                         "FSW_BTRFS: fsw_btrfs_dir_read ... Exit Func with FSW_SUCCESS at Offset==%llx\n"
                     ), (unsigned long long) shand->pos
@@ -3247,7 +3252,7 @@ fsw_status_t fsw_btrfs_dir_read (
             &elemsize, &key_out
         );
 
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_dir_read ... NEXT_2B OUT==%llx:%x:%llx ELEM==%llu+%llu\n"
             ),
@@ -3263,7 +3268,7 @@ out:
     if (r < 0) {
         r *= -1;
 
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_dir_read ... Exit Func with Status '%d' Error\n"
             ), r
@@ -3272,7 +3277,7 @@ out:
     else {
         r = FSW_NOT_FOUND;
 
-        FSW_MSG_LEVEL_3((
+        FSW_MSG_L03((
             FSW_MSG_STR(
                 "FSW_BTRFS: fsw_btrfs_dir_read ... Exit Func with FSW_NOT_FOUND\n"
             )

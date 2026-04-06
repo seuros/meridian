@@ -47,15 +47,21 @@ typedef struct _string_list {
 
 // DA-TAG: See here for more if needed:
 //         https://www.virtualbox.org/svn/vbox/trunk/src/VBox/Devices/EFI/Firmware/MdePkg/Library/BaseLib/String.c
-BOOLEAN IsValidHex (CHAR16 *Input);
-BOOLEAN IsGuid (CHAR16 *UnknownString);
+BOOLEAN IsValidHex (IN CHAR16 *Input);
+BOOLEAN IsGuid (IN CHAR16 *UnknownString);
 BOOLEAN IsIn (IN CHAR16 *SmallString, IN CHAR16 *List);
-BOOLEAN TruncateString (CHAR16 *TheString, UINTN Limit);
-BOOLEAN LimitStringLength (CHAR16 *TheString, UINTN Limit);
 BOOLEAN IsListItem (IN CHAR16 *SmallString, IN CHAR16 *List);
 BOOLEAN IsListMatch (IN CHAR16 *TestString, IN CHAR16 *List);
 BOOLEAN IsInSubstring (IN CHAR16 *BigString, IN CHAR16 *List);
-BOOLEAN DeleteItemFromCsvList (CHAR16 *ToDelete, CHAR16 **List);
+BOOLEAN TruncateString (IN CHAR16 *TheString, IN UINTN Limit);
+BOOLEAN LimitStringLength (
+    IN CHAR16 *TheString,
+    IN UINTN    Limit
+);
+BOOLEAN DeleteItemFromCsvList (
+    IN CHAR16  *ToDelete,
+    IN CHAR16 **List
+);
 BOOLEAN FindSubStr (
     IN CHAR16 *RawString,
     IN CHAR16 *RawStrCharSet
@@ -147,11 +153,22 @@ VOID MyUnicodeFilterString (
     IN     BOOLEAN   SingleLine
 );
 
-CHAR8 * MyAsciiStrStr (IN const CHAR8 *String, IN const CHAR8 *SearchString);
+CHAR8 * MyAsciiStrStr (
+    IN const CHAR8 *String,
+    IN const CHAR8 *SearchString
+);
 
-UINTN NumCharsInCommon (IN CHAR16 *String1, IN CHAR16 *String2);
+UINTN CountListItems (IN CHAR16 *InString);
+UINTN NumCharsInCommon (
+    IN CHAR16 *String1,
+    IN CHAR16 *String2
+);
 
-UINT64 StrToHex (CHAR16 *OurStr, UINTN Pos, UINTN NumChars);
+UINT64 StrToHex (
+    IN CHAR16 *OurStr,
+    IN UINTN   Pos,
+    IN UINTN   NumChars
+);
 
 EFI_GUID StringAsGuid (CHAR16 *InString);
 

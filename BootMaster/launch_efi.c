@@ -744,6 +744,7 @@ EFI_STATUS StartEFIImage (
     do {
         ChildImageHandle = NULL;
         TempImageHandle  = NULL;
+        BootLogoImage    = NULL;
 
         ReturnStatus = EFI_LOAD_ERROR;  // In case list is empty
 
@@ -908,7 +909,6 @@ EFI_STATUS StartEFIImage (
 
             // DA-TAG: Investigate This
             //         Optionally Re-enable the EFI watchdog timer
-            BootLogoImage = NULL;
             if (IsBoot) {
                 ShowLogoLin = (
                     !Verbose &&

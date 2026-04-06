@@ -1,5 +1,9 @@
 0.14.2.AE (PRE-RELEASE):
 -----------------------
+- Fixes `CleanNvram` Handling
+  * The required loader path had ended up empty
+    - This rendered the tool inoperable
+  * This bug was introduced in v0.14.2.AD (Commit d6cd6cd)
 - Fixes `SimpleTextOut` Reconnection Issues
   * Some firmware reset to the console default resolution on reconnection
     - This quirk was not accounted for when enforcing reconnection
@@ -14,6 +18,10 @@
     - https://github.com/torvalds/linux/commit/3e86e4d74c0490e5fc5a7f8de8f29e7579c9ffe5
   * This bug was inherited from legacy upstream code
     - Fixed for `BtrFS`, `Ext4`, and `Ext2` drivers
+- Fixes and Improves `BadRamTag` Feature
+  * Feature renamed from previous `TagBadRAM`
+  * Applies various fixes to resolve breakages
+  * Applies various operational optimisation
 - Improves `Filesystem Driver` Setup
   * Resurrects/Restores original debug print macros
   * The various build types are now different in terms of debug output
@@ -39,6 +47,11 @@
   * Disabled if `UEFI Secure Boot` active
     - Avoids `Security Violation` errors
   * Use `signed standalone drivers` instead
+- Renames Misc Configuration Tokens
+  * `badram_fix_list` to `badram_tag_list`
+  * `badram_fix_type` to `badram_tag_mode`
+  * `badram_fix_wide` to `badram_tag_wide`
+    - Functionality of this token was also changed
 
 
 0.14.2.AD (11 NOV 2025):

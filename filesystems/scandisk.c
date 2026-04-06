@@ -122,7 +122,7 @@ int dsk_btrfs_scan_disks (
     Print(L" ");
 #endif
 
-    FSW_MSG_LEVEL_3((
+    FSW_MSG_L03((
         FSW_MSG_STR(
             "SCANDISK: dsk_btrfs_scan_disks ... Scanning Disks\n"
         )
@@ -162,7 +162,7 @@ int dsk_btrfs_scan_disks (
         );
 
         if (vol) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "SCANDISK: dsk_btrfs_scan_disks ... Checking Disk %d\n"
                 ), i

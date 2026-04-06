@@ -91,7 +91,7 @@ static fsw_ssize_t zstd_decompress (
         workspace_size
     );
 	if (!stream) {
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_BTRFS_ZSTD: zstd_decompress ... ZSTD_initDStream Failed\n"
             )
@@ -113,7 +113,7 @@ static fsw_ssize_t zstd_decompress (
 
 	    ret2 = ZSTD_decompressStream (stream, &out_buf, &in_buf);
 	    if (ZSTD_isError(ret2)) {
-            FSW_MSG_LEVEL_2((
+            FSW_MSG_L02((
                 FSW_MSG_STR(
                     "FSW_BTRFS_ZSTD: zstd_decompress ... ZSTD_decompressStream Returned '%d'\n"
                 ), ZSTD_getErrorCode(ret2)
@@ -124,7 +124,7 @@ static fsw_ssize_t zstd_decompress (
 	    }
 
 	    if (out_buf.pos == 0 && in_buf.pos == in_buf.size) {
-            FSW_MSG_LEVEL_2((
+            FSW_MSG_L02((
                 FSW_MSG_STR(
                     "FSW_BTRFS_ZSTD: zstd_decompress ... ZSTD_decompressStream Ended Early\n"
                 )
@@ -145,7 +145,7 @@ static fsw_ssize_t zstd_decompress (
 
 	ret2 = ZSTD_decompressStream (stream, &out_buf, &in_buf);
 	if (ZSTD_isError(ret2)) {
-        FSW_MSG_LEVEL_2((
+        FSW_MSG_L02((
             FSW_MSG_STR(
                 "FSW_BTRFS_ZSTD: zstd_decompress ... ZSTD_decompressStream returned %d\n"
             ), ZSTD_getErrorCode(ret2)

@@ -684,7 +684,7 @@ fsw_status_t fsw_hfs_btree_search (
         if (be16_to_cpu(
                 *(fsw_u16*)(buffer + btree->node_size - 2)) != sizeof (BTNodeDescriptor)
             ) {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_HFS: fsw_hfs_btree_search ... Corrupted Node\n"
                 )
@@ -865,7 +865,7 @@ int fsw_hfs_btree_visit_node (
             return 0;
         }
         default: {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_HFS: fsw_hfs_btree_visit_node ... Unknown File Type\n"
                 )
@@ -1330,7 +1330,7 @@ static fsw_status_t fsw_hfs_dir_lookup (
             break;
         }
         default: {
-            FSW_MSG_LEVEL_3((
+            FSW_MSG_L03((
                 FSW_MSG_STR(
                     "FSW_HFS: fsw_hfs_dir_lookup ... Unknown File Type\n"
                 )

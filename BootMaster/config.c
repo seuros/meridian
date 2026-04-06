@@ -1891,6 +1891,13 @@ VOID ExitOuter (
         GlobalConfig.Timeout     =     0;
     }
 
+    if (GlobalConfig.BadRamTagType < -1 ||
+        GlobalConfig.BadRamTagType >  8
+    ) {
+        // Disable on Invalid Config
+        GlobalConfig.BadRamTagType = 0;
+    }
+
     #if REFIT_DEBUG > 0
     if (NotRunBefore) MuteLogger = FALSE;
     #endif
@@ -2951,10 +2958,7 @@ VOID ReadConfig (
         }
         else if (
             !GotNoneGraphicsFor &&
-            MyStriCmp (
-                TokenList[0],
-                L"use_graphics_for"
-            )
+            MyStriCmp (TokenList[0], L"use_graphics_for")
         ) {
             if (!OutLoopGraphicsFor) {
                 // DA-TAG: Reset Current Setting
@@ -3021,10 +3025,7 @@ VOID ReadConfig (
         }
         else if (
             !GotNoneSyncTrust &&
-            MyStriCmp (
-                TokenList[0],
-                L"sync_trust"
-            )
+            MyStriCmp (TokenList[0], L"sync_trust")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop && !OutLoopSyncTrust) {
@@ -3071,7 +3072,9 @@ VOID ReadConfig (
                 }
             } // for
         }
-        else if (MyStriCmp (TokenList[0], L"icons_dir")) {
+        else if (
+            MyStriCmp (TokenList[0], L"icons_dir")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3085,7 +3088,9 @@ VOID ReadConfig (
                 &(GlobalConfig.IconsDir)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"scanfor")) {
+        else if (
+            MyStriCmp (TokenList[0], L"scanfor")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3101,10 +3106,8 @@ VOID ReadConfig (
             } // for
         }
         else if (
-            MyStriCmp (
-                TokenList[0],
-                L"log_level"
-            ) && TokenCount == 2
+            TokenCount == 2 &&
+            MyStriCmp (TokenList[0], L"log_level")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3127,7 +3130,9 @@ VOID ReadConfig (
             else if (GlobalConfig.LogLevel < LOGLEVELOFF) GlobalConfig.LogLevel = LOGLEVELOFF;
             else if (GlobalConfig.LogLevel > MaxLogLevel) GlobalConfig.LogLevel = MaxLogLevel;
         }
-        else if (MyStriCmp (TokenList[0], L"also_scan_dirs")) {
+        else if (
+            MyStriCmp (TokenList[0], L"also_scan_dirs")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3141,7 +3146,9 @@ VOID ReadConfig (
                 &(GlobalConfig.AlsoScan)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"also_scan_tool_dirs")) {
+        else if (
+            MyStriCmp (TokenList[0], L"also_scan_tool_dirs")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3247,7 +3254,9 @@ VOID ReadConfig (
                 &(GlobalConfig.DontScanFirmware)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"use_nvram")) {
+        else if (
+            MyStriCmp (TokenList[0], L"use_nvram")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3258,7 +3267,9 @@ VOID ReadConfig (
 
             GlobalConfig.UseNvram = HandleBoolean (TokenList, TokenCount);
         }
-        else if (MyStriCmp (TokenList[0], L"disable_rescan_dxe")) {
+        else if (
+            MyStriCmp (TokenList[0], L"disable_rescan_dxe")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3276,10 +3287,8 @@ VOID ReadConfig (
             }
         }
         else if (
-            MyStriCmp (
-                TokenList[0],
-                L"sync_nvram"
-            ) && TokenCount == 2
+            TokenCount == 2 &&
+            MyStriCmp (TokenList[0], L"sync_nvram")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3294,7 +3303,9 @@ VOID ReadConfig (
                 &(GlobalConfig.SyncNVram)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"scan_driver_dirs")) {
+        else if (
+            MyStriCmp (TokenList[0], L"scan_driver_dirs")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3308,7 +3319,9 @@ VOID ReadConfig (
                 &(GlobalConfig.DriverDirs)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"showtools")) {
+        else if (
+            MyStriCmp (TokenList[0], L"showtools")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3406,7 +3419,9 @@ VOID ReadConfig (
                 }
             } // while {Infinite} ... OUTER
         }
-        else if (MyStriCmp (TokenList[0], L"banner")) {
+        else if (
+            MyStriCmp (TokenList[0], L"banner")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3421,10 +3436,8 @@ VOID ReadConfig (
             );
         }
         else if (
-            MyStriCmp (
-                TokenList[0],
-                L"banner_scale"
-            ) && TokenCount == 2
+            TokenCount == 2 &&
+            MyStriCmp (TokenList[0], L"banner_scale")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3449,10 +3462,8 @@ VOID ReadConfig (
             }
         }
         else if (
-            MyStriCmp (
-                TokenList[0],
-                L"small_icon_size"
-            ) && TokenCount == 2
+            TokenCount == 2 &&
+            MyStriCmp (TokenList[0], L"small_icon_size")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3470,10 +3481,8 @@ VOID ReadConfig (
             }
         }
         else if (
-            MyStriCmp (
-                TokenList[0],
-                L"big_icon_size"
-            ) && TokenCount == 2
+            TokenCount == 2 &&
+            MyStriCmp (TokenList[0], L"big_icon_size")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3491,7 +3500,9 @@ VOID ReadConfig (
                 GlobalConfig.IconSizes[ICON_SIZE_BADGE] = i / 4;
             }
         }
-        else if (MyStriCmp (TokenList[0], L"selection_small")) {
+        else if (
+            MyStriCmp (TokenList[0], L"selection_small")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3505,7 +3516,9 @@ VOID ReadConfig (
                 &(GlobalConfig.SelectionSmallFileName)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"selection_big")) {
+        else if (
+            MyStriCmp (TokenList[0], L"selection_big")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3519,7 +3532,9 @@ VOID ReadConfig (
                 &(GlobalConfig.SelectionBigFileName)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"default_selection")) {
+        else if (
+            MyStriCmp (TokenList[0], L"default_selection")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3542,13 +3557,9 @@ VOID ReadConfig (
             }
         }
         else if (
-            MyStriCmp (
-                TokenList[0],
-                L"resolution"
-            ) && (
-                TokenCount == 2 ||
-                TokenCount == 3
-            )
+            (
+                TokenCount == 2 || TokenCount == 3
+            ) && MyStriCmp (TokenList[0], L"resolution")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3574,7 +3585,9 @@ VOID ReadConfig (
                     ? Atoi(TokenList[2]) : 0;
             }
         }
-        else if (MyStriCmp (TokenList[0], L"screensaver")) {
+        else if (
+            MyStriCmp (TokenList[0], L"screensaver")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3590,10 +3603,8 @@ VOID ReadConfig (
             );
         }
         else if (
-            MyStriCmp (
-                TokenList[0],
-                L"font"
-            ) && TokenCount == 2
+            TokenCount == 2 &&
+            MyStriCmp (TokenList[0], L"font")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3605,7 +3616,9 @@ VOID ReadConfig (
 
             egLoadFont (TokenList[1]);
         }
-        else if (MyStriCmp (TokenList[0], L"textonly")) {
+        else if (
+            MyStriCmp (TokenList[0], L"textonly")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3618,7 +3631,9 @@ VOID ReadConfig (
                 TokenList, TokenCount
             );
         }
-        else if (MyStriCmp (TokenList[0], L"textmode")) {
+        else if (
+            MyStriCmp (TokenList[0], L"textmode")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3632,7 +3647,9 @@ VOID ReadConfig (
                 &(GlobalConfig.RequestedTextMode)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"scan_all_linux_kernels")) {
+        else if (
+            MyStriCmp (TokenList[0], L"scan_all_linux_kernels")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3645,7 +3662,9 @@ VOID ReadConfig (
                 TokenList, TokenCount
             );
         }
-        else if (MyStriCmp (TokenList[0], L"fold_linux_kernels")) {
+        else if (
+            MyStriCmp (TokenList[0], L"fold_linux_kernels")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3658,7 +3677,9 @@ VOID ReadConfig (
                 TokenList, TokenCount
             );
         }
-        else if (MyStriCmp (TokenList[0], L"linux_prefixes")) {
+        else if (
+            MyStriCmp (TokenList[0], L"linux_prefixes")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3672,7 +3693,9 @@ VOID ReadConfig (
                 &(GlobalConfig.LinuxPrefixes)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"csr_values")) {
+        else if (
+            MyStriCmp (TokenList[0], L"csr_values")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3687,8 +3710,8 @@ VOID ReadConfig (
             );
         }
         else if (
-            MyStriCmp (TokenList[0], L"screen_rgb") &&
-            TokenCount == 4
+            TokenCount == 4 &&
+            MyStriCmp (TokenList[0], L"screen_rgb")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -3711,7 +3734,9 @@ VOID ReadConfig (
                 GlobalConfig.ScreenB >= 0 && GlobalConfig.ScreenB <= 255
             );
         }
-        else if (MyStriCmp (TokenList[0], L"enable_mouse")) {
+        else if (
+            MyStriCmp (TokenList[0], L"enable_mouse")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3724,7 +3749,9 @@ VOID ReadConfig (
                 TokenList, TokenCount
             );
         }
-        else if (MyStriCmp (TokenList[0], L"enable_touch")) {
+        else if (
+            MyStriCmp (TokenList[0], L"enable_touch")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3737,7 +3764,9 @@ VOID ReadConfig (
                 TokenList, TokenCount
             );
         }
-        else if (MyStriCmp (TokenList[0], L"persist_boot_args")) {
+        else if (
+            MyStriCmp (TokenList[0], L"persist_boot_args")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3947,7 +3976,9 @@ VOID ReadConfig (
                 GlobalConfig.SetAppleFB = (DeclineSetting) ? FALSE : TRUE;
             }
         }
-        else if (MyStriCmp (TokenList[0], L"decline_help_icon")) {
+        else if (
+            MyStriCmp (TokenList[0], L"decline_help_icon")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3976,7 +4007,9 @@ VOID ReadConfig (
             DeclineSetting = HandleBoolean (TokenList, TokenCount);
             GlobalConfig.HelpText = (DeclineSetting) ? FALSE : TRUE;
         }
-        else if (MyStriCmp (TokenList[0], L"decline_help_size")) {
+        else if (
+            MyStriCmp (TokenList[0], L"decline_help_size")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -3988,7 +4021,9 @@ VOID ReadConfig (
             DeclineSetting = HandleBoolean (TokenList, TokenCount);
             GlobalConfig.HelpSize = (DeclineSetting) ? FALSE : TRUE;
         }
-        else if (MyStriCmp (TokenList[0], L"disable_legacy_sync")) {
+        else if (
+            MyStriCmp (TokenList[0], L"disable_legacy_sync")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4000,7 +4035,9 @@ VOID ReadConfig (
             DeclineSetting = HandleBoolean (TokenList, TokenCount);
             GlobalConfig.LegacySync = (DeclineSetting) ? FALSE : TRUE;
         }
-        else if (MyStriCmp (TokenList[0], L"follow_symlinks")) {
+        else if (
+            MyStriCmp (TokenList[0], L"follow_symlinks")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4071,7 +4108,9 @@ VOID ReadConfig (
                 &(GlobalConfig.DynamicCSR)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"disable_nvram_paniclog")) {
+        else if (
+            MyStriCmp (TokenList[0], L"disable_nvram_paniclog")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4194,7 +4233,9 @@ VOID ReadConfig (
             DeclineSetting = HandleBoolean (TokenList, TokenCount);
             GlobalConfig.BootLogoClear = (DeclineSetting) ? FALSE : TRUE;
         }
-        else if (MyStriCmp (TokenList[0], L"supply_nvme")) {
+        else if (
+            MyStriCmp (TokenList[0], L"supply_nvme")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4207,7 +4248,9 @@ VOID ReadConfig (
                 TokenList, TokenCount
             );
         }
-        else if (MyStriCmp (TokenList[0], L"supply_uefi")) {
+        else if (
+            MyStriCmp (TokenList[0], L"supply_uefi")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4246,7 +4289,9 @@ VOID ReadConfig (
                 }
             }
         }
-        else if (MyStriCmp (TokenList[0], L"scale_ui")) {
+        else if (
+            MyStriCmp (TokenList[0], L"scale_ui")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4282,7 +4327,9 @@ VOID ReadConfig (
                 GlobalConfig.NvramProtect = (DeclineSetting) ? FALSE : TRUE;
             }
         }
-        else if (MyStriCmp (TokenList[0], L"disable_pass_gop_thru")) {
+        else if (
+            MyStriCmp (TokenList[0], L"disable_pass_gop_thru")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4329,10 +4376,8 @@ VOID ReadConfig (
             );
         }
         else if (
-            MyStriCmp (
-                TokenList[0],
-                L"mouse_size"
-            ) && TokenCount == 2
+            TokenCount == 2 &&
+            MyStriCmp (TokenList[0], L"mouse_size")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -4350,10 +4395,8 @@ VOID ReadConfig (
             }
         }
         else if (
-            MyStriCmp (
-                TokenList[0],
-                L"mouse_speed"
-            ) && TokenCount == 2
+            TokenCount == 2 &&
+            MyStriCmp (TokenList[0], L"mouse_speed")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -4372,7 +4415,9 @@ VOID ReadConfig (
             else if (i > 32)      i = 32;
             GlobalConfig.MouseSpeed =  i;
         }
-        else if (MyStriCmp (TokenList[0], L"continue_on_warning")) {
+        else if (
+            MyStriCmp (TokenList[0], L"continue_on_warning")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4385,7 +4430,9 @@ VOID ReadConfig (
                 TokenList, TokenCount
             );
         }
-        else if (MyStriCmp (TokenList[0], L"decouple_key_f10")) {
+        else if (
+            MyStriCmp (TokenList[0], L"decouple_key_f10")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4399,10 +4446,8 @@ VOID ReadConfig (
             );
         }
         else if (
-            MyStriCmp (
-                TokenList[0],
-                L"icon_row_move"
-            ) && TokenCount == 2
+            TokenCount == 2 &&
+            MyStriCmp (TokenList[0], L"icon_row_move")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -4419,10 +4464,8 @@ VOID ReadConfig (
             );
         }
         else if (
-            MyStriCmp (
-                TokenList[0],
-                L"icon_row_tune"
-            ) && TokenCount == 2
+            TokenCount == 2 &&
+            MyStriCmp (TokenList[0], L"icon_row_tune")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -4442,10 +4485,8 @@ VOID ReadConfig (
             GlobalConfig.IconRowTune *= -1;
         }
         else if (
-            MyStriCmp (
-                TokenList[0],
-                L"scan_delay"
-            ) && TokenCount == 2
+            TokenCount == 2 &&
+            MyStriCmp (TokenList[0], L"scan_delay")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -4460,7 +4501,9 @@ VOID ReadConfig (
                 &(GlobalConfig.ScanDelay)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"uefi_deep_legacy_scan")) {
+        else if (
+            MyStriCmp (TokenList[0], L"uefi_deep_legacy_scan")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4473,7 +4516,9 @@ VOID ReadConfig (
                 TokenList, TokenCount
             );
         }
-        else if (MyStriCmp (TokenList[0], L"ransom_drives")) {
+        else if (
+            MyStriCmp (TokenList[0], L"ransom_drives")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4490,7 +4535,9 @@ VOID ReadConfig (
                 );
             }
         }
-        else if (MyStriCmp (TokenList[0], L"prefer_uga")) {
+        else if (
+            MyStriCmp (TokenList[0], L"prefer_uga")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4503,7 +4550,9 @@ VOID ReadConfig (
                 TokenList, TokenCount
             );
         }
-        else if (MyStriCmp (TokenList[0], L"windows_recovery_files")) {
+        else if (
+            MyStriCmp (TokenList[0], L"windows_recovery_files")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4517,7 +4566,9 @@ VOID ReadConfig (
                 &(GlobalConfig.WindowsRecoveryFiles)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"shutdown_after_timeout")) {
+        else if (
+            MyStriCmp (TokenList[0], L"shutdown_after_timeout")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4530,7 +4581,9 @@ VOID ReadConfig (
                 TokenList, TokenCount
             );
         }
-        else if (MyStriCmp (TokenList[0], L"set_boot_args")) {
+        else if (
+            MyStriCmp (TokenList[0], L"set_boot_args")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4548,7 +4601,9 @@ VOID ReadConfig (
                 MY_FREE_POOL(GlobalConfig.SetBootArgs);
             }
         }
-        else if (MyStriCmp (TokenList[0], L"nvram_protect_ex")) {
+        else if (
+            MyStriCmp (TokenList[0], L"nvram_protect_ex")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4565,7 +4620,9 @@ VOID ReadConfig (
                 );
             }
         }
-        else if (MyStriCmp (TokenList[0], L"write_systemd_vars")) {
+        else if (
+            MyStriCmp (TokenList[0], L"write_systemd_vars")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4578,7 +4635,9 @@ VOID ReadConfig (
                 TokenList, TokenCount
             );
         }
-        else if (MyStriCmp (TokenList[0], L"extra_kernel_version_strings")) {
+        else if (
+            MyStriCmp (TokenList[0], L"extra_kernel_version_strings")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4592,7 +4651,10 @@ VOID ReadConfig (
                 &(GlobalConfig.ExtraKernelVersionStrings)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"badram_fix_list")) {
+        else if (
+            MyStriCmp (TokenList[0], L"badram_tag_list") ||
+            MyStriCmp (TokenList[0], L"badram_fix_list")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4603,14 +4665,13 @@ VOID ReadConfig (
 
             HandleStrings (
                 TokenList, TokenCount,
-                &(GlobalConfig.BadRamFixList)
+                &(GlobalConfig.BadRamTagList)
             );
         }
         else if (
-            MyStriCmp (
-                TokenList[0],
-                L"badram_fix_type"
-            ) && TokenCount == 2
+            MyStriCmp (TokenList[0], L"badram_tag_mode") ||
+            MyStriCmp (TokenList[0], L"badram_fix_type") ||
+            MyStriCmp (TokenList[0], L"badram_tag_type")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -4622,10 +4683,13 @@ VOID ReadConfig (
 
             HandleSignedInt (
                 TokenList, TokenCount,
-                &(GlobalConfig.BadRamFixType)
+                &(GlobalConfig.BadRamTagType)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"badram_fix_wide")) {
+        else if (
+            MyStriCmp (TokenList[0], L"badram_tag_wide") ||
+            MyStriCmp (TokenList[0], L"badram_fix_wide")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4634,11 +4698,13 @@ VOID ReadConfig (
             }
             #endif
 
-            GlobalConfig.BadRamFixWide = HandleBoolean (
+            GlobalConfig.BadRamTagWide = HandleBoolean (
                 TokenList, TokenCount
             );
         }
-        else if (MyStriCmp (TokenList[0], L"max_tags")) {
+        else if (
+            MyStriCmp (TokenList[0], L"max_tags")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4652,7 +4718,9 @@ VOID ReadConfig (
                 &(GlobalConfig.MaxTags)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"enable_and_lock_vmx")) {
+        else if (
+            MyStriCmp (TokenList[0], L"enable_and_lock_vmx")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4665,7 +4733,9 @@ VOID ReadConfig (
                 TokenList, TokenCount
             );
         }
-        else if (MyStriCmp (TokenList[0], L"spoof_osx_version")) {
+        else if (
+            MyStriCmp (TokenList[0], L"spoof_osx_version")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4682,7 +4752,9 @@ VOID ReadConfig (
                 );
             }
         }
-        else if (MyStriCmp (TokenList[0], L"support_gzipped_loaders")) {
+        else if (
+            MyStriCmp (TokenList[0], L"support_gzipped_loaders")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
@@ -4696,10 +4768,8 @@ VOID ReadConfig (
             );
         }
         else if (
-            MyStriCmp (
-                TokenList[0],
-                L"nvram_variable_limit"
-            ) && TokenCount == 2
+            TokenCount == 2 &&
+            MyStriCmp (TokenList[0], L"nvram_variable_limit")
         ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
@@ -4714,7 +4784,9 @@ VOID ReadConfig (
                 &(GlobalConfig.NvramVariableLimit)
             );
         }
-        else if (MyStriCmp (TokenList[0], L"unicode_collation")) {
+        else if (
+            MyStriCmp (TokenList[0], L"unicode_collation")
+        ) {
             #if REFIT_DEBUG > 0
             if (!OuterLoop) {
                 UpdatedToken = LogUpdate (
