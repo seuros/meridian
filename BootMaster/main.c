@@ -4014,11 +4014,11 @@ EFI_STATUS EFIAPI efi_main (
         OurToolTag = L"CLANG";
         #if defined(__APPLE__)
             #if defined(__GNUC__)
-                OurToolTag = L"XCODE5";
+                OurToolTag = L"XCODE";
             #endif
         #endif
     #elif defined(__GNUC__)
-        OurToolTag = L"GCC5";
+        OurToolTag = L"GCC";
     #else
         OurToolTag = L"UNKNOWN";
     #endif
@@ -4106,7 +4106,7 @@ EFI_STATUS EFIAPI efi_main (
     LOG_MSG("\n\n");
     #endif
 
-    /* Get/Set Config File ... Prefer RefindPlus Configuration File Name */
+    /* Get/Set Config File */
     SetConfigFilename (ImageHandle);
     if (!FileExists (SelfDir, GlobalConfig.ConfigFilename)) {
         ConfigWarn = TRUE;
@@ -4138,8 +4138,9 @@ EFI_STATUS EFIAPI efi_main (
         GlobalConfig.BadRamTagType,
         GlobalConfig.BadRamTagWide
     );
-    if (Status != EFI_SUCCESS      &&
-        Status != EFI_NOT_STARTED  &&
+    if (Status != EFI_SUCCESS &&
+        Status != EFI_NOT_READY &&
+        Status != EFI_NOT_STARTED &&
         Status != EFI_ALREADY_STARTED
     ) {
         WarnTagBadRAM = TRUE;

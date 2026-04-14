@@ -77,7 +77,7 @@
 #    Hence, tools such as 'MemTest' may therefore be considered instead.
 #    However, the output often needs conversion before use in RefindPlus.
 #    The basic program auto scan modes are functional without extra steps.
-#    Refer: www.github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BadRam.md.
+#    Refer: www.github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BADRAM.md.
 #
 # 2. The auto detection of faulty RAM regions via Mode '8/9' is cached on first run.
 #    Subsequent runs will leverage this cached data, if present, to reduce run times.

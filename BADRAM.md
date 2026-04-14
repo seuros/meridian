@@ -19,7 +19,7 @@ The feature allows masking faulty memory regions to prevent them being used by t
                <li><a href="#configuration-settings">CONFIGURATION SETTINGS</a></li>
                <li><a href="#technical-constraints">TECHNICAL CONSTRIANTS</a></li>
                <li><a href="#tagging-strategies">TAGGING STRATEGIES</a></li>
-               <li><a href="#address-entries">ADDRRESS ENTRIES</a></li>
+               <li><a href="#address-entries">ADDRESS ENTRIES</a></li>
                <li><a href="#troubleshooting">TROUBLESHOOTING</a></li>
            </ul>
        </div>
@@ -68,9 +68,9 @@ The following limits are enforced to ensure system stability:
 * **Max Address:** Ignores addresses beyond the 64-bit page-aligned ceiling (`0xfffffffffffff000`).
 * **Address 0:** Never tagged, or even probed, as holds the 'Real Mode' `Interrupt Vector Table (IVT)` on x86.
 
-> The size limit is raised to `4.0GB` when `badram_tag_mode` is set to `1`.
->
-> This on-screen message is shown by all build types (`REL`, `DBG`, and `NPT`)
+> The size limit is raised to `4.0GB` when `badram_tag_mode` is set to `1`. \
+> `4.0GB` is allowed for initial `Mode 1` attempts on other modes with `badram_tag_wide` active. \
+> If an initial `Mode 1` attempt fails, the original mode's `1.0GB` limit applies to the fallback stage.
 
 <br><br>
 
@@ -125,7 +125,9 @@ reasons. Mainly because MemTest output may often need conversion before use as R
 ### Dedicated Tools
 
 Tools such as MemTest can be run to carry out exhaustive tests and subsequently output details on faulty memory.<br/>
-A FOSS MemTest variant, `MemTest86+`, has the following candidate output types that can be considered as source.<br/>
+A FOSS MemTest variant, `MemTest86+`, has the following candidate output types that can be considered as source.
+
+See: https://memtest.org/readme#error-reporting
 
 #### 1. Error Summary
 
@@ -134,20 +136,13 @@ if the size of the range is within the defined limits. The range can be split if
 
 > [!CAUTION]
 >
-> The `Error Summary` range will also include Good RAM in most cases.
->
+> The `Error Summary` range will also include Good RAM in most cases. \
 > The larger the size range, the likelier it also includes Good RAM.
 
 #### 2. Misc Others
 
-The `BadRAM Patterns`/`Linux memmap`/`Bad Pages` and similar output types provide ranges that exclude and/or limit Good RAM.<br/>
+The `BadRAM Patterns`/`Linux memmap`/`Bad Pages` and similar output types provide ranges that exclude or limit Good RAM.<br/>
 These outputs could potentially be passed to `AI ChatBots` for conversion to a comma delimited list of start/end addresses.
-
-> [!IMPORTANT]
->
-> Instructions to AI ChatBots must outline `Max Ranges`, `Size Limit`, and other pertinent information.
-
-REF: https://memtest.org/readme#error-reporting
 
 <br><br>
 
@@ -173,10 +168,8 @@ The debug log will report the status of the `BadRamTag` operation.
 | Device Error      | Could not allocate memory space for the system memory map. |
 | Out of Resources  | Could not allocate memory space for internal buffer needs. |
 
-> RefindPlus will display an on-screen message on boot when errors are encountered.
->
-> However, `Not Ready`/`Already Started` do not trigger the on-screen message.
->
+> RefindPlus will display an on-screen message on boot when errors are encountered. \
+> However, `Not Ready`/`Already Started` do not trigger the on-screen message. \
 > This on-screen message is shown by all build types (`REL`, `DBG`, and `NPT`).
 
 ### <ins>Some Issues and Fixes</ins>

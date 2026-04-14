@@ -17,11 +17,8 @@
 
 ## Remote Build (GitHub)
 
-**General Overview** \
 RefindPlus can be built by leveraging GitHub's `Workflow Artefact` creation and storage capabilities. \
 A GitHub `Workflow Action` is included in this repository to facilitate this.
-
-**Activate Workflow Action**
 - Navigate to https://github.com/RefindPlusRepo/RefindPlus and fork the repository.
 - Navigate to `https://github.com/YOUR_GITHUB_USERNAME_GOES_HERE/RefindPlus.git`.
   - Enable Github Actions
@@ -35,19 +32,22 @@ A GitHub `Workflow Action` is included in this repository to facilitate this.
 
 Click the Workflow Action run instance when done, and look for `'Artifacts'` near the bottom of the page.
 
-**Secure Boot Considerations** \
+<details>
+<summary><strong>Secure Boot Considerations</strong></summary>
+
 The action will create a one-off private key and associated certificate by default. The created certificate is bundled with the generated artefacts for enrolment but the private key is not, as there is no way to securely transfer this (artefacts are publicly available).
 
-Certificates are public keys and can therefore be shared along with the artefacts. Private keys cannot be disclosed on the other hand, and are therefore discarded after signing the binaries for the reason stated earlier. The outcome is that **`a new certificate must be enrolled for each build`**.
+Certificates are public keys and can therefore be shared along with the artefacts. \
+Private keys cannot be disclosed however, and are therefore discarded after use. \
+The implication is that a new certificate must be enrolled for each build.
 
-This limitation can be avoided by providing the Workflow Action a certificate and private key instead.
-
-When Certificates/Keys are not provided, the Workflow Action will generate them each time as previously described and with the limitations described.
+This limitation can be avoided by providing the Workflow Action a certificate and private key instead. \
+When these are unavailable, they will be generated on each run with the limitations described.
 
 <details>
-<summary><strong>Optionally Provide Certificate/Key</strong></summary>
+<summary><strong>Providing Certificate/Key</strong></summary>
 
-Save a private key as a `SIG_RP_KEY` repository secret in the repository fork along with the associated certificate data saved as a `SIG_RP_CRT` repository secret.
+Save a private key as a `SIG_RP_KEY` repository secret in the repository fork as well as certificate data saved as a `SIG_RP_CRT` secret.
 
 These repository secrets will be used each time the Workflow Action is run on your fork with the option to sign selected. \
 Associated certificate files will always be bundled with artefacts generated but only need to be enrolled once.
@@ -69,16 +69,21 @@ Finally, the public certificates derived via the 'one-off' private keys may sati
 <summary><strong>Generate Public Certificate and Private Key</strong></summary>
 
 At a Terminal prompt and with `OpenSSL` installed, create 10-Year validity `MySig.key/crt/cer` files by running:
+
 ```
 $ openssl req -new -x509 -nodes -newkey rsa:2048 -keyout MySig.key -out MySig.crt -days 3650 -subj "/CN=MyKeyCert/"
 $ openssl x509 -in MySig.crt -out MySig.cer -outform DER
 ```
+
 Copy the three files to a secure location and adjust permissions to restrict read access to the `MySig.key` file. \
 Preserve these files as they are needed to sign binaries in future with details consistent with what is signed now.
 
 </details>
 
 </details>
+
+</details>
+
 
 <br><br>
 
@@ -144,7 +149,7 @@ These tools can be easily installed with package managers such as `MacPorts` or 
 
 > [!NOTE]
 >
-> MacPorts supports Mac OS versions for a lot longer than HomeBrew.\
+> MacPorts supports Mac OS versions for a lot longer than HomeBrew. \
 > However, HomeBrew typically tends to have more packages available.
 
 If not already installed, follow installation instructions on the respective project websites:
@@ -252,10 +257,10 @@ Your local RefindPlusUDK repository will be under `Documents/RefindPlus/edk2`.
 - Navigate to your `/Documents/RefindPlus/edk2/000-BuildScript` folder in the Finder.
 - Separately, open a new Terminal window.
   - Always use a new Terminal window when building.
-- Type `chmod +x` in Terminal, add a space, then drag the `RefindPlusBuilder.sh` file onto the Terminal window and press `Enter`.
-  - This "chmod +x" step is typically only required the first time the script file is ever run.
+- Type `chmod a+x` in Terminal, add a space, then drag the `RefindPlusBuilder.sh` file onto the Terminal window and press `Enter`.
+  - This "chmod a+x" step is typically only required the first time the script file is ever run.
 - Type `bash` in Terminal, add a space, then drag the `RefindPlusBuilder.sh` file to the Terminal window again and press `Enter`.
-  - Enter a space followed by `--build-branch="BRANCH_NAME"` to the end of the line (if you want to build on `BRANCH_NAME`) before pressing `Enter`.
+  - Enter a space followed by `--build-branch="BRANCH_NAME"` to the end of the line (build on `BRANCH_NAME`) before pressing `Enter`.
   - If nothing is entered, the script will build on the current checked out code.
   - Pass `--help` to the build script for guidance on script options
 
@@ -272,14 +277,13 @@ If some time has passed since your last build or since you initially created you
 - Navigate to your `/Documents/RefindPlus/edk2/000-BuildScript` folder in the Finder.
 - Separately, open a new Terminal window.
   - A new Terminal window is best for syncing.
-- Type `chmod +x`, add a space, then drag the `RepoUpdater.sh` file onto the Terminal window and press `Enter`.
-  - This "chmod +x" step is typically only required the first time the script file is ever run.
+- Type `chmod a+x`, add a space, then drag the `RepoUpdater.sh` file onto the Terminal window and press `Enter`.
+  - This "chmod a+x" step is typically only required the first time the script file is ever run.
 - Type `bash`, add a space, then drag the `RepoUpdater.sh` file to the Terminal window again and press `Enter`.
 
 > [!TIP]
 >
-> If you get an error after running the script, try running it again as subsequent runs should realign things.
->
+> If you get an error after running the script, try running it again as subsequent runs should realign things. \
 > If the script still fails after a third attempt, try the manual sync steps outlined below instead.
 
 ### OPTION 2: Manual Sync

@@ -1053,23 +1053,29 @@ fsw_status_t fsw_dnode_readlink (
 **/
 
 fsw_status_t fsw_dnode_readlink_data (
-    struct fsw_dnode *dno,
+    struct fsw_dnode  *dno,
     struct fsw_string *link_target
 ) {
     fsw_status_t       status;
-    struct fsw_shandle shand;
     fsw_u32            buffer_size;
     char               buffer[FSW_PATH_MAX];
 
-    struct fsw_string s;
 
     if (dno->size > FSW_PATH_MAX) {
         return FSW_VOLUME_CORRUPTED;
     }
 
+    struct fsw_string s;
     s.type = FSW_STRING_TYPE_ISO88591;
     s.size = s.len = (int)dno->size;
     s.data = buffer;
+
+    struct fsw_shandle shand;
+    shand.extent.type       =    0;
+    shand.extent.log_start  =    0;
+    shand.extent.log_count  =    0;
+    shand.extent.phys_start =    0;
+    shand.extent.buffer     = NULL;
 
     // Open shandle and read the data
     status = fsw_shandle_open (dno, &shand);

@@ -145,7 +145,7 @@ jobs:
         shell: bash
         run: |
           # Set Title
-          if [ "${ENV_PROVENANCE_KNOWN}" == 'NO' ]; then
+          if [ "${ENV_PROVENANCE_KNOWN}" == 'YES' ]; then
             NewTitle="${ENV_OUR_TITLE}"
           else
             # Use default if ENV_PROVENANCE_TAG is blank

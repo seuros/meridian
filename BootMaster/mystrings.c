@@ -125,46 +125,38 @@ CHAR16 * CapitalisedCase (
                 // Whitespace/Other: Copy as-is
                 ResultString[IndexOut] = StringChar;
             }
+            else if (InputString[IndexIn + 1] == L'\0') {
+                ResultString[IndexOut] = StringChar;
+            }
+            else if ((
+                    (InputString[IndexIn + 1] < L'a') ||
+                    (InputString[IndexIn + 1] > L'z')
+                ) && (
+                    (InputString[IndexIn + 1] < L'A') ||
+                    (InputString[IndexIn + 1] > L'Z')
+                )
+            ) {
+                // Whitespace/Other: Copy as-is
+                ResultString[IndexOut] = StringChar;
+            }
+            else if (IndexIn == 0) {
+                // Whitespace/Other: Copy as-is
+                ResultString[IndexOut] = StringChar;
+            }
+            else if ((
+                    (InputString[IndexIn - 1] < L'a') ||
+                    (InputString[IndexIn - 1] > L'z')
+                ) && (
+                    (InputString[IndexIn - 1] < L'A') ||
+                    (InputString[IndexIn - 1] > L'Z')
+                )
+            ) {
+                // Whitespace/Other: Copy as-is
+                ResultString[IndexOut] = StringChar;
+            }
             else {
-                if (InputString[IndexIn + 1] == L'\0') {
-                    ResultString[IndexOut] = StringChar;
-                }
-                else {
-                    if ((
-                            (InputString[IndexIn + 1] < L'a') ||
-                            (InputString[IndexIn + 1] > L'z')
-                        ) && (
-                            (InputString[IndexIn + 1] < L'A') ||
-                            (InputString[IndexIn + 1] > L'Z')
-                        )
-                    ) {
-                        // Whitespace/Other: Copy as-is
-                        ResultString[IndexOut] = StringChar;
-                    }
-                    else {
-                        if (IndexIn == 0) {
-                            // Whitespace/Other: Copy as-is
-                            ResultString[IndexOut] = StringChar;
-                        }
-                        else {
-                            if ((
-                                    (InputString[IndexIn - 1] < L'a') ||
-                                    (InputString[IndexIn - 1] > L'z')
-                                ) && (
-                                    (InputString[IndexIn - 1] < L'A') ||
-                                    (InputString[IndexIn - 1] > L'Z')
-                                )
-                            ) {
-                                // Whitespace/Other: Copy as-is
-                                ResultString[IndexOut] = StringChar;
-                            }
-                            else {
-                                // Hyphen: Replace with space
-                                ResultString[IndexOut] = L' ';
-                            }
-                        }
-                    }
-                }
+                // Hyphen: Replace with space
+                ResultString[IndexOut] = L' ';
             }
 
             IndexIn  += 1;
@@ -294,6 +286,26 @@ CHAR16 * CapitalisedCase (
     return ResultString;
 } // CHAR16 * CapitalisedCase()
 
+static
+CHAR16 * GetDelimiter (
+    IN CHAR16 *InputDelimiter,
+    IN CHAR16 *String
+) {
+    // Handle Deprecated 'INITIAL_STRING_DELIM' = L" @@ "
+    // DA-TAG: When 'InputDelimiter' is 'DEFAULT_STRING_DELIM', this also
+    //         checks for the deprecated 'INITIAL_STRING_DELIM' as fallback.
+    //         For all other delimiters, 'InputDelimiter' is used as is.
+    if (!MyStriCmp (InputDelimiter, DEFAULT_STRING_DELIM)) {
+        return InputDelimiter;
+    }
+
+    if (MyStrStr (String, INITIAL_STRING_DELIM)) {
+        return INITIAL_STRING_DELIM;
+    }
+
+    return  DEFAULT_STRING_DELIM;
+} // static CHAR16 * GetDelimiter()
+
 /**
 ** Return the substring after a supplied delimiter.
 **
@@ -317,33 +329,24 @@ CHAR16 * GetSubStrAfter (
         return NULL;
     }
 
-    // Handle Deprecated 'INITIAL_STRING_DELIM' = L" @@ "
-    // DA-TAG: When 'InputDelimiter' is 'DEFAULT_STRING_DELIM', this also
-    //         checks for the deprecated 'INITIAL_STRING_DELIM' as fallback.
-    //         For all other delimiters, 'InputDelimiter' is used as is.
-    if (!MyStriCmp (InputDelimiter, DEFAULT_STRING_DELIM)) {
-        Delimiter = InputDelimiter;
-    }
-    else if (MyStrStr (String, INITIAL_STRING_DELIM)) {
-        Delimiter = INITIAL_STRING_DELIM;
-    }
-    else {
-        Delimiter = DEFAULT_STRING_DELIM;
-    }
+    Delimiter = GetDelimiter (
+        InputDelimiter, String
+    );
 
     Substring = MyStrStr (String, Delimiter);
     if (Substring == NULL) {
-        // Return original string ... Delimiter not found
+        // Return pointer to original string ... Delimiter not found
         return String;
     }
 
     // Move past delimiter
     Substring += StrLen (Delimiter);
     if (*Substring == L'\0') {
-        // Return original string ... Delimiter is at end
+        // Return pointer to original string ... Delimiter is at end
         return String;
     }
 
+    // Return pointer to substring within original string
     return Substring;
 } // CHAR16 * GetSubStrAfter()
 
@@ -373,36 +376,28 @@ CHAR16 * GetSubStrBefore (
         return NULL;
     }
 
-    // Handle Deprecated 'INITIAL_STRING_DELIM' = L" @@ "
-    // DA-TAG: When 'InputDelimiter' is 'DEFAULT_STRING_DELIM', this also
-    //         checks for the deprecated 'INITIAL_STRING_DELIM' as fallback.
-    //         For all other delimiters, 'InputDelimiter' is used as is.
-    if (!MyStriCmp (InputDelimiter, DEFAULT_STRING_DELIM)) {
-        Delimiter = InputDelimiter;
-    }
-    else if (MyStrStr (String, INITIAL_STRING_DELIM)) {
-        Delimiter = INITIAL_STRING_DELIM;
-    }
-    else {
-        Delimiter = DEFAULT_STRING_DELIM;
-    }
+    Delimiter = GetDelimiter (
+        InputDelimiter, String
+    );
 
     Substring = MyStrStr (String, Delimiter);
     if (Substring == NULL) {
-        // Return original string ... Delimiter not found
-        return String;
+        // Return copy of original string ... Delimiter not found
+        return StrDuplicate (String);
     }
 
     if (MyStriCmp (Substring, String)) {
-        // Return original string ... Delimiter is at start
-        return String;
+        // Return copy of original string ... Delimiter is at start
+        return StrDuplicate (String);
     }
 
     Length = StrLen (String) - StrLen (Substring);
-    Result = AllocateZeroPool ((Length + 1) * sizeof (CHAR16));
+    Result = AllocateZeroPool (
+        (Length + 1) * sizeof (CHAR16)
+    );
     if (Result == NULL) {
-        // Return original string ... Memory exhausted
-        return String;
+        // Return NULL ... Memory exhausted
+        return NULL;
     }
 
     REFIT_CALL_3_WRAPPER(
@@ -1634,11 +1629,12 @@ BOOLEAN DeleteItemFromCsvList (
         // Delimiter was NOT found.
         // Search for alt delimiter.
         // Set to NULL if not found.
+        MY_FREE_POOL(PartA);
         PartA = GetSubStrBefore (
             ToDelete, *List
         );
         if (MyStriCmp (PartA, *List)) {
-            PartA = NULL;
+            MY_FREE_POOL(PartA);
         }
     }
     MY_FREE_POOL(TmpStr);

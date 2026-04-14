@@ -1451,7 +1451,10 @@ begin_direct_read:
         buf   = (uint8_t *)buf + csize;
         addr += csize;
 
-        if (challoc) FreePool(chunk);
+        if (challoc) {
+            FreePool(chunk);
+            chunk = NULL;
+        }
         challoc = 0;
 
         if (stripe_data) FSW_DO_FREE(stripe_data);
@@ -1601,6 +1604,7 @@ void fsw_btrfs_volume_free (
             }
         }
         FreePool(vol->devices_attached);
+        vol->devices_attached = NULL;
     }
 
     if (vol->extent) FreePool(vol->extent);
@@ -1608,8 +1612,10 @@ void fsw_btrfs_volume_free (
 	for (i = 0; i < RECOVER_CACHE_SIZE; i++)
         if (vol->rcache->buffer) {
             FreePool(vol->rcache->buffer);
+            vol->rcache->buffer = NULL;
         }
         FreePool(vol->rcache);
+        vol->rcache = NULL;
     }
 }
 
@@ -2612,6 +2618,7 @@ fsw_status_t fsw_btrfs_readlink (
             size
         );
         FreePool(extent.buffer);
+        extent.buffer = NULL;
 
         extent.log_start = i;
         i += extent.log_count;
@@ -3231,7 +3238,10 @@ fsw_status_t fsw_btrfs_dir_read (
                 child_dno_out
             );
             if (!err) {
-                FreePool(direl);
+                if (direl) {
+                    FreePool(direl);
+                    direl = NULL;
+                }
                 fsw_btrfs_free_iterator (&desc);
 
                 shand->pos = key_out.offset;
@@ -3262,7 +3272,11 @@ fsw_status_t fsw_btrfs_dir_read (
     } while (r > 0);
 
 out:
-    if (direl) FreePool(direl);
+    if (direl) {
+        FreePool(direl);
+        direl = NULL;
+    }
+
     fsw_btrfs_free_iterator (&desc);
 
     if (r < 0) {

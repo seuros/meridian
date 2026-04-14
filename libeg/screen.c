@@ -197,10 +197,9 @@ EFI_STATUS SwitchMode (
 static
 VOID ReconnectTextOut (VOID) {
     EFI_STATUS  Status;
-    INT32       StashMode;
-    INTN        StashType;
-    INTN        StashWidth;
-    INTN        StashHeight;
+    UINT32      StashMode;
+    UINT32      StashWidth;
+    UINT32      StashHeight;
     UINTN       HandleIndex;
     UINTN       HandleCount;
     EFI_HANDLE *HandleBuffer;
@@ -217,21 +216,15 @@ VOID ReconnectTextOut (VOID) {
 
     StashWidth = (
         GOPDraw != NULL
-    ) ? GOPDraw->Mode->Info->HorizontalResolution : -1;
+    ) ? GOPDraw->Mode->Info->HorizontalResolution : 0;
 
     StashHeight = (
         GOPDraw != NULL
-    ) ? GOPDraw->Mode->Info->VerticalResolution : -1;
+    ) ? GOPDraw->Mode->Info->VerticalResolution : 0;
 
-    StashType = (
+    StashMode = (
         GOPDraw != NULL
-    ) ? GOPDraw->Mode->Mode : -1;
-    if (StashType < 0) {
-        StashMode = 0;
-    }
-    else {
-        StashMode = (INT32) StashType;
-    }
+    ) ? GOPDraw->Mode->Mode : 0;
 
     for (
         HandleIndex = 0;
@@ -257,14 +250,11 @@ VOID ReconnectTextOut (VOID) {
         );
     }
 
-    if (GOPDraw != NULL && StashHeight > 0 && StashWidth > 0 && (
-        StashType                                  = -1         ||
-        GOPDraw->Mode->Mode                       != StashMode  ||
-        GOPDraw->Mode->Info->HorizontalResolution != StashWidth
-    )) {
+    /* coverity[dead_error_line: SUPPRESS] */
+    if (GOPDraw != NULL && GOPDraw->Mode->Mode != StashMode) {
         // DA-TAG: Mode index optionally forced later by caller
-        GOPDraw->Mode->Info->HorizontalResolution  = StashWidth;
-        GOPDraw->Mode->Info->VerticalResolution    = StashHeight;
+        GOPDraw->Mode->Info->HorizontalResolution = StashWidth;
+        GOPDraw->Mode->Info->VerticalResolution = StashHeight;
     }
 
     MY_FREE_POOL(HandleBuffer);

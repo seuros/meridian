@@ -22,13 +22,20 @@ RefindPlus is a fork of _`rEFInd`_ that provides extended functionality via enha
 
 RefindPlus is particularly useful for those with additional configuration needs or that require advanced or otherwise non-standard (hence typically unavailable) options for running operating systems and uEFI utilities on Mac and PC.
 
-Some features:
+> `RefindPlus` requires case-sensitive presentation. \
+> This _SHALL NOT_ be hyphenated or otherwise split.
+>
+> Presentation ... Standard:- **RefindPlus** \
+> Presentation ... Lowercase:- **refindplus** \
+> Presentation ... Uppercase:- **REFINDPLUS**
+
+Some RefindPlus Features:
 - Maintains feature and configuration parity with `Upstream v0.14.2` base.
 - Provides options to [tag faulty RAM](https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BadRamTag.md) regions as unusable to extend useful life.
 - Provides protection against damage to vulnerable Mac nvRAM by UEFI Windows.
-- Provides mitigation against boot failures and related issues on T2/TPM chipped units.
 - Emulates UEFI 2.x on EFI 1.x units to permit running UEFI 2.x utilities on such units.
-- Provides Pre-Boot Configuration Screen on units running GPUs without native EFI on Macs.
+- Provides mitigation against boot failures and related issues on T2/TPM chipped units.
+- Provides Pre-Boot Configuration Screen on Apple Macs running GPUs without native EFI.
 - Extensive memory management improvements with associated speed and stability gains.
 - Provides improved text display support for languages that require unicode text.
 - Provides option to block unwanted changes to the nvRAM `BootOrder` variable.
@@ -58,9 +65,12 @@ Some features:
 
 A simple and direct way is to manually make the RefindPlus efi file a `UEFI Fallback File` by naming it accordingly, `BOOTx64.efi`, and placing this in the `UEFI Fallback Path` of a disk, `/EFI/BOOT`. The configuration file should be placed next to the RefindPlus efi file along with optional `drivers`, `tools`, and/or `icons` folders as required.
 
-> [!IMPORTANT]
->
 > Only `x86_64` builds of RefindPlus are currently distributed and supported.
+>
+> External ports can be slower than internal ones by an order of magnitude. \
+> HDD disks are slower than SSD/NVMe drives by an order of magnitude. \
+> Loading RefindPlus from either often results in longer load times. \
+> Booting with either attached often results in longer load times.
 
 [MyBootMgr](https://www.dakanji.com/creations/index.html) is recommended to automate installing RefindPlus when running Mac OS on Intel-based Macs. Alternatively, as the RefindPlus efi file can function as a drop-in replacement for the upstream efi file, [rEFInd](https://www.rodsbooks.com/refind/installing.html) can be installed first and its efi file replaced with the RefindPlus efi file (rename RefindPlus file to match). This allows installing RefindPlus on other compatible operating systems supported upstream. See the [Divergence](https://github.com/RefindPlusRepo/RefindPlus#divergence) section for how to enable `UEFI Secure Boot` (if required).
 
@@ -88,9 +98,9 @@ When run without activating RefindPlus-specific configuration options, as will b
 
 ## Additional Functionality
 
-RefindPlus-specific functionality can be configured by using the tokens below.<br/>
-Additional information can be found in the sample RefindPlus configuration file.<br/>
-These settings make up `Section 1` of the sample RefindPlus configuration file.
+RefindPlus-specific funtionality can be configured using the tokens below. \
+Additional information is provided in the sample RefindPlus configuration file. \
+These tokens are included in `Section 1` of the sample RefindPlus configuration file.
 
 Token | Functionality
 ----- | -----
@@ -189,7 +199,7 @@ In addition to the new functionality listed above, the following upstream config
 ## Divergence
 
 Significant visible implementation differences vis-a-vis the upstream base are:
-- **UEFI Secure Boot:** RefindPlus binaries as from v0.14.2.AD now include the `Secure Boot Advanced Targeting (SBAT)` section required by Shim v15.3/newer for secure boot support but require users to self-sign the binaries and to self-enrol the associated certificate.
+- **UEFI Secure Boot:** RefindPlus binaries as from v0.14.2.AD include the `Secure Boot Advanced Targeting (SBAT)` section required by Shim v15.3/newer for secure boot support but require users to self-sign the binaries and to self-enrol the associated certificate.
   - > The process [outlined upstream](https://www.rodsbooks.com/refind/secureboot.html#installation) for self-signing can be followed to enable support.
   - > An adaptation of the process for RefindPlus is [provided here](https://github.com/RefindPlusRepo/RefindPlus/discussions/190#discussioncomment-10130431). Modify for newer releases as required.
   - > Refer to [this summation](https://forum.manjaro.org/t/howto-enable-secure-boot-with-refind/121403/6) for futher insight.

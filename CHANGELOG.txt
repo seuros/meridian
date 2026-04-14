@@ -13,7 +13,7 @@
   * Refactoring of `fsw_strfunc.h` meant the driver was a `NOOP`
     - This bug was introduced in v0.14.2.AC (Commit 9ac45b9)
 - Fixes Failure of FS Drivers to Handle `Sparse Holes`
-  * Resulted in a failure to boot Linux Kernel v6.17.4/Newer
+  * Resulted in a failure to boot Linux Kernel `v6.17.4/Newer`
     - https://sf.net/p/refind/discussion/general/thread/172b9cbf09
     - https://github.com/torvalds/linux/commit/3e86e4d74c0490e5fc5a7f8de8f29e7579c9ffe5
   * This bug was inherited from legacy upstream code
@@ -35,12 +35,12 @@
         - Now `ALL CAPS` for consistency
       * Rationalised use of `static` functions
 - Improves `AppleLegacyLoader` Handling
-  * Used for Legacy BIOS Boot on some older Macs (AKA BootCamp)
-  * The hardcoded links grandfathered in from rEFIt have been removed
+  * Used for Legacy BIOS Boot on some older Macs (AKA `BootCamp`)
+  * The hardcoded links grandfathered in from `rEFIt` have been removed
     - These were kept as fallback links when dynamic link search was added
   * The grandfathered dynamic link search has proved to work without fallback
     - In any case, the hardcoded links also only included a subset of links
-    - Dynamic AppleLegacyLoader search was added to `rEFIt` in 2009:
+    - Dynamic AppleLegacyLoader search was added to rEFIt in 2009:
       * sf.net/p/refit/code/438
       * sf.net/p/refit/code/440
 - Amends `SupplyNVME` Feature

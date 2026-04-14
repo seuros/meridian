@@ -340,22 +340,24 @@ EFI_MEMORY_TYPE GetAddressMemType (
 static
 EFI_STATUS AddBadRange (
     IN OUT CHAR16               **BadRamData,
-    IN     EFI_PHYSICAL_ADDRESS   PageAddress,
-    IN     EFI_PHYSICAL_ADDRESS   RangeStart
+    IN     EFI_PHYSICAL_ADDRESS   RangeStart,
+    IN     EFI_PHYSICAL_ADDRESS   RangeClose,
+    IN     UINTN                  RangeTally
 ) {
+    EFI_STATUS                    Status;
     CHAR16                       *BadRamTemp;
 
 
     if (*BadRamData == NULL) {
         BadRamTemp = PoolPrint (
             L"0x%lx:0x%lx",
-            RangeStart, PageAddress
+            RangeStart, RangeClose
         );
     }
     else {
         BadRamTemp = PoolPrint (
             L"%s,0x%lx:0x%lx",
-            *BadRamData, RangeStart, PageAddress
+            *BadRamData, RangeStart, RangeClose
         );
     }
 
@@ -365,14 +367,23 @@ EFI_STATUS AddBadRange (
         #endif
 
         MemDrained = TRUE;
-        return EFI_OUT_OF_RESOURCES;
+        Status = EFI_OUT_OF_RESOURCES;
+    }
+    else {
+        Status = EFI_SUCCESS;
+
+        // Only Change if Allocated
+        MY_FREE_POOL(*BadRamData);
+        *BadRamData = BadRamTemp;
     }
 
-    // Only Change if Allocated
-    MY_FREE_POOL(*BadRamData);
-    *BadRamData = BadRamTemp;
+    OUR_MSG_L00((
+        OUR_MSG_STR(
+            "Potential BadRAM Range:   - Cache AutoScan Range %02d:- '%r'\n"
+        ), RangeTally, Status
+    ));
 
-    return EFI_SUCCESS;
+    return Status;
 } // static EFI_STATUS AddBadRange()
 
 static
@@ -543,25 +554,14 @@ EFI_STATUS AutoScanRam (
                         PageAddress -= EFI_PAGE_SIZE;
                     }
 
-                    OUR_MSG_L00((
-                        OUR_MSG_STR(
-                            "Potential BadRAM Range:   - Caching Self Derived BadRAM Range %02d"
-                        ), SeenRanges
-                    ));
-
                     // Add Range to Cache.
                     // Even if 'bad' size.
                     TmpStatus = AddBadRange (
                         &BadRamInfo,
+                        RangeStart,
                         PageAddress,
-                        RangeStart
+                        SeenRanges
                     );
-
-                    OUR_MSG_L00((
-                        OUR_MSG_STR(
-                            " ... Completed With Status:- '%r'\n"
-                        ), TmpStatus
-                    ));
 
                     if (EFI_ERROR(TmpStatus)) {
                         // Means Out of Resources.
@@ -630,25 +630,14 @@ EFI_STATUS AutoScanRam (
                     break; // Inner Loop 1B
                 }
 
-                OUR_MSG_L00((
-                    OUR_MSG_STR(
-                        "Potential BadRAM Range:   - Caching Self Derived BadRAM Range %02d"
-                    ), SeenRanges
-                ));
-
                 // Add Range to Cache.
                 // Even if 'bad' size.
                 TmpStatus = AddBadRange (
                     &BadRamInfo,
+                    RangeStart,
                     PageAddress,
-                    RangeStart
+                    SeenRanges
                 );
-
-                OUR_MSG_L00((
-                    OUR_MSG_STR(
-                        " ... Completed With Status:- '%r'\n"
-                    ), TmpStatus
-                ));
 
                 if (EFI_ERROR(TmpStatus)) {
                     // Means Out of Resources.

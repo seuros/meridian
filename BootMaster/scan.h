@@ -86,10 +86,10 @@
 
 #if defined (EFIX64)
 #   define MEMTEST_FILES \
-L"bootx64.efi,memtest.efi,memtest86.efi,memtest86p.efi,\
-memtest_x64.efi,memtestx64.efi,memtest+x64.efi,x64_memtest.efi,\
-memtest86_x64.efi,memtest86x64.efi,memtest86+x64.efi,x64_memtest86.efi,\
-memtest86p_x64.efi,memtest86px64.efi,memtest86p+x64.efi,x64_memtest86p.efi"
+L"bootx64.efi,memtest.efi,memtest86p.efi,memtest86.efi,\
+memtestx64.efi,memtest86px64.efi,memtest86x64.efi,\
+memtest_x64.efi,memtest86p_x64.efi,memtest86_x64.efi,\
+x64_memtest.efi,x64_memtest86p.efi,x64_memtest86.efi"
 #   define SKIPNAME_PATTERNS       L"*ia32*.efi,*aa64*.efi,*mips*.efi"
 #   define FALLBACK_FULLNAME       L"EFI\\BOOT\\bootx64.efi"
 #   define FALLBACK_BASENAME       L"BOOTx64.efi"
@@ -100,8 +100,10 @@ memtest86p_x64.efi,memtest86px64.efi,memtest86p+x64.efi,x64_memtest86p.efi"
 #   define NVRAMCLEAN_FILES        L"CleanNvram.efi,CleanNvramx64.efi,CleanNvram_x64.efi,x64_CleanNvram.efi"
 #elif defined (EFI32)
 #   define MEMTEST_FILES \
-L"bootia32.efi,memtest.efi,memtest_ia32.efi,\
-memtestia32.efi,memtest+ia32.efi,ia32_memtest.efi"
+L"bootia32.efi,memtest.efi,memtest86p.efi,memtest86.efi,\
+memtestia32.efi,memtest86pia32.efi,memtest86ia32.efi,\
+memtest_ia32.efi,memtest86p_ia32.efi,memtest86_ia32.efi,\
+ia32_memtest.efi,ia32_memtest86p.efi,ia32_memtest86.efi"
 #   define SKIPNAME_PATTERNS       L"*x64*.efi,*aa64*.efi,*mips*.efi"
 #   define FALLBACK_FULLNAME       L"EFI\\BOOT\\bootia32.efi"
 #   define FALLBACK_BASENAME       L"BOOTia32.efi"
@@ -114,6 +116,12 @@ memtestia32.efi,memtest+ia32.efi,ia32_memtest.efi"
 #   define MEMTEST_FILES \
 L"bootaa64.efi,memtest.efi,memtest_aa64.efi,\
 memtestaa64.efi,memtest+aa64.efi,aa64_memtest.efi"
+
+#   define MEMTEST_FILES \
+L"bootaa64.efi,memtest.efi,memtest86p.efi,memtest86.efi,\
+memtestaa64.efi,memtest86paa64.efi,memtest86aa64.efi,\
+memtest_aa64.efi,memtest86p_aa64.efi,memtest86_aa64.efi,\
+aa64_memtest.efi,aa64_memtest86p.efi,aa64_memtest86.efi"
 #   define SKIPNAME_PATTERNS       L"*x64*.efi,*ia32*.efi,*mips*.efi"
 #   define FALLBACK_FULLNAME       L"EFI\\BOOT\\bootaa64.efi"
 #   define FALLBACK_BASENAME       L"BOOTaa64.efi"
@@ -123,7 +131,7 @@ memtestaa64.efi,memtest+aa64.efi,aa64_memtest.efi"
 #   define SHELL_FILES             L"shell.efi,shell_aa64.efi,shellaa64.efi,aa64_shell.efi"
 #   define NVRAMCLEAN_FILES        L"CleanNvram.efi,CleanNvramaa64.efi,CleanNvram_aa64.efi,aa64_CleanNvram.efi"
 #else
-#   define MEMTEST_FILES           L"boot.efi,memtest.efi"
+#   define MEMTEST_FILES           L"boot.efi,memtest.efi,memtest86p.efi,memtest86.efi"
 #   define SKIPNAME_PATTERNS       L"*x64*.efi,*ia32*.efi,*aa64*.efi,*mips*.efi"
 #   define FALLBACK_FULLNAME       L"EFI\\BOOT\\boot.efi" // Not really correct
 #   define FALLBACK_BASENAME       L"BOOT.efi"            // Not really correct

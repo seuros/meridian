@@ -670,6 +670,43 @@ static int fsw_reiserfs_compare_key(struct reiserfs_key *key,
     return KEYS_IDENTICAL;
 }
 
+static
+void fsw_handle_dup (
+    struct fsw_reiserfs_item  *item,
+    struct item_head          *ihead,
+    fsw_u8                    *buffer,
+    fsw_u32                    tree_bno
+) {
+    // return results
+    FSW_DO_MEMCPY(&item->ih, ihead, sizeof (struct item_head));
+    item->item_type = (fsw_u32)FSW_U64_SHR(ihead->ih_key.u.k_offset_v2.v, 60);
+    if (item->item_type != TYPE_DIRECT &&
+        item->item_type != TYPE_INDIRECT &&
+        item->item_type != TYPE_DIRENTRY
+    ) {
+        // 3.5 format (_v1)
+        item->item_type = ihead->ih_key.u.k_offset_v1.k_uniqueness;
+        item->item_offset = ihead->ih_key.u.k_offset_v1.k_offset;
+    } else {
+        // 3.6 format (_v2)
+        item->item_offset = ihead->ih_key.u.k_offset_v2.v & (~0ULL >> 4);
+    }
+    item->item_data = buffer + ihead->ih_item_location;
+    item->valid = 1;
+
+    // add information for block release
+    item->block_bno = tree_bno;
+    item->block_buffer = buffer;
+
+    FSW_MSG_L03((
+        FSW_MSG_STR(
+            "FSW_REISERFS: fsw_reiserfs_item_search ... found %d/%d/%lld (%d)\n"
+        ),
+        ihead->ih_key.k_dir_id, ihead->ih_key.k_objectid,
+        item->item_offset, item->item_type
+    ));
+}
+
 /**
  * Find an item by key in the reiserfs tree.
  */
@@ -772,33 +809,10 @@ static fsw_status_t fsw_reiserfs_item_search(struct fsw_reiserfs_volume *vol,
         return FSW_NOT_FOUND;   // Found no key for this object at all
     }
 
-    // return results
-    FSW_DO_MEMCPY(&item->ih, ihead, sizeof (struct item_head));
-    item->item_type = (fsw_u32)FSW_U64_SHR(ihead->ih_key.u.k_offset_v2.v, 60);
-    if (item->item_type != TYPE_DIRECT &&
-        item->item_type != TYPE_INDIRECT &&
-        item->item_type != TYPE_DIRENTRY) {
-        // 3.5 format (_v1)
-        item->item_type = ihead->ih_key.u.k_offset_v1.k_uniqueness;
-        item->item_offset = ihead->ih_key.u.k_offset_v1.k_offset;
-    } else {
-        // 3.6 format (_v2)
-        item->item_offset = ihead->ih_key.u.k_offset_v2.v & (~0ULL >> 4);
-    }
-    item->item_data = buffer + ihead->ih_item_location;
-    item->valid = 1;
+    fsw_handle_dup (
+        item, ihead, buffer, tree_bno
+    );
 
-    // add information for block release
-    item->block_bno = tree_bno;
-    item->block_buffer = buffer;
-
-    FSW_MSG_L03((
-        FSW_MSG_STR(
-            "FSW_REISERFS: fsw_reiserfs_item_search ... found %d/%d/%lld (%d)\n"
-        ),
-        ihead->ih_key.k_dir_id, ihead->ih_key.k_objectid,
-        item->item_offset, item->item_type
-    ));
     return FSW_SUCCESS;
 }
 
@@ -836,22 +850,23 @@ static fsw_status_t fsw_reiserfs_item_next(struct fsw_reiserfs_volume *vol,
         // Get the current tree block into memory
         tree_bno = item->path_bno[tree_level];
         status = fsw_block_get (vol, tree_bno, tree_level, (void **) &buffer);
-        if (status)
-            return status;
+        if (status) return status;
+
         bhead = (struct block_head *)buffer;
         if (bhead->blk_level != tree_level) {
             FSW_MSG_L01((
                 FSW_MSG_STR(
-                    "FSW_REISERFS: fsw_reiserfs_item_next .. tree block %d has not expected level %d\n"
+                    "FSW_REISERFS: fsw_reiserfs_item_next ... tree block %d has not expected level %d\n"
                 ), tree_bno, tree_level
             ));
             fsw_block_release (vol, tree_bno, buffer);
             return FSW_VOLUME_CORRUPTED;
         }
+
         nr_item = bhead->blk_nr_item;
         FSW_MSG_L03((
             FSW_MSG_STR(
-                "fsw_reiserfs_item_next: visiting block %d level %d items %d\n"
+                "FSW_REISERFS: fsw_reiserfs_item_next ... visiting block %d level %d items %d\n"
             ), tree_bno, tree_level, nr_item
         ));
 
@@ -873,18 +888,19 @@ static fsw_status_t fsw_reiserfs_item_next(struct fsw_reiserfs_volume *vol,
 
             // Get the current tree block into memory
             status = fsw_block_get (vol, tree_bno, tree_level, (void **) &buffer);
-            if (status)
-                return status;
+            if (status) return status;
+
             bhead = (struct block_head *)buffer;
             if (bhead->blk_level != tree_level) {
                 FSW_MSG_L01((
                     FSW_MSG_STR(
-                        "FSW_REISERFS: fsw_reiserfs_item_next: tree block %d has not expected level %d\n"
+                        "FSW_REISERFS: fsw_reiserfs_item_next ... tree block %d has not expected level %d\n"
                     ), tree_bno, tree_level
                 ));
                 fsw_block_release (vol, tree_bno, buffer);
                 return FSW_VOLUME_CORRUPTED;
             }
+
             nr_item = bhead->blk_nr_item;
             FSW_MSG_L03((
                 FSW_MSG_STR(
@@ -904,32 +920,10 @@ static fsw_status_t fsw_reiserfs_item_next(struct fsw_reiserfs_volume *vol,
             return FSW_NOT_FOUND;   // Found no next key for this object
         }
 
-        // return results
-        FSW_DO_MEMCPY(&item->ih, ihead, sizeof (struct item_head));
-        item->item_type = (fsw_u32)FSW_U64_SHR(ihead->ih_key.u.k_offset_v2.v, 60);
-        if (item->item_type != TYPE_DIRECT &&
-            item->item_type != TYPE_INDIRECT &&
-            item->item_type != TYPE_DIRENTRY) {
-            // 3.5 format (_v1)
-            item->item_type = ihead->ih_key.u.k_offset_v1.k_uniqueness;
-            item->item_offset = ihead->ih_key.u.k_offset_v1.k_offset;
-        } else {
-            // 3.6 format (_v2)
-            item->item_offset = ihead->ih_key.u.k_offset_v2.v & (~0ULL >> 4);
-        }
-        item->item_data = buffer + ihead->ih_item_location;
-        item->valid = 1;
+        fsw_handle_dup (
+            item, ihead, buffer, tree_bno
+        );
 
-        // add information for block release
-        item->block_bno = tree_bno;
-        item->block_buffer = buffer;
-
-        FSW_MSG_L03((
-            FSW_MSG_STR(
-                "FSW_REISERFS: fsw_reiserfs_item_next ... found %d/%d/%lld (%d)\n"
-            ), ihead->ih_key.k_dir_id, ihead->ih_key.k_objectid,
-            item->item_offset, item->item_type
-        ));
         return FSW_SUCCESS;
     }
 
