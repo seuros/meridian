@@ -11,6 +11,16 @@ body:
         ---
 
 
+        **Try the item below first if RefindPlus fails to display/boot Linux.**
+        Especially if running Linux Kernel v6.17.4 or newer.
+        - Run RefindPlus with Linux filesystem drivers from version:- `0.14.2.AE or Newer`.
+
+        **NB:** Previous FS drivers failed on voids in binaries.
+
+
+        ---
+
+
         **Try the item below first if RefindPlus fails to display but responds to key inputs on Apple Macs.**
         Especially if running 5k monitors on Pre-2020 units as the firmware restricts third-party loaders.
         - Run RefindPlus with these config settings active:- `disable_set_consolegop` and `disable_set_applefb`.
@@ -52,7 +62,7 @@ body:
       label: RefindPlus Version
       description: Which version of RefindPlus is affected?
       options:
-        - 'Official v0.14.2.AD Release'
+        - 'Official v0.14.2.AE Release'
         - 'Official Older Released Version'
         - 'Official Pre-Release Code Build'
         - 'Unofficially Modified Code Build'

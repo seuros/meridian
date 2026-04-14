@@ -38,8 +38,6 @@ Some RefindPlus Features:
 - Provides Pre-Boot Configuration Screen on Apple Macs running GPUs without native EFI.
 - Extensive memory management improvements with associated speed and stability gains.
 - Provides improved text display support for languages that require unicode text.
-- Provides option to block unwanted changes to the nvRAM `BootOrder` variable.
-  - These amendments often result in `Boot Coups` following system updates.
 - Identifies and automatically handles `Ventoy` instances if present.
   - Rationalises binaries displayed.
   - Displays an `os_ventoy` icon if available.
