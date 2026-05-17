@@ -142,7 +142,7 @@ if the size of the range is within the defined limits. The range can be split if
 #### 2. Misc Others
 
 The `BadRAM Patterns`/`Linux memmap`/`Bad Pages` and similar output types provide ranges that exclude or limit Good RAM.<br/>
-These outputs could potentially be passed to `AI ChatBots` for conversion to a comma delimited list of start/end addresses.
+These outputs could potentially be passed to `LLM Bots` for conversion to a comma delimited list of start/end addresses.
 
 <br><br>
 

@@ -22,16 +22,18 @@ RefindPlus is a fork of _`rEFInd`_ that provides extended functionality via enha
 
 RefindPlus is particularly useful for those with additional configuration needs or that require advanced or otherwise non-standard (hence typically unavailable) options for running operating systems and uEFI utilities on Mac and PC.
 
-> `RefindPlus` requires case-sensitive presentation. \
-> This _SHALL NOT_ be hyphenated or otherwise split.
+> Project Name:- `'RefindPlus'` (case sensitive). \
+> This _SHALL NOT_ be hyphenated or otherwise mutated.
 >
-> Presentation ... Standard:- **RefindPlus** \
-> Presentation ... Lowercase:- **refindplus** \
-> Presentation ... Uppercase:- **REFINDPLUS**
+> Presentation[Standard]:- **RefindPlus** \
+> Presentation[Lowercase]:- **refindplus** \
+> Presentation[Uppercase]:- **REFINDPLUS**
+>
+> Presentation _MAY_ be abbreviated to '**RP**' or '**rp**'.
 
 Some RefindPlus Features:
 - Maintains feature and configuration parity with `Upstream v0.14.2` base.
-- Provides options to [tag faulty RAM](https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BadRamTag.md) regions as unusable to extend useful life.
+- Provides options to [tag faulty RAM regions](https://github.com/RefindPlusRepo/RefindPlus/blob/GOPFix/BADRAM.md) as unusable to extend useful life.
 - Provides protection against damage to vulnerable Mac nvRAM by UEFI Windows.
 - Emulates UEFI 2.x on EFI 1.x units to permit running UEFI 2.x utilities on such units.
 - Provides mitigation against boot failures and related issues on T2/TPM chipped units.
@@ -65,10 +67,10 @@ A simple and direct way is to manually make the RefindPlus efi file a `UEFI Fall
 
 > Only `x86_64` builds of RefindPlus are currently distributed and supported.
 >
-> External ports can be slower than internal ones by an order of magnitude. \
+> External ports can be slower than internal by an order of magnitude. \
 > HDD disks are slower than SSD/NVMe drives by an order of magnitude. \
-> Loading RefindPlus from either often results in longer load times. \
-> Booting with either attached often results in longer load times.
+> Loading RefindPlus from external ports or HDD disks results in longer start times. \
+> Booting with external ports or HDD disks active typically results in longer start times.
 
 [MyBootMgr](https://www.dakanji.com/creations/index.html) is recommended to automate installing RefindPlus when running Mac OS on Intel-based Macs. Alternatively, as the RefindPlus efi file can function as a drop-in replacement for the upstream efi file, [rEFInd](https://www.rodsbooks.com/refind/installing.html) can be installed first and its efi file replaced with the RefindPlus efi file (rename RefindPlus file to match). This allows installing RefindPlus on other compatible operating systems supported upstream. See the [Divergence](https://github.com/RefindPlusRepo/RefindPlus#divergence) section for how to enable `UEFI Secure Boot` (if required).
 
@@ -104,7 +106,7 @@ Token | Functionality
 ----- | -----
 badram_tag_list       |Allows providing a list of faulty memory regions to be marked as `unusable`
 badram_tag_mode       |Controls whether and how faulty memory regions are managed by the program
-badram_tag_wide       |Allows first trying a simpler, and faster, process for some tagging types.
+badram_tag_wide       |Allows first trying a simpler, and faster, process for some tag modes
 continue_on_warning   |Proceed as if a key was pressed after screen warnings (for unattended boot)
 csr_dynamic           |Actively sets or unsets Apple's `Configurable Security Restrictions (CSR)`
 csr_normalise         |Removes the `APPLE_INTERNAL` CSR bit, when present, to permit OTA updates
@@ -183,14 +185,14 @@ In addition to the new functionality listed above, the following upstream config
       - Upstream Levels 1 to 3 were dispensed with
     - Level 2 is only exposed on `NOOPT` builds and outputs logs at a very detailed level
       - The RefindPlus build script will create `NOOPT` builds when passed `ALL` or `NPT` via the `--build-type=XYZ` parameter
-        - Setting `ALL` adds an `NPT` build to the standard `REL` and `DBG` builds created
-        - Setting `NPT` creates only that build type
+        - Setting `ALL` adds an `NPT` file to the standard `REL` and `DBG` files created
+        - Setting `NPT` creates only that build file
           - Applies to only setting `REL` or `DBG`
         - Pass `--help` to the build script for guidance on options
     - When Level 2 is not exposed, selected levels above `1` will be capped at Level 1
     - When exposed, selected levels above `2` will be capped at Level 2
-  - Logging is never active on `RELEASE` builds (day-to-day use).
-  - Logging is always active on `DEBUG` and `NOOPT` builds (trouble shooting).
+  - Logging is never active on `REL` files (for day-to-day use).
+  - Logging is always active on `DBG` and `NPT` files (for trouble shooting).
 - **"resolution":** The `max` setting is redundant in RefindPlus, which always defaults to the maximum available resolution when a resolution is not specified or is not available for any other reason.
 - **"screensaver":** The screensaver cycles through a set of colours as opposed to a single grey colour.
 
@@ -219,7 +221,7 @@ Significant visible implementation differences vis-a-vis the upstream base are:
   - > Activate the RefindPlus-specific `disable_apfs_load` setting to switch this feature off.
 - **APFS PreBoot Volumes:** RefindPlus always synchronises APFS System and PreBoot partitions transparently such that the Preboot partitions of APFS volumes are always used to boot APFS formatted Mac OS. Hence, a single option for booting Mac OS on APFS volumes is presented in RefindPlus to provide maximum APFS compatibility. This is via an inbuilt `SyncAPFS` feature.
   - > Activate the RefindPlus-specific `disable_apfs_sync` setting to switch this feature off.
-- **Mac nvRAM Protection:** RefindPlus always prevents UEFI Windows Secure Boot from saving certificates to Mac nvRAM as this can result in damage and, ultimately, an inability to boot anything on some Macs (typically Pre 2013 Vintage). Blocking these certificates does not impact the operation of UEFI Windows on such Macs. This filtering only happens when Apple firmware is detected and is not applied to other types of firmware. This is via an inbuilt `ProtectNVRAM` feature.
+- **Mac nvRAM Protection:** RefindPlus always prevents UEFI Windows from saving certificates to Mac nvRAM as this can result in damage and, ultimately, an inability to boot anything on some Macs (typically Pre 2013 Vintage). Blocking these certificates does not impact the operation of UEFI Windows on such Macs. This filtering only happens when Apple firmware is detected and is not applied to other types of firmware. This is via an inbuilt `ProtectNVRAM` feature.
   - > Activate the RefindPlus-specific `disable_nvram_protect` setting to switch this feature off.
 - **Mac Legacy BIOS Boot:** RefindPlus originally assumed all Macs were capable of legacy BIOS boot based on code that went in upstream back in 2012 when this was a reasonable default. However, some later Intel Macs do not support legacy BIOS boot and RefindPlus now attempts to categorise Macs to enable/disable legacy BIOS boot accordingly.
   - > Activate the RefindPlus-specific `disable_legacy_sync` setting to keep the old assumption.

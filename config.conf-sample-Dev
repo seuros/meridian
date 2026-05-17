@@ -1,6 +1,7 @@
 # config.conf
 # Configuration File for the RefindPlus Boot Manager
 
+
 ##--------------------------------------------------------------##
 ##                        Section 1 of 4                        ##
 ##               ADDITIONAL CONFIGURATION ITEMS                 ##
@@ -119,7 +120,7 @@
 # values "ON" or "OFF" by using the "CSR Rotate" tool on the main menu.
 # The following options are available:
 #   1    - Always Enable SIP/SSV
-#   0    - Take no Action
+#   0    - Take no Action (Default)
 #  -1    - Always Disable SIP/SSV
 #
 # NOTES:
@@ -604,7 +605,7 @@
 # This token allows overriding the detection as follows:
 #  99    - Never scale UI elements
 #   1    - Always scale UI elements up
-#   0    - Scale UI elements, or not, based on screen resolution
+#   0    - Scale UI elements, or not, based on screen resolution (Default)
 #  -1    - Always scale UI elements down
 #
 # Scales UI Elements Based on Screen Resolution When Commented Out
