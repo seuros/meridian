@@ -1,5 +1,12 @@
 # Changelog
 
+## [2026.9.2](https://github.com/seuros/meridian/compare/v2026.9.1...v2026.9.2) (2026-09-13)
+
+
+### Build
+
+* bump edk2 to stable202608, consolidate mem* intrinsics ([#3](https://github.com/seuros/meridian/issues/3)) ([ec1c504](https://github.com/seuros/meridian/commit/ec1c504a1e3b2a0291b6f47147945ff6f0f1fbda))
+
 ## [2026.9.1](https://github.com/seuros/meridian/compare/v2026.9.0...v2026.9.1) (2026-09-11)
 
 
