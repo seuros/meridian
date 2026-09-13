@@ -22,7 +22,6 @@
 
 [Sources]
     snp_discover.c
-    snp_intrinsics.c    # weak memset/memcpy -- clang lowers ZeroMem/CopyMem clears to libc symbols
 
 [Packages]
     MdePkg/MdePkg.dec
@@ -37,6 +36,7 @@
     BaseMemoryLib
     MemoryAllocationLib
     PrintLib
+    MeridianIntrinsicsLib
 
 [Protocols]
     gEfiPxeBaseCodeProtocolGuid          ## CONSUMES

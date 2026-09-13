@@ -102,6 +102,7 @@
     LuaLib|MeridianPkg/Library/LuaLib/LuaLib.inf
 # libstatemachines runtime (freestanding profile, zero heap)
     StateMachineLib|MeridianPkg/Library/StateMachineLib/StateMachineLib.inf
+    MeridianIntrinsicsLib|MeridianPkg/Library/IntrinsicsLib/IntrinsicsLib.inf
 # Shared rEFInd-derived "fsw" filesystem framework (core + EFI glue + utils),
 # linked once into every filesystems/*.inf driver.
     FswFrameworkLib|MeridianPkg/filesystems/FswFrameworkLib.inf

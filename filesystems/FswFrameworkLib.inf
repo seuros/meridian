@@ -30,7 +30,6 @@
     fsw_efi.c
     fsw_lib.c
     fsw_efi_lib.c
-    fsw_intrinsics.c
 
 [Packages]
     MdePkg/MdePkg.dec
@@ -47,6 +46,7 @@
     DxeServicesTableLib
     DevicePathLib
     PrintLib
+    MeridianIntrinsicsLib
 
 [LibraryClasses.AARCH64]
     BaseStackCheckLib
