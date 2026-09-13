@@ -56,7 +56,6 @@
     install/install.c
     loaders/launch_efi.c
     lib/lib.c
-    lib/intrinsics.c
     storage/volume_scan.c
     storage/file_io.c
     loaders/linux.c
@@ -167,6 +166,7 @@
 # For SupplyNVME
     NvmExpressLib
     StateMachineLib
+    MeridianIntrinsicsLib
 
 
 

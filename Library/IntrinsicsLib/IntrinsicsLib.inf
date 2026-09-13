@@ -1,0 +1,33 @@
+## @file
+#  MeridianIntrinsicsLib - weak mem* intrinsics for every Meridian image.
+#
+#  Each EFI binary is a separate link unit, so the definitions in Intrinsics.c
+#  cannot be shared at link time; this library exists so they are written once
+#  and compiled into each image that needs them. Linked by Meridian.inf,
+#  FswFrameworkLib.inf (and through it every fsw filesystem driver) and
+#  MeridianSnpDiscover.inf.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Abdelkader Boudih <oss@seuros.com>
+##
+
+[Defines]
+    INF_VERSION    = 0x00010006
+    BASE_NAME      = MeridianIntrinsicsLib
+    FILE_GUID      = eebb6b0d-64c9-4d3f-82f8-3cf198523cec
+    MODULE_TYPE    = BASE
+    VERSION_STRING = 1.0
+    LIBRARY_CLASS  = MeridianIntrinsicsLib
+
+#
+# VALID_ARCHITECTURES = X64 AARCH64
+#
+
+[Sources]
+    Intrinsics.c
+
+[Packages]
+    MdePkg/MdePkg.dec
+
+[LibraryClasses]
+    BaseMemoryLib
