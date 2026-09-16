@@ -18,7 +18,7 @@ OUT_DIR="${ROOT_DIR}/dist"
 FS_DRIVERS=(bcachefs btrfs ext2 ext4 hfs iso9660 ntfs ufs)
 
 # Standalone applications shipped as loose downloads, not inside the ESP tree.
-# MeridianSnpDiscover, SmSelfTest and LuaTest are build-time/bench tools and are
+# MeridianSnpDiscover and LuaTest are build-time/bench tools and are
 # deliberately not released.
 APPLICATIONS=(Cydia DarkPassenger)
 

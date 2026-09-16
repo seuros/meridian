@@ -137,7 +137,6 @@
     MeridianPkg/Library/LuaLib/LuaLib.inf
     MeridianPkg/Library/LuaLib/test/LuaTest.inf
     MeridianPkg/Library/StateMachineLib/StateMachineLib.inf
-    MeridianPkg/Application/SmSelfTest/SmSelfTest.inf
     MeridianPkg/Application/DarkPassenger/DarkPassenger.inf
     MeridianPkg/Application/Cydia/Cydia.inf
     MeridianPkg/net/snp/MeridianSnpDiscover.inf
