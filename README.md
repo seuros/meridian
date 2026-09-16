@@ -65,6 +65,7 @@ inherited config is present, clean it manually or delete it.
 
 | Path | Purpose |
 | --- | --- |
+| `Application/` | Standalone UEFI applications, each its own `.efi`. See [Application/README.md](Application/README.md). |
 | `boot/` | UEFI application entry, early globals, and ESP-layout constants only. |
 | `config/` | Configuration parser, token handlers, stanzas, and config synchronisation. |
 | `discovery/` | Boot-entry discovery and scanner strategies. |
@@ -97,7 +98,7 @@ Each release attaches, per architecture (`x64` and `aarch64`):
 | `meridian-<version>-<arch>-esp.zip` | The complete on-ESP tree. Unzip it at the root of your ESP. |
 | `Meridian-<version>-<arch>.efi` | The boot manager on its own. |
 | `Cydia-<version>-<arch>.efi` | Standalone pre-OS hardware diagnostic. |
-| `DarkPassenger-<version>-<arch>.efi` | Standalone LPSS re-enablement tool. |
+| `DarkPassenger-<version>-<arch>.efi` | Standalone read-only recon for vendor firmware lockouts. |
 | `SHA256SUMS` | Checksums for every asset above. |
 
 The ESP archive is the fast path:
