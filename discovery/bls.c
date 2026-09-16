@@ -165,12 +165,18 @@ static BOOLEAN BlsIsSupportedArchitecture(IN CHAR16 *Architecture)
 #endif
 }
 
+// BLS puts the OS in 'title' and the kernel in 'version', so every entry from a
+// distribution shares one title. Append the version as 'Name ::: Version'.
 static CHAR16 *BlsTitleFromFields(IN CHAR16 *Title, IN CHAR16 *Version, IN CHAR16 *EntryFileName)
 {
     CHAR16 *BaseName;
     CHAR16 *EntryTitle;
 
     if (Title != NULL && Title[0] != L'\0') {
+        if (Version != NULL && Version[0] != L'\0' && !MrdStrIncludesCI(Title, Version)) {
+            return PoolPrint(L"%s ::: %s", Title, Version);
+        }
+
         return StrDuplicate(Title);
     }
 
