@@ -485,6 +485,290 @@ static VOID ReconcileHackintoshMacOS(VOID)
     (VOID) Removed;
 }
 
+// Kernel release of a Linux entry ('6.14.11-9-pve'), or NULL when unknown.
+// Taken from the kernel basename, else from the sibling initrd basename.
+static CHAR16 *LinuxKernelRelease(IN LOADER_ENTRY *LoaderEntry)
+{
+    UINTN i;
+    CHAR16 *Base;
+    CHAR16 *Stem;
+    CHAR16 *Prefix;
+    CHAR16 *Release;
+    CHAR16 *Tail; // Do *NOT* Free ... interior pointer
+    CHAR16 *InitrdSpec;
+
+    static CHAR16 *InitrdStems[] = {L"initrd.img-", L"initramfs.img-", L"initramfs-", L"initrd-"};
+
+    if (LoaderEntry == NULL) {
+        return NULL;
+    }
+
+    Release = NULL;
+
+    if (LoaderEntry->LoaderPath != NULL) {
+        Base = Basename(LoaderEntry->LoaderPath);
+        if (Base != NULL) {
+            i = 0;
+            while (Release == NULL) {
+                Prefix = FindCommaDelimited(GlobalConfig.LinuxPrefixes, i++);
+                if (Prefix == NULL) {
+                    break;
+                }
+
+                Stem = PoolPrint(L"%s-", Prefix);
+                if (Stem != NULL && MrdStrStartsWithCI(Stem, Base)) {
+                    Tail = GetSubStrAfter(Stem, Base);
+                    if (Tail != NULL && Tail != Base && Tail[0] != L'\0') {
+                        Release = StrDuplicate(Tail);
+                    }
+                }
+
+                MRD_FREE_POOL(Stem);
+                MRD_FREE_POOL(Prefix);
+            }
+
+            MRD_FREE_POOL(Base);
+        }
+    }
+
+    if (Release != NULL) {
+        return Release;
+    }
+
+    // BLS entries carry 'initrd=' in LoadOptions rather than InitrdPath.
+    InitrdSpec = NULL;
+    if (LoaderEntry->InitrdPath != NULL) {
+        InitrdSpec = StrDuplicate(LoaderEntry->InitrdPath);
+    }
+    else if (LoaderEntry->LoadOptions != NULL &&
+             MrdStrIncludesCI(LoaderEntry->LoadOptions, L"initrd=")) {
+        Tail = GetSubStrAfter(L"initrd=", LoaderEntry->LoadOptions);
+        if (Tail != NULL && Tail != LoaderEntry->LoadOptions) {
+            InitrdSpec = GetSubStrBefore(L" ", Tail);
+        }
+    }
+
+    if (InitrdSpec == NULL) {
+        return NULL;
+    }
+
+    Base = Basename(InitrdSpec);
+    MRD_FREE_POOL(InitrdSpec);
+    if (Base == NULL) {
+        return NULL;
+    }
+
+    for (i = 0; i < ARRAY_SIZE(InitrdStems); i++) {
+        if (MrdStrStartsWithCI(InitrdStems[i], Base)) {
+            Tail = GetSubStrAfter(InitrdStems[i], Base);
+            if (Tail != NULL && Tail != Base && Tail[0] != L'\0') {
+                Release = StrDuplicate(Tail);
+            }
+
+            break;
+        }
+    }
+
+    MRD_FREE_POOL(Base);
+
+    return Release;
+}
+
+// Verbatim 'root=' value of a Linux entry, or NULL when it has none.
+static CHAR16 *LinuxRootSpec(IN LOADER_ENTRY *LoaderEntry)
+{
+    CHAR16 *Tail; // Do *NOT* Free ... interior pointer
+    CHAR16 *RootSpec;
+
+    if (LoaderEntry == NULL || LoaderEntry->LoadOptions == NULL) {
+        return NULL;
+    }
+
+    if (!MrdStrIncludesCI(LoaderEntry->LoadOptions, L"root=")) {
+        return NULL;
+    }
+
+    Tail = GetSubStrAfter(L"root=", LoaderEntry->LoadOptions);
+    if (Tail == NULL || Tail == LoaderEntry->LoadOptions) {
+        return NULL;
+    }
+
+    RootSpec = GetSubStrBefore(L" ", Tail);
+    if (RootSpec != NULL && RootSpec[0] == L'\0') {
+        MRD_FREE_POOL(RootSpec);
+    }
+
+    return RootSpec;
+}
+
+// Ranks the boot path of an otherwise identical kernel entry. Higher wins:
+// SelfVolume, then any FAT volume, then a driver-mounted filesystem.
+static UINTN LinuxEntryRank(IN LOADER_ENTRY *LoaderEntry)
+{
+    if (LoaderEntry == NULL || LoaderEntry->Volume == NULL) {
+        return 0;
+    }
+
+    if (LoaderEntry->Volume == SelfVolume) {
+        return 3;
+    }
+
+    switch (LoaderEntry->Volume->FSType) {
+    case FS_TYPE_FAT12:
+    case FS_TYPE_FAT16:
+    case FS_TYPE_FAT32:
+        return 2;
+
+    default:
+        return 1;
+    }
+}
+
+// Collapses Linux kernel entries that are the same kernel on the same root,
+// reached by different routes (ESP copy, BLS entry, /boot via an FS driver).
+// Identity is (release, root=); both must be known or the entry is kept.
+// Chainloaders and manual stanzas are left alone.
+static VOID ReconcileDuplicateLinuxKernels(VOID)
+{
+    UINTN i;
+    UINTN j;
+    UINTN Removed;
+    UINTN LoserIndex;
+    UINTN KeptRank;
+    UINTN TestRank;
+    CHAR16 *KeptRelease;
+    CHAR16 *KeptRoot;
+    CHAR16 *TestRelease;
+    CHAR16 *TestRoot;
+    BOOLEAN IsDuplicate;
+    LOADER_ENTRY *KeptEntry;
+    LOADER_ENTRY *TestEntry;
+    MERIDIAN_MENU_ENTRY *MenuEntry;
+    MERIDIAN_MENU_ENTRY *RemovedEntry;
+
+    if (MainMenu == NULL || MainMenu->Entries == NULL || MainMenu->EntryCount < 2) {
+        return;
+    }
+
+    Removed = 0;
+
+    i = 0;
+    while (i < MainMenu->EntryCount) {
+        MenuEntry = MainMenu->Entries[i];
+        if (MenuEntry == NULL || MenuEntry->Tag != TAG_LOADER) {
+            i++;
+            continue;
+        }
+
+        KeptEntry = (LOADER_ENTRY *)MenuEntry;
+        if (KeptEntry->OSType != 'L' || KeptEntry->DiscoveryType != DISCOVERY_TYPE_AUTO) {
+            i++;
+            continue;
+        }
+
+        KeptRelease = LinuxKernelRelease(KeptEntry);
+        KeptRoot = LinuxRootSpec(KeptEntry);
+        if (KeptRelease == NULL || KeptRoot == NULL) {
+            MRD_FREE_POOL(KeptRelease);
+            MRD_FREE_POOL(KeptRoot);
+            i++;
+            continue;
+        }
+
+        KeptRank = LinuxEntryRank(KeptEntry);
+
+        j = i + 1;
+        while (j < MainMenu->EntryCount) {
+            MenuEntry = MainMenu->Entries[j];
+            if (MenuEntry == NULL || MenuEntry->Tag != TAG_LOADER) {
+                j++;
+                continue;
+            }
+
+            TestEntry = (LOADER_ENTRY *)MenuEntry;
+            if (TestEntry->OSType != 'L' || TestEntry->DiscoveryType != DISCOVERY_TYPE_AUTO) {
+                j++;
+                continue;
+            }
+
+            TestRelease = LinuxKernelRelease(TestEntry);
+            TestRoot = LinuxRootSpec(TestEntry);
+
+            IsDuplicate =
+                (TestRelease != NULL && TestRoot != NULL &&
+                 MrdStrEqualsCI(TestRelease, KeptRelease) && MrdStrEqualsCI(TestRoot, KeptRoot));
+
+            MRD_FREE_POOL(TestRelease);
+            MRD_FREE_POOL(TestRoot);
+
+            if (!IsDuplicate) {
+                j++;
+                continue;
+            }
+
+            // Keep the better boot path: swap a winning later entry into slot
+            // 'i' so the loser is always the one at 'j'.
+            TestRank = LinuxEntryRank(TestEntry);
+            if (TestRank > KeptRank) {
+                MainMenu->Entries[i] = (MERIDIAN_MENU_ENTRY *)TestEntry;
+                MainMenu->Entries[j] = (MERIDIAN_MENU_ENTRY *)KeptEntry;
+
+                TestEntry = KeptEntry;
+                KeptEntry = (LOADER_ENTRY *)MainMenu->Entries[i];
+                KeptRank = TestRank;
+            }
+
+#if MERIDIAN_DEBUG > 0
+            DEBUG_LOG(1, LOG_LINE_NORMAL,
+                      L"Drop Duplicate Kernel Entry:- '%s' on '%s' ... Same Release '%s' and "
+                      L"'root=%s' as '%s' on '%s'",
+                      TestEntry->LoaderPath,
+                      (TestEntry->Volume != NULL && TestEntry->Volume->VolName != NULL)
+                          ? TestEntry->Volume->VolName
+                          : L"?",
+                      KeptRelease, KeptRoot, KeptEntry->LoaderPath,
+                      (KeptEntry->Volume != NULL && KeptEntry->Volume->VolName != NULL)
+                          ? KeptEntry->Volume->VolName
+                          : L"?");
+#endif
+
+            LoserIndex = j;
+            RemovedEntry = MainMenu->Entries[LoserIndex];
+            for (j = LoserIndex + 1; j < MainMenu->EntryCount; j++) {
+                MainMenu->Entries[j - 1] = MainMenu->Entries[j];
+            }
+
+            MainMenu->EntryCount--;
+            MainMenu->Entries[MainMenu->EntryCount] = NULL;
+
+            FreeMenuEntry(&RemovedEntry);
+            Removed++;
+
+            j = LoserIndex;
+        }
+
+        MRD_FREE_POOL(KeptRelease);
+        MRD_FREE_POOL(KeptRoot);
+
+        i++;
+    }
+
+#if MERIDIAN_DEBUG > 0
+    if (Removed > 0) {
+        DEBUG_LOG(1, LOG_STAR_SEPARATOR,
+                  L"Collapsed %d Duplicate Linux Kernel Entr%s (Same Release, Same Root)", Removed,
+                  (Removed == 1) ? L"y" : L"ies");
+        INFO_LOG("\n");
+        INFO_LOG("INFO: Duplicate Kernels ... Collapsed %d Entr%s (Same Release, Same Root)",
+                 Removed, (Removed == 1) ? L"y" : L"ies");
+        INFO_LOG("\n");
+    }
+#endif
+    (VOID) Removed;
+}
+
+// Locates boot loaders.
+// NOTE: This assumes that GlobalConfig.LegacyType is correctly set.
 VOID ScanForBootloaders(VOID)
 {
 #if MERIDIAN_DEBUG > 0
@@ -683,6 +967,7 @@ VOID ScanForBootloaders(VOID)
     }
 
     ReconcileHackintoshMacOS();
+    ReconcileDuplicateLinuxKernels();
 
     do {
         if (MainMenu->EntryCount == 0) {
