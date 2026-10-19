@@ -1,5 +1,28 @@
 # Changelog
 
+## [2026.10.0](https://github.com/seuros/meridian/compare/v2026.9.2...v2026.10.0) (2026-10-19)
+
+
+### Features
+
+* **boot:** one-shot NextBoot file overrides default_selection ([a4c0954](https://github.com/seuros/meridian/commit/a4c0954187ea2f17d638603e08fc214b1bd7b983))
+
+
+### Fixes
+
+* **bls:** show the kernel version in Boot Loader Spec titles ([5dae004](https://github.com/seuros/meridian/commit/5dae00466fc509e479f9edf06d6ed4696e352221))
+* **discovery:** collapse duplicate Linux kernel entries ([5acd7c9](https://github.com/seuros/meridian/commit/5acd7c97c9d2ea7b1655e5ddc1313a5684d62105))
+
+
+### Documentation
+
+* document the standalone Application tree ([a0ae46a](https://github.com/seuros/meridian/commit/a0ae46afc8c9d3880ebe008bf1c1beef525631b6))
+
+
+### Chores
+
+* drop SmSelfTest application ([46cb785](https://github.com/seuros/meridian/commit/46cb785eebaec741557be92a453ae92f55081077))
+
 ## [2026.9.2](https://github.com/seuros/meridian/compare/v2026.9.1...v2026.9.2) (2026-09-13)
 
 
