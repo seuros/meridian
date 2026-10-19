@@ -332,6 +332,8 @@ VOID BootstrapMissingConfig(VOID)
                  "# Other available options -- uncomment and edit to override defaults:\n"
                  "#\n"
                  "# default_selection \"Linux\"     # entry to pre-select / auto-boot\n"
+                 "#   one-shot: write an entry name to \\EFI\\Meridian\\NextBoot; it is used\n"
+                 "#   for the next boot only, then deleted (config untouched)\n"
                  "# textonly                        # force the text menu (no graphics)\n"
                  "# resolution         1920 1080    # exact mode, or: resolution max\n"
                  "# scanfor            internal,external,optical,manual\n"

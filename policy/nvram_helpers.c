@@ -270,8 +270,10 @@ UINTN RunTrustSync(LOADER_ENTRY *Entry)
     MRD_FREE_POOL(MsgStr);
 #endif
 
-    StoreLoaderName((Entry->Title != NULL) ? Entry->Title : Entry->me.Title);
-    StoreLoaderIdentity(Entry);
+    if (!IsNextBootEntry(Entry)) {
+        StoreLoaderName((Entry->Title != NULL) ? Entry->Title : Entry->me.Title);
+        StoreLoaderIdentity(Entry);
+    }
 
 #if MERIDIAN_DEBUG > 0
     OUT_TAG();

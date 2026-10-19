@@ -2476,12 +2476,35 @@ static CHAR16 *ConnPreviousBootIdentity(VOID)
     return GetPreviousBootIdentity();
 }
 
+static INTN ConnFindByTitle(MERIDIAN_MENU_ENTRY **Entries, UINTN Count, CONST CHAR16 *Name)
+{
+    UINTN i;
+
+    for (i = 0; Name != NULL && i < Count; i++) {
+        if (Entries[i] != NULL && Entries[i]->Title != NULL &&
+            MrdStrIncludesCI(Entries[i]->Title, (CHAR16 *)Name)) {
+            return (INTN)i;
+        }
+    }
+    return -1;
+}
+
 static MERIDIAN_MENU_ENTRY *ConnDefaultEntry(MERIDIAN_MENU_SCREEN *Menu, CHAR16 **SelectionName)
 {
     UINTN i;
 
     if (Menu == NULL || Menu->EntryCount == 0 || Menu->Entries == NULL) {
         return NULL;
+    }
+    {
+        INTN Hit = ConnFindByTitle(Menu->Entries, Menu->EntryCount, gNextBootSelection);
+        if (Hit >= 0) {
+            gNextBootEntry = Menu->Entries[Hit];
+        }
+        MRD_FREE_POOL(gNextBootSelection);
+        if (Hit >= 0) {
+            return gNextBootEntry;
+        }
     }
     if (SelectionName != NULL && *SelectionName != NULL) {
         CHAR16 *Identity = ConnPreviousBootIdentity();
@@ -2750,7 +2773,22 @@ RestartConn:
 
         Def = (FirstLoader < List->count) ? FirstLoader : 0;
 
-        if (SelectionName != NULL && *SelectionName != NULL) {
+        if (gNextBootSelection != NULL) {
+            INTN Hit = ConnFindByTitle(Map, List->count, gNextBootSelection);
+            if (Hit >= 0) {
+                Def = (UINTN)Hit;
+                Matched = TRUE;
+                gNextBootEntry = Map[Hit];
+                INFO_LOG("\nNEXTBOOT: '%s' -> idx %d\n", gNextBootSelection, Def);
+            }
+            else {
+                INFO_LOG("\nWARN: NextBoot '%s' matched no entry -> using default_selection\n",
+                         gNextBootSelection);
+            }
+            MRD_FREE_POOL(gNextBootSelection);
+        }
+
+        if (!Matched && SelectionName != NULL && *SelectionName != NULL) {
             CHAR16 *Identity = ConnPreviousBootIdentity();
 
             if (Identity != NULL) {

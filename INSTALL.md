@@ -248,6 +248,29 @@ already have one on the ESP, either clean it manually or delete it and let
 Meridian auto-detect entries and regenerate a fresh `config.conf` from effective
 defaults.
 
+### Boot a different OS once (NextBoot)
+
+To boot something other than `default_selection` for one boot only, without
+editing `config.conf`, write the entry name to `\EFI\Meridian\NextBoot`:
+
+```bash
+# Linux (ESP at /boot or /efi)
+echo FreeBSD | sudo tee /boot/EFI/Meridian/NextBoot && sudo reboot
+# FreeBSD (ESP at /boot/efi)
+echo Arch | sudo tee /boot/efi/EFI/Meridian/NextBoot && sudo reboot
+```
+
+- Matched like `default_selection`: case-insensitive substring of the menu title.
+- First non-blank, non-`#` line is used; quotes and whitespace are trimmed.
+  ASCII/UTF-8, or UTF-16LE with a BOM.
+- The file is deleted when Meridian reads it, before anything boots, so a typo
+  or a broken target never loops. The boot after that is back to normal.
+- A NextBoot auto-boot is not saved as `PreviousBoot`, so `default_selection "+"`
+  is not hijacked. Picking an entry by hand at the menu is saved as usual.
+- `timeout` still applies: with `timeout 0`/`-1` the entry is pre-selected but
+  not auto-booted.
+- No match: a warning is logged and `default_selection` is used.
+
 ## Troubleshooting
 
 - **Firmware skips Meridian / boots straight to the OS** -- either use the

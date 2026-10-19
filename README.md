@@ -55,6 +55,9 @@ behavior exposed through the auto-generated `config.conf` and companion notes:
 - filesystem drivers for common non-FAT filesystems used during boot discovery
 - optional NVMe, APFS, UEFI-revision, console, graphics, and NVRAM support
   paths controlled through configuration tokens
+- one-shot boot override: write an entry name to `\EFI\Meridian\NextBoot`
+  and the next boot defaults to it, then the file is deleted (no config edit,
+  no NVRAM write)
 
 Meridian is **not** a drop-in configuration replacement for rEFInd or
 RefindPlus. Start from no config, let Meridian auto-detect the machine and write

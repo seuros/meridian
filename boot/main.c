@@ -462,6 +462,141 @@ static VOID AdjustDefaultSelection(VOID)
     GlobalConfig.DefaultSelection = NewCommaDelimited;
 }
 
+CHAR16 *gNextBootSelection = NULL;
+MERIDIAN_MENU_ENTRY *gNextBootEntry = NULL;
+
+#define NEXTBOOT_FILE L"NextBoot"
+#define NEXTBOOT_MAX_BYTES 512
+
+static BOOLEAN NextBootIsSpace(CHAR16 c)
+{
+    return (c == L' ' || c == L'\t' || c == L'\r' || c == L'\n');
+}
+
+static CHAR16 *NextBootDecode(UINT8 *Data, UINTN Size)
+{
+    CHAR16 *Out;
+    UINTN i, n;
+
+    Out = AllocateZeroPool((Size + 1) * sizeof(CHAR16));
+    if (Out == NULL) {
+        return NULL;
+    }
+
+    if (Size >= 2 && Data[0] == 0xFF && Data[1] == 0xFE) {
+        for (i = 2, n = 0; i + 1 < Size; i += 2) {
+            Out[n++] = (CHAR16)((UINT32)Data[i] | ((UINT32)Data[i + 1] << 8U));
+        }
+        return Out;
+    }
+
+    i = (Size >= 3 && Data[0] == 0xEF && Data[1] == 0xBB && Data[2] == 0xBF) ? 3 : 0;
+    for (n = 0; i < Size; n++) {
+        UINT32 b = Data[i];
+        if (b < 0x80U) {
+            Out[n] = (CHAR16)b;
+            i += 1;
+        }
+        else if ((b & 0xE0U) == 0xC0U && i + 1 < Size) {
+            Out[n] = (CHAR16)(((b & 0x1FU) << 6U) | ((UINT32)Data[i + 1] & 0x3FU));
+            i += 2;
+        }
+        else if ((b & 0xF0U) == 0xE0U && i + 2 < Size) {
+            Out[n] = (CHAR16)(((b & 0x0FU) << 12U) | (((UINT32)Data[i + 1] & 0x3FU) << 6U) |
+                              ((UINT32)Data[i + 2] & 0x3FU));
+            i += 3;
+        }
+        else {
+            Out[n] = L'?';
+            i += 1;
+        }
+    }
+
+    return Out;
+}
+
+static CHAR16 *ConsumeNextBoot(VOID)
+{
+    EFI_STATUS Status;
+    UINT8 *Data;
+    UINTN Size;
+    CHAR16 *Text;
+    CHAR16 *Line;
+    CHAR16 *End;
+    CHAR16 *Next;
+    CHAR16 *Result;
+
+    if (SelfDir == NULL || !FileExists(SelfDir, NEXTBOOT_FILE)) {
+        return NULL;
+    }
+
+    Data = NULL;
+    Size = 0;
+    Status = MrdLoadFile(SelfDir, NEXTBOOT_FILE, &Data, &Size);
+
+    if (EFI_ERROR(MrdSaveFile(SelfDir, NEXTBOOT_FILE, NULL, 0))) {
+        INFO_LOG("\nWARN: NextBoot could not be deleted (read-only ESP?) ... Ignored\n");
+        MRD_FREE_POOL(Data);
+        return NULL;
+    }
+
+    if (EFI_ERROR(Status) || Data == NULL) {
+        INFO_LOG("\nWARN: NextBoot unreadable (%r) ... Ignored\n", Status);
+        return NULL;
+    }
+    if (Size == 0 || Size > NEXTBOOT_MAX_BYTES) {
+        INFO_LOG("\nWARN: NextBoot is %d bytes (want 1-%d) ... Ignored\n", Size,
+                 NEXTBOOT_MAX_BYTES);
+        MRD_FREE_POOL(Data);
+        return NULL;
+    }
+
+    Text = NextBootDecode(Data, Size);
+    MRD_FREE_POOL(Data);
+    if (Text == NULL) {
+        return NULL;
+    }
+
+    Result = NULL;
+    for (Line = Text; *Line != L'\0' && Result == NULL;) {
+        for (End = Line; *End != L'\0' && *End != L'\n'; End++)
+            ;
+        Next = (*End == L'\0') ? End : End + 1;
+        *End = L'\0';
+
+        while (NextBootIsSpace(*Line)) {
+            Line++;
+        }
+        End = Line + StrLen(Line);
+        while (End > Line && NextBootIsSpace(End[-1])) {
+            *--End = L'\0';
+        }
+        if (End - Line >= 2 && Line[0] == L'"' && End[-1] == L'"') {
+            End[-1] = L'\0';
+            Line++;
+        }
+
+        if (*Line != L'\0' && *Line != L'#') {
+            Result = StrDuplicate(Line);
+        }
+        Line = Next;
+    }
+    MRD_FREE_POOL(Text);
+
+    if (Result == NULL) {
+        INFO_LOG("\nWARN: NextBoot held no entry name ... Ignored\n");
+        return NULL;
+    }
+
+    INFO_LOG("\nNEXTBOOT: '%s' (consumed)\n", Result);
+    return Result;
+}
+
+BOOLEAN IsNextBootEntry(IN LOADER_ENTRY *Entry)
+{
+    return (Entry != NULL && gNextBootEntry != NULL && &Entry->me == gNextBootEntry);
+}
+
 #if MERIDIAN_DEBUG > 0
 static VOID LogRevisionInfo(EFI_TABLE_HEADER *Hdr, CHAR16 *Name, UINT16 CompileSize,
                             BOOLEAN DoEFICheck)
@@ -905,6 +1040,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     AdjustDefaultSelection();
 
+    gNextBootSelection = ConsumeNextBoot();
+
 #if MERIDIAN_DEBUG > 0
 #define TAG_ITEM_A(Item) OffsetNext, Item
 #define TAG_ITEM_B(Item) OffsetNext, (Item) ? L"YES" : L"NO"
@@ -1276,6 +1413,9 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
         MenuExit = ConnRunMainMenu(MainMenu, &SelectionName, &ChosenOption);
         if (MenuExit != MENU_EXIT_TIMEOUT) {
             OneMainLoop = TRUE;
+        }
+        if (MenuExit != MENU_EXIT_TIMEOUT) {
+            gNextBootEntry = NULL;
         }
 
         if (MenuExit == MENU_EXIT_ESCAPE || MenuExit == MENU_EXIT_SHOWSCREEN) {

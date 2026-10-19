@@ -33,6 +33,10 @@ VOID RescanAll (BOOLEAN Reconnect);
 
 extern BOOLEAN DefaultIsPreviousBoot;
 
+extern CHAR16 *gNextBootSelection;
+extern MERIDIAN_MENU_ENTRY *gNextBootEntry;
+BOOLEAN IsNextBootEntry(IN LOADER_ENTRY *Entry);
+
 LOADER_ENTRY * MakeGenericLoaderEntry (VOID);
 
 #endif

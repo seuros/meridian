@@ -689,7 +689,7 @@ EFI_STATUS StartEFIImage(IN MERIDIAN_VOLUME *Volume, IN CHAR16 *Filename, IN CHA
             }
 
             if (BootSelection != NULL) {
-                if (IsBoot) {
+                if (IsBoot && !IsNextBootEntry(BootSelectionEntry)) {
                     StoreLoaderName(BootSelection);
                     StoreLoaderIdentity(BootSelectionEntry);
                 }
@@ -880,8 +880,10 @@ VOID RebootIntoLoader(LOADER_ENTRY *Entry)
         return;
     }
 
-    StoreLoaderName((Entry->Title != NULL) ? Entry->Title : Entry->me.Title);
-    StoreLoaderIdentity(Entry);
+    if (!IsNextBootEntry(Entry)) {
+        StoreLoaderName((Entry->Title != NULL) ? Entry->Title : Entry->me.Title);
+        StoreLoaderIdentity(Entry);
+    }
 
 #if MERIDIAN_DEBUG > 0
     OUT_TAG();
