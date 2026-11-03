@@ -1,5 +1,12 @@
 # Changelog
 
+## [2026.10.1](https://github.com/seuros/meridian/compare/v2026.10.0...v2026.10.1) (2026-11-03)
+
+
+### Fixes
+
+* **aarch64:** skip x86-only reset-cause probes ([#6](https://github.com/seuros/meridian/issues/6)) ([3f69f2c](https://github.com/seuros/meridian/commit/3f69f2c464f3da593f9415b2f1491e241c8b00d3))
+
 ## [2026.10.0](https://github.com/seuros/meridian/compare/v2026.9.2...v2026.10.0) (2026-10-19)
 
 
