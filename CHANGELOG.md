@@ -1,5 +1,12 @@
 # Changelog
 
+## [2026.10.2](https://github.com/seuros/meridian/compare/v2026.10.1...v2026.10.2) (2026-11-07)
+
+
+### Refactoring
+
+* **reset-reason:** gate x86-only probes on EFIX64 ([f8be65b](https://github.com/seuros/meridian/commit/f8be65bdcf8c2d2a4bf33c5ab3ebe9212d69a89d))
+
 ## [2026.10.1](https://github.com/seuros/meridian/compare/v2026.10.0...v2026.10.1) (2026-11-03)
 
 
