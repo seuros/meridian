@@ -148,7 +148,7 @@ static MERIDIAN_BOOT_CAUSE MssdCause(INT8 Code)
     }
 }
 
-#if !defined(EFIAARCH64)
+#if defined(EFIX64)
 /* x86-only sources: legacy low-memory coreboot tables, Intel PMC / AMD FCH MMIO
  * and the ACPI PM1 I/O port. On AArch64 physical page 0 is unmapped and there is
  * no port I/O, so touching any of these faults and the firmware resets. */
@@ -448,12 +448,12 @@ static BOOLEAN ReadCorebootPowerState(UINT32 *A, UINT32 *B, UINT32 *Prev)
     }
     return FALSE;
 }
-#endif /* !EFIAARCH64 */
+#endif /* EFIX64 */
 
 MERIDIAN_BOOT_CAUSE MrdDetectBootCause(VOID)
 {
     MERIDIAN_BOOT_CAUSE Cause = BOOT_CAUSE_UNKNOWN;
-#if !defined(EFIAARCH64)
+#if defined(EFIX64)
     UINT16 Pm1;
 #endif
 
@@ -485,7 +485,7 @@ MERIDIAN_BOOT_CAUSE MrdDetectBootCause(VOID)
         }
     }
     else {
-#if defined(EFIAARCH64)
+#if !defined(EFIX64)
         AsciiStrCpyS(gDetail, sizeof(gDetail), "no reset-status source on AArch64");
 #else
         UINT32 A = 0, B = 0, Prev = 0, Rst = 0;
@@ -513,7 +513,7 @@ MERIDIAN_BOOT_CAUSE MrdDetectBootCause(VOID)
 #endif
     }
 
-#if !defined(EFIAARCH64)
+#if defined(EFIX64)
     if (Cause == BOOT_CAUSE_UNKNOWN) {
         Pm1 = ReadPm1Sts();
         if (Pm1 & PM1_WAK_STS) {
