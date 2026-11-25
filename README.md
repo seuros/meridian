@@ -1,9 +1,8 @@
 # Meridian
 
-Meridian is a UEFI boot manager for x86_64 systems. It is the current project
-identity for a codebase descended from RefindPlus and rEFInd, with local work
-focused on EDK2 builds, Apple firmware support, generic UEFI PCs, OpenCore and
-Clover chain-loading, Secure Boot/MOK tooling, and filesystem driver support.
+Meridian is a UEFI boot manager for x86_64 and AArch64 systems, descended from
+RefindPlus and rEFInd. It discovers installed operating systems and EFI tools
+and lets you choose which one to start.
 
 ![The Conn boot menu, ATARI theme](.github/media/conn-atari.png)
 
@@ -20,26 +19,6 @@ Three themes ship, cycled with `T` at the menu. ATARI above, then PDP and C64:
 
 ATARI and PDP apply a scanline pass; C64 does not, because a machine that put
 its text on a television had no scanlines to simulate.
-
-The public name of this repository is Meridian. New package metadata, user
-documentation, generated assets, workflow names, and user-facing text should use
-Meridian. Older RefindPlus and rEFInd names remain only where they describe
-lineage, imported code, or platform-standard runtime paths such as the UEFI
-fallback loader and Secure Boot shim/MOK tooling.
-
-## Project Status
-
-- Supported build target: X64 UEFI application.
-- Supported build surface: EDK2 package metadata in `Meridian.inf`,
-  `MeridianPkg.dsc`, and `MeridianPkg.dec`.
-- Removed build surface: inherited GNU-EFI and old Tiano subdirectory
-  makefiles.
-- Current workspace dependency: an EDK2-compatible tree with the packages listed
-  in `MeridianPkg.dsc`; in practice this is still the inherited
-  RefindPlusUDK-style workspace until those package dependencies are fully
-  renamed or vendored.
-- Repository checks cover REUSE metadata, EDK2 manifest entries, active workflow
-  naming, and accidental return of removed makefiles.
 
 ## Features
 
@@ -162,24 +141,9 @@ reverse (OpenCore → Meridian): a re-launch of OpenCore returns
 `EFI_ALREADY_STARTED`, so when Meridian detects it was chainloaded *by* OpenCore
 it suppresses that entry. See `INSTALL.md` §3b.
 
-## Checks
+## Contributing
 
-Run the repository health check before changing firmware behavior:
-
-```sh
-./scripts/check.sh
-```
-
-The check validates REUSE metadata when `reuse` is installed, verifies that
-sources listed in `Meridian.inf` exist, verifies package components listed in
-`MeridianPkg.dsc`, confirms active workflow metadata uses the Meridian identity,
-and fails if removed legacy makefiles are reintroduced.
-
-For build metadata changes, also validate the build command resolution:
-
-```sh
-./scripts/build.sh --workspace /path/to/edk2 --dry-run
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and checks.
 
 ## Provenance And Configuration Policy
 
