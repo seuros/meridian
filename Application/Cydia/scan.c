@@ -854,8 +854,18 @@ VOID CyScanShutdown(IN OUT CY_REPORT *R)
 
 VOID CyScanTpm(IN OUT CY_REPORT *R)
 {
+    static CONST struct
+    {
+        UINT32 Bit;
+        CONST CHAR8 *Name;
+    } Banks[] = {
+        {EFI_TCG2_BOOT_HASH_ALG_SHA1, "SHA-1"},      {EFI_TCG2_BOOT_HASH_ALG_SHA256, "SHA-256"},
+        {EFI_TCG2_BOOT_HASH_ALG_SHA384, "SHA-384"},  {EFI_TCG2_BOOT_HASH_ALG_SHA512, "SHA-512"},
+        {EFI_TCG2_BOOT_HASH_ALG_SM3_256, "SM3-256"},
+    };
     EFI_TCG2_PROTOCOL *Tcg2 = NULL;
     EFI_TCG2_BOOT_SERVICE_CAPABILITY Cap;
+    EFI_STATUS Status;
     CY_COMPONENT *C;
 
     if (EFI_ERROR(gBS->LocateProtocol(&gEfiTcg2ProtocolGuid, NULL, (VOID **)&Tcg2)) ||
@@ -866,14 +876,39 @@ VOID CyScanTpm(IN OUT CY_REPORT *R)
     }
     ZeroMem(&Cap, sizeof(Cap));
     Cap.Size = sizeof(Cap);
-    if (!EFI_ERROR(Tcg2->GetCapability(Tcg2, &Cap)) && Cap.TPMPresentFlag) {
-        C = CyAdd(R, "TPM", CY_PRESENT);
-        AsciiSPrint(C->Detail, sizeof(C->Detail), "present, active PCR banks 0x%08x",
-                    Cap.ActivePcrBanks);
+    Status = Tcg2->GetCapability(Tcg2, &Cap);
+    if (EFI_ERROR(Status)) {
+        C = CyAdd(R, "TPM", CY_UNKNOWN);
+        AsciiSPrint(C->Detail, sizeof(C->Detail), "TCG2 capability query failed: %r", Status);
+        return;
     }
-    else {
+    if (!Cap.TPMPresentFlag) {
         C = CyAdd(R, "TPM", CY_ABSENT);
         AsciiStrCpyS(C->Detail, sizeof(C->Detail), "TCG2 present but TPM flag clear");
+        return;
+    }
+    C = CyAdd(R, "TPM", CY_PRESENT);
+    if (Cap.Size <
+        OFFSET_OF(EFI_TCG2_BOOT_SERVICE_CAPABILITY, ActivePcrBanks) + sizeof(Cap.ActivePcrBanks)) {
+        AsciiStrCpyS(C->Detail, sizeof(C->Detail), "present, active PCR banks not reported");
+        return;
+    }
+    UINT32 Remaining = Cap.ActivePcrBanks;
+    UINTN Used = AsciiSPrint(C->Detail, sizeof(C->Detail), "present, active PCR banks: ");
+    CONST CHAR8 *Sep = "";
+    for (UINTN i = 0; i < ARRAY_SIZE(Banks); ++i) {
+        if ((Remaining & Banks[i].Bit) != 0) {
+            Used +=
+                AsciiSPrint(C->Detail + Used, sizeof(C->Detail) - Used, "%a%a", Sep, Banks[i].Name);
+            Sep = " + ";
+            Remaining &= ~Banks[i].Bit;
+        }
+    }
+    if (Remaining != 0) {
+        AsciiSPrint(C->Detail + Used, sizeof(C->Detail) - Used, "%aunknown 0x%08x", Sep, Remaining);
+    }
+    else if (Cap.ActivePcrBanks == 0) {
+        AsciiStrCatS(C->Detail, sizeof(C->Detail), "none");
     }
 }
 

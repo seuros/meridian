@@ -23,6 +23,36 @@ If you are changing build metadata, also run:
 ./scripts/build.sh --workspace /path/to/edk2 --dry-run
 ```
 
+## Measured-boot smoke test (X64)
+
+`mise run smoke-tpm` boots Meridian under OVMF with a fresh software TPM, then
+chain-loads a UEFI shell. It checks that Meridian logged the loader identity in
+PCR 8 and the image in PCR 9, and that replay of both matches the TPM. It never
+uses the host TPM or changes the host's PCR banks.
+
+Install QEMU, TPM-capable OVMF, `swtpm`, `mtools`, `sgdisk` and an X64 UEFI
+shell. Build Meridian and the test-only EDK II app from the pinned tree:
+
+```bash
+git submodule update --init --recursive
+mise run workspace
+mise run build
+(
+    cd edk2
+    source edksetup.sh
+    build -p SecurityPkg/SecurityPkg.dsc \
+          -m SecurityPkg/Applications/TpmShellApp/TpmShellApp.inf \
+          -a X64 -b RELEASE -t CLANGDWARF
+)
+mise run smoke-tpm
+```
+
+The defaults use Arch's `edk2-ovmf` and `edk2-shell` paths. Elsewhere, set
+`OVMF_CODE`, `OVMF_VARS` (a matching blank template), and `SHELL_EFI` to
+absolute paths. `TPM_APP_EFI` can point at a prebuilt `TpmShellApp.efi` from
+the pinned release. Failed runs print the directory containing the disk image,
+TPM state and logs.
+
 ## Change Rules
 
 - Prefer the EDK2 package files as the source of truth.

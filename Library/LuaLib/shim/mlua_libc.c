@@ -39,10 +39,7 @@ char *strcat(char *dst, const char *src) { char *d = dst; while (*d) d++; while 
 char *strchr(const char *s, int c) {
   for (;; s++) { if (*s == (char)c) return (char *)s; if (!*s) return (void *)0; }
 }
-char *strrchr(const char *s, int c) {
-  const char *last = (void *)0;
-  for (;; s++) { if (*s == (char)c) last = s; if (!*s) return (char *)last; }
-}
+char *strrchr(const char *s, int c) { return AsciiStrRChr(s, (CHAR8)c); }
 char *strstr(const char *h, const char *n) {
   if (!*n) return (char *)h;
   for (; *h; h++) {
@@ -114,7 +111,7 @@ char *setlocale(int category, const char *locale) { (void)category; (void)locale
 int isalpha(int c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); }
 int isdigit(int c) { return c >= '0' && c <= '9'; }
 int isalnum(int c) { return isalpha(c) || isdigit(c); }
-int isspace(int c) { return c == ' ' || (c >= '\t' && c <= '\r'); }
+int isspace(int c) { return c >= 0 && c <= 0x7f && AsciiIsSpace((CHAR8)c); }
 int iscntrl(int c) { return (c >= 0 && c < 32) || c == 127; }
 int isgraph(int c) { return c > 32 && c < 127; }
 int islower(int c) { return c >= 'a' && c <= 'z'; }

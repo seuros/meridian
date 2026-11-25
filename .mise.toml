@@ -79,6 +79,10 @@ run = "./scripts/qemu-mac-smoke.sh"
 description = "Boot Meridian under QEMU ArmVirt (AArch64 smoke)"
 run = "./scripts/qemu-aarch64-smoke.sh"
 
+[tasks.smoke-tpm]
+description = "Verify Meridian's PCR 8/9 measurements under QEMU with swtpm"
+run = "./scripts/qemu-measured-boot-test.sh"
+
 [tasks.check]
 description = "Run all repository health checks (REUSE, INF sources, DSC components, stale refs)"
 run = "./scripts/check.sh"
