@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026.11.0](https://github.com/seuros/meridian/compare/v2026.10.2...v2026.11.0) (2026-11-25)
+
+
+### Features
+
+* adopt EDK II stable202611 and verify measured boot ([7ea4b71](https://github.com/seuros/meridian/commit/7ea4b71461cdfe0d68b5cb47abeb67d41ce9d621))
+* **cydia:** report SMC board voltages ([583bdfd](https://github.com/seuros/meridian/commit/583bdfd611416718ee04b9c8ef43f0f7ae27febd))
+
 ## [2026.10.2](https://github.com/seuros/meridian/compare/v2026.10.1...v2026.10.2) (2026-11-07)
 
 
