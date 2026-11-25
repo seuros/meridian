@@ -24,6 +24,12 @@ cycle count, design and full capacity and voltage (`BRSC`, `B0CT`, `B0FC`,
 `B0DC`, `B0AV`), fan count and CPU proximity temperature (`FNum`, `TC0P`), the
 last shutdown cause (`MSSD`, `MSSP`), and the panel sensor.
 
+Board voltages are separate from battery voltage. Like FreeBSD's
+[`asmc(4)`](https://github.com/freebsd/freebsd-src/blob/9fe57fe3578a3d53d00ba979d13fe3f68f1470fb/sys/dev/asmc/asmc.c#L660-L739),
+Cydia discovers `V…` keys and uses each key's type and size rather than guessing
+its scale. The report gives the raw key name and a snapshot in volts. An
+unreadable value is not zero, and neither changes the repair verdict.
+
 Everything else comes from what the firmware publishes: SMBIOS for model,
 serial, CPU and memory, GOP/UGA plus EDID for display, BlockIo for storage, SNP
 for network, TCG2 for the TPM, and UsbIo for enumerated devices.

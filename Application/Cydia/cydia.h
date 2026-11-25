@@ -29,6 +29,14 @@ typedef struct
 } CY_COMPONENT;
 
 #define CY_MAX_COMPONENTS 24
+#define CY_MAX_VOLTAGES 32
+
+typedef struct
+{
+    CHAR8 Key[5];
+    BOOLEAN Readable;
+    INT32 Millivolts;
+} CY_VOLTAGE;
 
 typedef struct
 {
@@ -42,6 +50,9 @@ typedef struct
 
     CY_COMPONENT Comp[CY_MAX_COMPONENTS];
     UINTN Count;
+    CY_VOLTAGE Voltages[CY_MAX_VOLTAGES];
+    UINTN VoltageCount;
+    CONST CHAR8 *VoltageNote;
 } CY_REPORT;
 
 #define CY_EXP_BATTERY BIT0
@@ -57,6 +68,7 @@ VOID CyScanMemory(IN OUT CY_REPORT *R);
 VOID CyScanStorage(IN OUT CY_REPORT *R);
 VOID CyScanDisplay(IN OUT CY_REPORT *R);
 VOID CyScanBattery(IN OUT CY_REPORT *R);
+VOID CyScanVoltages(IN OUT CY_REPORT *R);
 VOID CyScanNetwork(IN OUT CY_REPORT *R);
 VOID CyScanThermal(IN OUT CY_REPORT *R);
 VOID CyScanShutdown(IN OUT CY_REPORT *R);
@@ -66,5 +78,7 @@ VOID CyScanUsb(IN OUT CY_REPORT *R);
 CY_COMPONENT *CyAdd(IN OUT CY_REPORT *R, IN CONST CHAR8 *Name, IN CY_STATE State);
 
 BOOLEAN CySmcRead(IN CONST CHAR8 Key[4], OUT UINT8 *Buf, IN UINT8 Len);
+BOOLEAN CySmcKeyAt(UINT32 Index, CHAR8 Key[4]);
+BOOLEAN CySmcKeyInfo(CONST CHAR8 Key[4], UINT8 *Len, CHAR8 Type[4]);
 
 #endif

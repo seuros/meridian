@@ -25,6 +25,7 @@
 [Sources]
     Cydia.c
     scan.c
+    voltage.c
 
 [Packages]
     MdePkg/MdePkg.dec
@@ -37,6 +38,7 @@
     MemoryAllocationLib
     PrintLib
     IoLib
+    FileHandleLib
     UefiBootServicesTableLib
 
 [Protocols]

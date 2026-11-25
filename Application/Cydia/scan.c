@@ -972,18 +972,30 @@ UINT16 CyExpectFor(IN CONST CHAR8 *Model, IN BOOLEAN IsApple, OUT UINT8 *DimmSlo
 }
 
 #define CY_SMC_PROTO_GUID                                                                          \
-    {0xB91867EA, 0x9ED9, 0x4B71, {0xA0, 0xAC, 0x3B, 0x8B, 0x4D, 0x2F, 0x0C, 0xB9}}
+    {0x17407E5A, 0xAF6C, 0x4EE8, {0x98, 0xA8, 0x00, 0x21, 0x04, 0x53, 0xCD, 0xD9}}
 typedef struct _CY_SMC_IO_PROTOCOL CY_SMC_IO_PROTOCOL;
 typedef EFI_STATUS(EFIAPI *CY_SMC_READ_VALUE)(IN CY_SMC_IO_PROTOCOL *This, IN UINT32 Key,
                                               IN UINT8 Size, OUT UINT8 *Value);
 struct _CY_SMC_IO_PROTOCOL
 {
     UINT64 Version;
-    VOID *U1;
-    VOID *U2;
     CY_SMC_READ_VALUE ReadValue;
+    VOID *WriteValue;
+    VOID *GetKeyCount;
+    VOID *MakeKey;
+    EFI_STATUS(EFIAPI *KeyAt)(CY_SMC_IO_PROTOCOL *, UINT32, UINT32 *);
+    EFI_STATUS(EFIAPI *KeyInfo)(CY_SMC_IO_PROTOCOL *, UINT32, UINT8 *, UINT32 *, UINT8 *);
 };
-#define CY_SMC_KEY(a, b, c, d) ((UINT32)((a) << 24 | (b) << 16 | (c) << 8 | (d)))
+
+static UINT32 SmcCode(CONST CHAR8 Key[4])
+{
+    return SwapBytes32(ReadUnaligned32((CONST UINT32 *)(CONST VOID *)Key));
+}
+
+static VOID SmcBytes(UINT32 Code, CHAR8 Out[4])
+{
+    WriteUnaligned32((UINT32 *)(VOID *)Out, SwapBytes32(Code));
+}
 
 #define CY_MMIO_DATA 0x0000
 #define CY_MMIO_KEY_NAME 0x0078
@@ -1003,6 +1015,8 @@ struct _CY_SMC_IO_PROTOCOL
 #define SMC_PORT_ST_AWAIT 0x04
 #define SMC_PORT_ST_READY 0x05
 #define SMC_CMD_READ 0x10
+#define SMC_CMD_KEY_AT 0x12
+#define SMC_CMD_KEY_INFO 0x13
 
 static BOOLEAN CyMmioWait(UINTN Base)
 {
@@ -1019,25 +1033,25 @@ static BOOLEAN CyMmioWait(UINTN Base)
     return FALSE;
 }
 
-static BOOLEAN CyMmioReadKey(UINTN Base, CONST CHAR8 Key[4], UINT8 *Buf, UINT8 Len)
+static BOOLEAN CyMmioCommand(UINTN Base, UINT8 Cmd, CONST CHAR8 Key[4])
 {
     UINT32 KeyInt;
-    UINT8 i, RLen;
     if (MmioRead8(Base + CY_MMIO_STATUS)) {
         MmioWrite8(Base + CY_MMIO_STATUS, 0);
     }
     CopyMem(&KeyInt, Key, 4);
     MmioWrite32(Base + CY_MMIO_KEY_NAME, KeyInt);
     MmioWrite8(Base + CY_MMIO_SMC_ID, 0);
-    MmioWrite8(Base + CY_MMIO_CMD, SMC_CMD_READ);
-    if (!CyMmioWait(Base) || MmioRead8(Base + CY_MMIO_CMD) != 0) {
+    MmioWrite8(Base + CY_MMIO_CMD, Cmd);
+    return CyMmioWait(Base) && MmioRead8(Base + CY_MMIO_CMD) == 0;
+}
+
+static BOOLEAN CyMmioReadKey(UINTN Base, CONST CHAR8 Key[4], UINT8 *Buf, UINT8 Len)
+{
+    if (!CyMmioCommand(Base, SMC_CMD_READ, Key) || MmioRead8(Base + CY_MMIO_DATA_LEN) != Len) {
         return FALSE;
     }
-    RLen = MmioRead8(Base + CY_MMIO_DATA_LEN);
-    if (RLen > Len) {
-        RLen = Len;
-    }
-    for (i = 0; i < RLen; i++) {
+    for (UINTN i = 0; i < Len; i++) {
         Buf[i] = MmioRead8(Base + CY_MMIO_DATA + i);
     }
     return TRUE;
@@ -1089,11 +1103,11 @@ static BOOLEAN PortSendKeyBytes(CONST CHAR8 Key[4])
     return TRUE;
 }
 
-static BOOLEAN CyPortReadKey(CONST CHAR8 Key[4], UINT8 *Buf, UINT8 Len)
+static BOOLEAN CyPortQuery(UINT8 Cmd, CONST CHAR8 Key[4], UINT8 *Buf, UINT8 Len)
 {
     UINTN Try, i;
     for (Try = 0; Try < 10; Try++) {
-        if (!PortCommand(SMC_CMD_READ)) {
+        if (!PortCommand(Cmd)) {
             continue;
         }
         if (!PortSendKeyBytes(Key)) {
@@ -1132,16 +1146,17 @@ static VOID CySmcInit(VOID)
     gCySmc.Init = TRUE;
 
     if (!EFI_ERROR(gBS->LocateProtocol(&Guid, NULL, (VOID **)&P)) && P != NULL &&
-        P->ReadValue != NULL &&
-        !EFI_ERROR(P->ReadValue(P, CY_SMC_KEY('#', 'K', 'E', 'Y'), 4, Probe))) {
+        P->ReadValue != NULL && P->ReadValue(P, SmcCode("#KEY"), 4, Probe) == EFI_SUCCESS) {
         gCySmc.Proto = P;
+        return;
     }
 
     if (CyMmioIsT2((UINTN)CY_MMIO_BASE_CANDIDATE)) {
         gCySmc.MmioBase = (UINTN)CY_MMIO_BASE_CANDIDATE;
+        return;
     }
 
-    if (CyPortReadKey("#KEY", Probe, 4)) {
+    if (CyPortQuery(SMC_CMD_READ, "#KEY", Probe, 4)) {
         gCySmc.Port = TRUE;
     }
 }
@@ -1151,14 +1166,71 @@ BOOLEAN CySmcRead(IN CONST CHAR8 Key[4], OUT UINT8 *Buf, IN UINT8 Len)
     CySmcInit();
     ZeroMem(Buf, Len);
     if (gCySmc.Proto != NULL) {
-        return !EFI_ERROR(gCySmc.Proto->ReadValue(
-            gCySmc.Proto, CY_SMC_KEY(Key[0], Key[1], Key[2], Key[3]), Len, Buf));
+        return gCySmc.Proto->ReadValue(gCySmc.Proto, SmcCode(Key), Len, Buf) == EFI_SUCCESS;
     }
     if (gCySmc.MmioBase != 0) {
         return CyMmioReadKey(gCySmc.MmioBase, Key, Buf, Len);
     }
     if (gCySmc.Port) {
-        return CyPortReadKey(Key, Buf, Len);
+        return CyPortQuery(SMC_CMD_READ, Key, Buf, Len);
     }
     return FALSE;
+}
+
+BOOLEAN CySmcKeyAt(UINT32 Index, CHAR8 Key[4])
+{
+    CHAR8 Arg[4];
+    UINT32 Code;
+    UINTN Base = gCySmc.MmioBase;
+    if (gCySmc.Proto != NULL) {
+        if (gCySmc.Proto->KeyAt == NULL ||
+            gCySmc.Proto->KeyAt(gCySmc.Proto, Index, &Code) != EFI_SUCCESS) {
+            return FALSE;
+        }
+        SmcBytes(Code, Key);
+        return TRUE;
+    }
+    SmcBytes(Index, Arg);
+    if (Base != 0) {
+        if (!CyMmioCommand(Base, SMC_CMD_KEY_AT, Arg)) {
+            return FALSE;
+        }
+        for (UINTN i = 0; i < 4; i++) {
+            Key[i] = (CHAR8)MmioRead8(Base + CY_MMIO_DATA + i);
+        }
+        return TRUE;
+    }
+    return gCySmc.Port && CyPortQuery(SMC_CMD_KEY_AT, Arg, (UINT8 *)Key, 4);
+}
+
+BOOLEAN CySmcKeyInfo(CONST CHAR8 Key[4], UINT8 *Len, CHAR8 Type[4])
+{
+    UINT8 Info[6], Attr;
+    UINT32 Code;
+    UINTN Base = gCySmc.MmioBase;
+    if (gCySmc.Proto != NULL) {
+        if (gCySmc.Proto->KeyInfo == NULL ||
+            gCySmc.Proto->KeyInfo(gCySmc.Proto, SmcCode(Key), Len, &Code, &Attr) != EFI_SUCCESS) {
+            return FALSE;
+        }
+        SmcBytes(Code, Type);
+        return TRUE;
+    }
+    if (Base != 0) {
+        if (!CyMmioCommand(Base, SMC_CMD_KEY_INFO, Key)) {
+            return FALSE;
+        }
+        // MMIO: type, reserved byte, length; port I/O: length, type, attributes.
+        for (UINTN i = 0; i < 4; i++) {
+            Type[i] = (CHAR8)MmioRead8(Base + CY_MMIO_DATA + i);
+        }
+        *Len = MmioRead8(Base + CY_MMIO_DATA + 5);
+        return TRUE;
+    }
+    if (!gCySmc.Port || !CyPortQuery(SMC_CMD_KEY_INFO, Key, Info, sizeof(Info))) {
+        return FALSE;
+    }
+    *Len = Info[0];
+    CopyMem(Type, Info + 1, 4);
+    return TRUE;
 }

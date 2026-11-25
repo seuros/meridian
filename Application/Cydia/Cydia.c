@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Abdelkader Boudih <oss@seuros.com>
 
 #include "cydia.h"
+#include <Library/FileHandleLib.h>
 #include <Library/UefiApplicationEntryPoint.h>
 #include <Protocol/SimpleFileSystem.h>
 #include <Protocol/LoadedImage.h>
@@ -84,6 +85,22 @@ static UINTN BuildReport(IN CY_REPORT *R, OUT CHAR8 *Buf, IN UINTN Cap, OUT UINT
         }
     }
 
+    if (R->IsApple) {
+        Off += AsciiSPrint(Buf + Off, Cap - Off, "Board voltages (SMC snapshot):\n");
+        for (i = 0; i < R->VoltageCount; i++) {
+            CY_VOLTAGE *V = &R->Voltages[i];
+            if (!V->Readable) {
+                Off += AsciiSPrint(Buf + Off, Cap - Off, "  %a: unreadable\n", V->Key);
+                continue;
+            }
+            UINT32 Abs = (UINT32)(V->Millivolts < 0 ? -V->Millivolts : V->Millivolts);
+            Off += AsciiSPrint(Buf + Off, Cap - Off, "  %a: %a%u.%03u V\n", V->Key,
+                               V->Millivolts < 0 ? "-" : "", Abs / 1000, Abs % 1000);
+        }
+        if (R->VoltageNote != NULL) {
+            Off += AsciiSPrint(Buf + Off, Cap - Off, "  %a\n", R->VoltageNote);
+        }
+    }
     Off += AsciiSPrint(Buf + Off, Cap - Off,
                        "-----------------------------------------------------\n"
                        "VERDICT  : %a  (%u missing, %u degraded)\n"
@@ -116,6 +133,11 @@ static EFI_STATUS WriteReport(IN EFI_HANDLE Image, IN CHAR16 *Name, IN CHAR8 *Da
                         EFI_FILE_MODE_CREATE | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_READ, 0);
     if (!EFI_ERROR(Status)) {
         Status = File->Write(File, &Written, Data);
+        if (!EFI_ERROR(Status)) {
+            // EFI_DEVICE_ERROR expands to EDK II's MAX_BIT | 7.
+            // NOLINTNEXTLINE(bugprone-signed-bitwise)
+            Status = Written == Size ? FileHandleSetSize(File, Size) : EFI_DEVICE_ERROR;
+        }
         File->Close(File);
     }
     Root->Close(Root);
@@ -145,6 +167,7 @@ EFI_STATUS EFIAPI UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *Syste
     CyScanStorage(R);
     CyScanDisplay(R);
     CyScanBattery(R);
+    CyScanVoltages(R);
     CyScanNetwork(R);
     CyScanThermal(R);
     CyScanShutdown(R);
@@ -161,7 +184,19 @@ EFI_STATUS EFIAPI UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *Syste
 
     Size = BuildReport(R, Buf, 8192, &Faults);
 
-    AsciiPrint("%a", Buf);
+    // AsciiPrint truncates a whole report at PcdUefiLibMaxPrintBufferSize.
+    for (CHAR8 *Line = Buf; *Line != '\0';) {
+        CHAR8 *End = AsciiStrStr(Line, "\n");
+        if (End == NULL) {
+            AsciiPrint("%a", Line);
+            break;
+        }
+        CHAR8 Saved = *End;
+        *End = '\0';
+        AsciiPrint("%a\n", Line);
+        *End = Saved;
+        Line = End + 1;
+    }
 
     Status = WriteReport(ImageHandle, L"cydia-report.txt", Buf, Size);
     if (EFI_ERROR(Status)) {
