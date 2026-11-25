@@ -24,11 +24,13 @@ cycle count, design and full capacity and voltage (`BRSC`, `B0CT`, `B0FC`,
 `B0DC`, `B0AV`), fan count and CPU proximity temperature (`FNum`, `TC0P`), the
 last shutdown cause (`MSSD`, `MSSP`), and the panel sensor.
 
-Board voltages are separate from battery voltage. Like FreeBSD's
+Board electrical readings are separate from battery voltage. Like FreeBSD's
 [`asmc(4)`](https://github.com/freebsd/freebsd-src/blob/9fe57fe3578a3d53d00ba979d13fe3f68f1470fb/sys/dev/asmc/asmc.c#L660-L739),
-Cydia discovers `V…` keys and uses each key's type and size rather than guessing
-its scale. The report gives the raw key name and a snapshot in volts. An
-unreadable value is not zero, and neither changes the repair verdict.
+Cydia discovers voltage (`V…`), current (`I…`) and power (`P…`) keys and uses
+each key's type and size to decode it. The console and `cydia-report.txt` list
+the raw key names and readings in volts, amps and watts. Power readings can
+cover overlapping rails, so there is no calculated total. An unreadable value
+is not zero, and neither changes the repair verdict.
 
 Everything else comes from what the firmware publishes: SMBIOS for model,
 serial, CPU and memory, GOP/UGA plus EDID for display, BlockIo for storage, SNP
@@ -77,6 +79,7 @@ it found. The fault count lives in the report, not the exit status.
 
 - `Cydia.c`: entry point, expectation matching, report formatting and writing.
 - `scan.c`: the per-subsystem probes, SMC access, and the model table.
+- `electrical.c`: discovery and decoding of SMC voltage, current and power keys.
 - `cydia.h`: report/component structures and the scan function list.
 
 Adding a model is a row in `gModels` in `scan.c`: an SMBIOS name prefix, a mask

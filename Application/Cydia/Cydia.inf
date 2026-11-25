@@ -25,7 +25,7 @@
 [Sources]
     Cydia.c
     scan.c
-    voltage.c
+    electrical.c
 
 [Packages]
     MdePkg/MdePkg.dec

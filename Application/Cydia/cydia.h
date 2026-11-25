@@ -29,14 +29,21 @@ typedef struct
 } CY_COMPONENT;
 
 #define CY_MAX_COMPONENTS 24
-#define CY_MAX_VOLTAGES 32
+#define CY_MAX_READINGS 64 // Per electrical sensor class, as in FreeBSD asmc.
 
 typedef struct
 {
     CHAR8 Key[5];
     BOOLEAN Readable;
-    INT32 Millivolts;
-} CY_VOLTAGE;
+    INT32 MilliUnits;
+} CY_READING;
+
+typedef struct
+{
+    CY_READING Readings[CY_MAX_READINGS];
+    UINTN Count;
+    CONST CHAR8 *Note;
+} CY_SENSOR_GROUP;
 
 typedef struct
 {
@@ -50,9 +57,7 @@ typedef struct
 
     CY_COMPONENT Comp[CY_MAX_COMPONENTS];
     UINTN Count;
-    CY_VOLTAGE Voltages[CY_MAX_VOLTAGES];
-    UINTN VoltageCount;
-    CONST CHAR8 *VoltageNote;
+    CY_SENSOR_GROUP Voltages, Currents, Power;
 } CY_REPORT;
 
 #define CY_EXP_BATTERY BIT0
@@ -68,7 +73,7 @@ VOID CyScanMemory(IN OUT CY_REPORT *R);
 VOID CyScanStorage(IN OUT CY_REPORT *R);
 VOID CyScanDisplay(IN OUT CY_REPORT *R);
 VOID CyScanBattery(IN OUT CY_REPORT *R);
-VOID CyScanVoltages(IN OUT CY_REPORT *R);
+VOID CyScanElectrical(IN OUT CY_REPORT *R);
 VOID CyScanNetwork(IN OUT CY_REPORT *R);
 VOID CyScanThermal(IN OUT CY_REPORT *R);
 VOID CyScanShutdown(IN OUT CY_REPORT *R);

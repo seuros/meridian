@@ -55,6 +55,30 @@ static VOID FormatLine(IN CY_COMPONENT *C, OUT CHAR8 *Line, IN UINTN Cap)
                 (C->State == CY_ABSENT && C->Expected) ? " (expected)" : "", C->Detail);
 }
 
+// Include room for every component, three full groups, their notes and the verdict.
+#define CY_REPORT_BYTES (2048 + CY_MAX_COMPONENTS * 200 + 3 * CY_MAX_READINGS * 32)
+
+static UINTN FormatReadings(CONST CY_SENSOR_GROUP *Group, CONST CHAR8 *Title, CHAR8 Unit,
+                            CHAR8 *Buf, UINTN Cap)
+{
+    UINTN Off = AsciiSPrint(Buf, Cap, "%a (SMC snapshot):\n", Title);
+    for (UINTN i = 0; i < Group->Count; i++) {
+        CONST CY_READING *Reading = &Group->Readings[i];
+        if (!Reading->Readable) {
+            Off += AsciiSPrint(Buf + Off, Cap - Off, "  %a: unreadable\n", Reading->Key);
+            continue;
+        }
+        INT32 Value = Reading->MilliUnits;
+        UINT32 Abs = (UINT32)(Value < 0 ? -Value : Value);
+        Off += AsciiSPrint(Buf + Off, Cap - Off, "  %a: %a%u.%03u %c\n", Reading->Key,
+                           Value < 0 ? "-" : "", Abs / 1000, Abs % 1000, Unit);
+    }
+    if (Group->Note != NULL) {
+        Off += AsciiSPrint(Buf + Off, Cap - Off, "  %a\n", Group->Note);
+    }
+    return Off;
+}
+
 static UINTN BuildReport(IN CY_REPORT *R, OUT CHAR8 *Buf, IN UINTN Cap, OUT UINTN *Faults)
 {
     UINTN Off = 0, i;
@@ -86,20 +110,9 @@ static UINTN BuildReport(IN CY_REPORT *R, OUT CHAR8 *Buf, IN UINTN Cap, OUT UINT
     }
 
     if (R->IsApple) {
-        Off += AsciiSPrint(Buf + Off, Cap - Off, "Board voltages (SMC snapshot):\n");
-        for (i = 0; i < R->VoltageCount; i++) {
-            CY_VOLTAGE *V = &R->Voltages[i];
-            if (!V->Readable) {
-                Off += AsciiSPrint(Buf + Off, Cap - Off, "  %a: unreadable\n", V->Key);
-                continue;
-            }
-            UINT32 Abs = (UINT32)(V->Millivolts < 0 ? -V->Millivolts : V->Millivolts);
-            Off += AsciiSPrint(Buf + Off, Cap - Off, "  %a: %a%u.%03u V\n", V->Key,
-                               V->Millivolts < 0 ? "-" : "", Abs / 1000, Abs % 1000);
-        }
-        if (R->VoltageNote != NULL) {
-            Off += AsciiSPrint(Buf + Off, Cap - Off, "  %a\n", R->VoltageNote);
-        }
+        Off += FormatReadings(&R->Voltages, "Board voltages", 'V', Buf + Off, Cap - Off);
+        Off += FormatReadings(&R->Currents, "Board currents", 'A', Buf + Off, Cap - Off);
+        Off += FormatReadings(&R->Power, "Board power", 'W', Buf + Off, Cap - Off);
     }
     Off += AsciiSPrint(Buf + Off, Cap - Off,
                        "-----------------------------------------------------\n"
@@ -154,7 +167,7 @@ EFI_STATUS EFIAPI UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *Syste
     EFI_STATUS Status;
 
     R = AllocateZeroPool(sizeof(CY_REPORT));
-    Buf = AllocateZeroPool(8192);
+    Buf = AllocateZeroPool(CY_REPORT_BYTES);
     if (R == NULL || Buf == NULL) {
         Print(L"Cydia: out of memory\n");
         return EFI_OUT_OF_RESOURCES;
@@ -167,7 +180,7 @@ EFI_STATUS EFIAPI UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *Syste
     CyScanStorage(R);
     CyScanDisplay(R);
     CyScanBattery(R);
-    CyScanVoltages(R);
+    CyScanElectrical(R);
     CyScanNetwork(R);
     CyScanThermal(R);
     CyScanShutdown(R);
@@ -182,7 +195,7 @@ EFI_STATUS EFIAPI UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *Syste
         }
     }
 
-    Size = BuildReport(R, Buf, 8192, &Faults);
+    Size = BuildReport(R, Buf, CY_REPORT_BYTES, &Faults);
 
     // AsciiPrint truncates a whole report at PcdUefiLibMaxPrintBufferSize.
     for (CHAR8 *Line = Buf; *Line != '\0';) {
