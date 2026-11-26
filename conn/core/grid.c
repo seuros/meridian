@@ -4,6 +4,12 @@
 #include "conn_core.h"
 #include "version.h"
 
+// The version stamped on the frame border. The golden-image test pins it so a
+// release bump does not change the expected pixels.
+#ifndef CONN_FRAME_VERSION
+#define CONN_FRAME_VERSION VERSION_STRING_ASCII
+#endif
+
 #define TRANSPARENT 0u
 
 #define VISIBLE_ROWS CONN_MENU_PAGE_ROWS
@@ -288,7 +294,7 @@ VOID conn_grid_frame(ConnGrid *g, const ConnTextTheme *th) {
 
     // Build version, right-aligned on the bottom border so it never competes
     // with the header's theme/resolution/clock fields.
-    static const char ver[] = " v" VERSION_STRING_ASCII " ";
+    static const char ver[] = " v" CONN_FRAME_VERSION " ";
     puts_at(g, CONN_COLS - 3 - (INTN)(sizeof(ver) - 1), CONN_ROWS - 1, ver, th->dim, TRANSPARENT,
             FALSE);
 }

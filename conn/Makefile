@@ -25,6 +25,8 @@ CORE     := core/paint.c core/grid.c core/widget_clock.c core/widget_editline.c 
 HOST_PNG := host/shim.c host/main_png.c host/png.c host/scan_mock.c
 
 PNGBIN   := $(BUILD)/conn-host-png
+# Same renderer with the frame version pinned, so the golden survives releases.
+GOLDBIN  := $(BUILD)/conn-host-png-golden
 GOLD     := test/golden
 
 # ImageMagick 7 puts everything behind `magick`; ImageMagick 6, which is still
@@ -37,8 +39,11 @@ COMPARE  := $(if $(MAGICK),$(MAGICK) compare,compare)
 all: $(PNGBIN)
 
 # deterministic golden-image path: real engine -> fake GOP -> PNG (no SDL)
-$(PNGBIN): $(CORE) $(HOST_PNG) core/conn_core.h efi/efi_env.h core/font_atlas.h | $(BUILD)
+$(PNGBIN): $(CORE) $(HOST_PNG) core/conn_core.h efi/efi_env.h core/font_atlas.h ../include/version.h | $(BUILD)
 	$(CC) $(CFLAGS) -o $@ $(CORE) $(HOST_PNG)
+
+$(GOLDBIN): $(CORE) $(HOST_PNG) core/conn_core.h efi/efi_env.h core/font_atlas.h | $(BUILD)
+	$(CC) $(CFLAGS) '-DCONN_FRAME_VERSION="0.0.0"' -o $@ $(CORE) $(HOST_PNG)
 
 render: $(PNGBIN)
 	$(PNGBIN) $(BUILD)/conn-text-crt-80x25.png
@@ -73,16 +78,16 @@ paneltest: | $(BUILD)
 	@$(CC) $(CFLAGS) -o $(BUILD)/conn-paneltest core/paint.c core/grid.c core/widget_clock.c core/widget_panel.c $(STATE_MACHINE) test/panel_test.c
 	@$(BUILD)/conn-paneltest
 
-test: $(PNGBIN) uitest editlinetest listtest paneltest
-	@$(PNGBIN) $(BUILD)/_test-crt.png >/dev/null
+test: $(GOLDBIN) uitest editlinetest listtest paneltest
+	@$(GOLDBIN) $(BUILD)/_test-crt.png >/dev/null
 	@if $(COMPARE) -metric AE $(BUILD)/_test-crt.png $(GOLD)/text-crt.png null: 2>/dev/null; then \
 	   echo "PASS  text-crt  (pixel-identical to golden)"; \
 	 else echo; echo "FAIL  text-crt  (differs from golden)"; \
 	   echo "  inspect: $(COMPARE) $(BUILD)/_test-crt.png $(GOLD)/text-crt.png /tmp/conn-diff.png"; \
 	   exit 1; fi
 
-golden: $(PNGBIN)
-	@$(PNGBIN) $(GOLD)/text-crt.png >/dev/null && echo "updated $(GOLD)/text-crt.png"
+golden: $(GOLDBIN)
+	@$(GOLDBIN) $(GOLD)/text-crt.png >/dev/null && echo "updated $(GOLD)/text-crt.png"
 
 # firmware smoke: build the PE32+ app, boot it under QEMU+OVMF, screendump to PNG
 smoke:
