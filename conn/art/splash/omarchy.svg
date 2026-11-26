@@ -5,12 +5,10 @@
      OMARCHY wordmark. Vectorised losslessly from the distro's own
      /usr/share/omarchy/icon.png, which is an exact 15x15 cell grid of 20px
      cells; each cell here is 16px, so the mark is 240px centred in the 256px
-     splash field. Filled white: the splash plane is mono coverage and the
-     runtime tints it with the entry accent. Omarchy's own green is #9ECE6A
-     (matching ANSI_COLOR in its os-release) if the mark is ever drawn in
-     colour. -->
+     splash field. Drawn in Omarchy's own green, #9ECE6A
+     (matching ANSI_COLOR in its os-release). -->
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-  <g fill="#fff" shape-rendering="crispEdges">
+  <g fill="#9ECE6A" shape-rendering="crispEdges">
     <rect x="8" y="8" width="240" height="16"/>
     <rect x="8" y="24" width="16" height="224"/>
     <rect x="120" y="24" width="16" height="32"/>

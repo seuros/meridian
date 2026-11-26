@@ -3,7 +3,7 @@
 <!-- SPDX-FileCopyrightText: 2026 Abdelkader Boudih <oss@seuros.com> -->
 <!-- Arch Linux: the mountain/'A' with the notched base. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-  <path fill="#fff" fill-rule="evenodd"
+  <path fill="#1793D1" fill-rule="evenodd"
         d="M128 32
            L206 218
            L150 184

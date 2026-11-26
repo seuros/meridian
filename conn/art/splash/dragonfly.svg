@@ -3,10 +3,12 @@
 <!-- SPDX-FileCopyrightText: 2026 Abdelkader Boudih <oss@seuros.com> -->
 <!-- DragonFly BSD: a dragonfly, slim body, head, four wings. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-  <g fill="#fff">
+  <g fill="#3B7DD8">
     <!-- head + body -->
     <circle cx="128" cy="52" r="18"/>
     <path d="M120 70 h16 l-4 150 h-8 z"/>
+  </g>
+  <g fill="#A9D4F5" fill-opacity="0.92">
     <!-- wings -->
     <ellipse cx="80"  cy="96"  rx="58" ry="16" transform="rotate(-18 80 96)"/>
     <ellipse cx="176" cy="96"  rx="58" ry="16" transform="rotate(18 176 96)"/>

@@ -30,32 +30,16 @@ If you have SVG or illustration skills, any of the logos could use love:
 | `linux.svg` | rough | Hand-drawn Tux |
 | `meridian.svg` | rough | Our own logo -- should look the best, currently does not |
 
+Fill colours are drawn as-is. Keep to flat fills (no gradients), at most 15
+colours per logo; `#000` is transparent, so use it for eyes, mouths and
+other holes.
+
 How to contribute: replace the SVG, run `make -C conn splash` to bake
-it, open a PR. No code change needed.
+it (needs Ruby and `rsvg-convert`), open a PR. No code change needed.
 
 ---
 
-## 2. Per-OS color splash (read colors from SVG)
-
-**Files:** `conn/tools/bake_splash.py`, `conn/core/splash_atlas.h`,
-`ui/conn_bridge.c` -- `ConnLaunchSplash()`
-
-Right now the bake pipeline throws away all color information and stores
-only a mono alpha/coverage plane. At runtime the logo is tinted with a
-single hardcoded accent color per OS.
-
-A better implementation would:
-- Extract per-pixel RGB from the SVG at bake time (not just alpha)
-- Store a compact color-indexed or full-RGB RLE plane in `splash_atlas.h`
-- Have `ConnLaunchSplash()` composite the real colors instead of tinting
-
-The pipeline is in `conn/tools/bake_splash.py` (Python + Pillow +
-rsvg-convert). The runtime renderer is `ConnLaunchSplash()` in
-`ui/conn_bridge.c`. Both ends need updating.
-
----
-
-## 3. Broader OS testing
+## 2. Broader OS testing
 
 The OSes I have splash logos for have been booted and verified on my hardware.
 What I have not tested at all, or only superficially:

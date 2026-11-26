@@ -98,6 +98,6 @@ Graphics and splash art:
 ------------------------
 
 * Meridian no longer ships the inherited rEFInd/RefindPlus icon tree. The
-  current Conn UI uses generated splash coverage planes from `conn/art/splash/`
-  and `conn/tools/bake_splash.py`, with per-file SPDX metadata in those source
+  current Conn UI uses generated splash palette/coverage planes from
+  `conn/art/splash/` and `conn/tools/bake_splash.rb`, with per-file SPDX metadata in those source
   assets.

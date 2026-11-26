@@ -93,9 +93,9 @@ font:
 
 # Bake the per-OS boot-splash logos (conn/art/splash/*.svg) into the firmware
 # header core/splash_atlas.h, consumed by ui/conn_bridge.c (ConnLaunchSplash).
-# Offline only: needs rsvg-convert + Pillow, never run at boot.
+# Offline only: needs rsvg-convert + Ruby (stdlib only), never run at boot.
 splash:
-	python3 tools/bake_splash.py
+	ruby tools/bake_splash.rb
 
 $(BUILD):
 	mkdir -p $(BUILD)

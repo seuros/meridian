@@ -21,6 +21,8 @@ VOID ConnBootScreen(VOID);
 
 VOID ConnLaunchSplash(IN CHAR8 OSType, IN CONST CHAR16 *Hint);
 
+VOID ConnSplashGallery(VOID);
+
 VOID ConnTextScreenHeader(IN CHAR16 *Title);
 
 BOOLEAN ConnScreensActive(MERIDIAN_MENU_SCREEN *Screen);

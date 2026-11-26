@@ -3,7 +3,7 @@
 <!-- SPDX-FileCopyrightText: 2026 Abdelkader Boudih <oss@seuros.com> -->
 <!-- GhostBSD: a classic ghost silhouette (rough first-pass; refine later). -->
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-  <g fill="#fff">
+  <g fill="#DCE8F5">
     <!-- body: domed head over a wavy hem -->
     <path d="M56 150
              C56 92 92 52 128 52

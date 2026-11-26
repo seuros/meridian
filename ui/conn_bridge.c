@@ -1766,14 +1766,63 @@ static ConnColor AccentForEntry(CHAR8 OSType, CONST CHAR16 *Hint)
     return AccentForSplash(SplashIndexFor(OSType, Hint), OSType);
 }
 
+// Paint logo Idx at Pct% intensity, centred on a Sw x Sh screen: each pixel
+// is palette[index] scaled by its coverage. Cover, Index and Scratch are
+// CONN_SPLASH_W x CONN_SPLASH_H, already expanded from the atlas.
+static VOID SplashPaint(UINTN Idx, CONST UINT8 *Cover, CONST UINT8 *Index,
+                        EFI_GRAPHICS_OUTPUT_BLT_PIXEL *Scratch, UINT32 Pct, UINTN Sw, UINTN Sh)
+{
+    CONST UINTN W = CONN_SPLASH_W, H = CONN_SPLASH_H;
+    CONST unsigned int *Pal = conn_splash_pal[Idx];
+    UINTN x, y;
+    UINTN cx = (Sw > W) ? (Sw - W) / 2 : 0;
+    UINTN cy = (Sh > H) ? (Sh - H) / 2 : 0;
+    UINTN bw = (W < Sw) ? W : Sw;
+    UINTN bh = (H < Sh) ? H : Sh;
+
+    for (y = 0; y < H; y++) {
+        for (x = 0; x < W; x++) {
+            UINTN p = y * W + x;
+            UINT32 a = (UINT32)Cover[p] * Pct / 100u;
+            UINT32 c = (Index[p] < CONN_SPLASH_MAX_COLOURS) ? Pal[Index[p]] : 0u;
+            EFI_GRAPHICS_OUTPUT_BLT_PIXEL *o = &Scratch[p];
+            o->Blue = (UINT8)((c & 0xFFu) * a / 255u);
+            o->Green = (UINT8)(((c >> 8u) & 0xFFu) * a / 255u);
+            o->Red = (UINT8)(((c >> 16u) & 0xFFu) * a / 255u);
+            o->Reserved = 0;
+        }
+    }
+    VideoBlt(Scratch, FALSE, cx, cy, bw, bh, W * sizeof(*Scratch));
+}
+
+// Expand logo Idx's coverage and palette-index planes. FALSE on allocation
+// failure (both pointers are then NULL).
+static BOOLEAN SplashExpand(UINTN Idx, UINT8 **Cover, UINT8 **Index)
+{
+    CONST UINTN N = (UINTN)CONN_SPLASH_W * CONN_SPLASH_H;
+
+    if (*Cover == NULL)
+        *Cover = AllocatePool(N);
+    if (*Index == NULL)
+        *Index = AllocatePool(N);
+    if (*Cover == NULL || *Index == NULL) {
+        MRD_FREE_POOL(*Cover);
+        MRD_FREE_POOL(*Index);
+        *Cover = NULL;
+        *Index = NULL;
+        return FALSE;
+    }
+    SplashRleExpand(conn_splash_rle[Idx], conn_splash_rle_len[Idx], *Cover, N);
+    SplashRleExpand(conn_splash_idx[Idx], conn_splash_idx_len[Idx], *Index, N);
+    return TRUE;
+}
+
 VOID ConnLaunchSplash(IN CHAR8 OSType, IN CONST CHAR16 *Hint)
 {
     EFI_GRAPHICS_OUTPUT_BLT_PIXEL Black = {0, 0, 0, 0};
     EFI_GRAPHICS_OUTPUT_BLT_PIXEL *Scratch;
-    UINT8 *Cover;
-    ConnColor accent;
-    UINTN sw = 0, sh = 0, idx, cx, cy, x, y, f, bw, bh;
-    UINT32 ar, ag, ab;
+    UINT8 *Cover = NULL, *Index = NULL;
+    UINTN sw = 0, sh = 0, idx, f;
     static const UINT8 fpct[] = {12, 30, 55, 80, 100};
     CONST UINTN W = CONN_SPLASH_W, H = CONN_SPLASH_H;
 
@@ -1786,44 +1835,79 @@ VOID ConnLaunchSplash(IN CHAR8 OSType, IN CONST CHAR16 *Hint)
     }
 
     idx = SplashIndexFor(OSType, Hint);
-    accent = AccentForSplash(idx, OSType);
-    ar = (UINT32)CONN_R(accent);
-    ag = (UINT32)CONN_G(accent);
-    ab = (UINT32)CONN_B(accent);
 
-    Cover = AllocatePool(W * H);
     Scratch = AllocatePool(W * H * sizeof(*Scratch));
-    if (Cover == NULL || Scratch == NULL) {
-        MRD_FREE_POOL(Cover);
+    if (Scratch == NULL || !SplashExpand(idx, &Cover, &Index)) {
         MRD_FREE_POOL(Scratch);
         return;
     }
-    SplashRleExpand(conn_splash_rle[idx], conn_splash_rle_len[idx], Cover, W * H);
-
-    cx = (sw > W) ? (sw - W) / 2 : 0;
-    cy = (sh > H) ? (sh - H) / 2 : 0;
-    bw = (W < sw) ? W : sw;
-    bh = (H < sh) ? H : sh;
 
     RstFill(&Black, 0, 0, sw, sh, sw, sh);
     for (f = 0; f < sizeof(fpct); f++) {
-        UINT32 fa = fpct[f];
-        for (y = 0; y < H; y++) {
-            for (x = 0; x < W; x++) {
-                UINT32 a = (UINT32)Cover[y * W + x] * fa / 100u;
-                EFI_GRAPHICS_OUTPUT_BLT_PIXEL *o = &Scratch[y * W + x];
-                o->Blue = (UINT8)(ab * a / 255u);
-                o->Green = (UINT8)(ag * a / 255u);
-                o->Red = (UINT8)(ar * a / 255u);
-                o->Reserved = 0;
-            }
-        }
-        VideoBlt(Scratch, FALSE, cx, cy, bw, bh, W * sizeof(*Scratch));
+        SplashPaint(idx, Cover, Index, Scratch, fpct[f], sw, sh);
         gBS->Stall(45000);
     }
     gBS->Stall(300000);
 
     MRD_FREE_POOL(Cover);
+    MRD_FREE_POOL(Index);
+    MRD_FREE_POOL(Scratch);
+}
+
+// Debug viewer: every splash logo at full intensity, held until a key.
+// Right/Down/Space/Enter = next, Left/Up = previous, Esc/Q = back to menu.
+VOID ConnSplashGallery(VOID)
+{
+    EFI_GRAPHICS_OUTPUT_BLT_PIXEL Black = {0, 0, 0, 0};
+    EFI_GRAPHICS_OUTPUT_BLT_PIXEL *Scratch;
+    UINT8 *Cover = NULL, *Index = NULL;
+    UINTN sw = 0, sh = 0, idx = 0;
+    CONST UINTN W = CONN_SPLASH_W, H = CONN_SPLASH_H;
+
+    SwitchToGraphics();
+    if (!AllowGraphicsMode || (GOPDraw == NULL && UGADraw == NULL) || !VideoSize(&sw, &sh)) {
+        return;
+    }
+
+    Scratch = AllocatePool(W * H * sizeof(*Scratch));
+    if (Scratch == NULL) {
+        return;
+    }
+
+    ReadAllKeyStrokes();
+    for (;;) {
+        EFI_INPUT_KEY Key;
+        UINTN Ev;
+
+        INFO_LOG("Splash Logos:- %d/%d '%a'", (UINT32)(idx + 1), (UINT32)CONN_SPLASH_COUNT,
+                 conn_splash_key[idx]);
+        if (!SplashExpand(idx, &Cover, &Index)) {
+            break;
+        }
+        RstFill(&Black, 0, 0, sw, sh, sw, sh);
+        SplashPaint(idx, Cover, Index, Scratch, 100, sw, sh);
+
+        if (gST->ConIn == NULL || gST->ConIn->WaitForKey == NULL ||
+            EFI_ERROR(gBS->WaitForEvent(1, &gST->ConIn->WaitForKey, &Ev))) {
+            break;
+        }
+        if (EFI_ERROR(gST->ConIn->ReadKeyStroke(gST->ConIn, &Key))) {
+            continue;
+        }
+        if (Key.ScanCode == SCAN_ESC || Key.UnicodeChar == L'q' || Key.UnicodeChar == L'Q') {
+            break;
+        }
+        if (Key.ScanCode == SCAN_LEFT || Key.ScanCode == SCAN_UP) {
+            idx = (idx == 0) ? CONN_SPLASH_COUNT - 1 : idx - 1;
+        }
+        else {
+            idx = (idx + 1) % CONN_SPLASH_COUNT;
+        }
+    }
+
+    RstFill(&Black, 0, 0, sw, sh, sw, sh);
+    MRD_FREE_POOL(Cover);
+    MRD_FREE_POOL(Index);
     MRD_FREE_POOL(Scratch);
 }
 

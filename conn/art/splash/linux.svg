@@ -3,7 +3,7 @@
 <!-- SPDX-FileCopyrightText: 2026 Abdelkader Boudih <oss@seuros.com> -->
 <!-- Linux generic: a stylised penguin silhouette. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-  <g fill="#fff">
+  <g fill="#4A4A55">
     <!-- body -->
     <path d="M128 36
              c26 0 40 20 40 46
@@ -14,14 +14,23 @@
              c4 -34 26 -56 26 -70
              c0 -10 -4 -18 -4 -30
              c0 -26 14 -46 40 -46z"/>
-    <!-- feet -->
+  </g>
+  <!-- belly -->
+  <ellipse cx="128" cy="168" rx="38" ry="52" fill="#F2F2F2"/>
+  <!-- eyes -->
+  <g fill="#F2F2F2">
+    <ellipse cx="116" cy="78" rx="10" ry="12"/>
+    <ellipse cx="140" cy="78" rx="10" ry="12"/>
+  </g>
+  <!-- feet -->
+  <g fill="#F5B921">
     <ellipse cx="104" cy="216" rx="20" ry="9"/>
     <ellipse cx="152" cy="216" rx="20" ry="9"/>
   </g>
-  <!-- eyes + beak as holes (drawn in background colour; baked alpha keeps them dark) -->
+  <!-- pupils: black bakes as zero coverage, i.e. a hole -->
   <g fill="#000">
-    <circle cx="116" cy="78" r="7"/>
-    <circle cx="140" cy="78" r="7"/>
+    <circle cx="118" cy="80" r="5"/>
+    <circle cx="138" cy="80" r="5"/>
   </g>
-  <path d="M120 92 l8 14 l8 -14 z" fill="#000"/>
+  <path d="M118 92 l10 16 l10 -16 z" fill="#F5B921"/>
 </svg>
