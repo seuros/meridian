@@ -17,7 +17,7 @@ MDE     := $(EDK2)/MdePkg/Include
 EFI_INC  := -I$(MDE) -I$(MDE)/X64 -DMDE_CPU_X64=
 CFLAGS   ?= -O2 -std=c11 -ffreestanding -fshort-wchar -Wall -Wextra \
             -Wno-unused-parameter $(EFI_INC) -Icore -Iefi -Ihost \
-            -I../libstatemachines/include
+            -I../libstatemachines/include -I../include
 BUILD    := build
 
 STATE_MACHINE := ../libstatemachines/src/state_machine.c

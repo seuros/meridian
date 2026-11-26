@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 Abdelkader Boudih <oss@seuros.com>
 
 #include "conn_core.h"
+#include "version.h"
 
 #define TRANSPARENT 0u
 
@@ -93,12 +94,12 @@ static INTN ucs_len(const char *s) {
 // APFS into "Apfs", which is how you tell a boot manager nobody ever looked at.
 // Matched case-insensitively against a whole word; the spelling here wins.
 static const char *const CANON[] = {
-    "macOS", "iOS", "OS", "FreeBSD", "OpenBSD", "NetBSD", "DragonFly",
-    "GhostBSD", "MidnightBSD", "BSD", "9front", "openSUSE", "GNU", "PC-BSD",
-    "APFS", "HFS", "NTFS", "ZFS", "UFS", "FFS", "BFS", "XFS", "JFS", "FAT32",
-    "EXT2", "EXT3", "EXT4", "HAMMER2", "LUKS", "LVM", "RAID", "ReFS",
-    "GPT", "MBR", "ESP", "EFI", "UEFI", "NVMe", "SSD", "HD", "USB", "DHH",
-    "PinkPuffy", "CURRENT", "STABLE", "RELEASE",
+    "macOS",       "iOS",  "OS",     "FreeBSD",   "OpenBSD", "NetBSD",  "DragonFly", "GhostBSD",
+    "MidnightBSD", "BSD",  "9front", "openSUSE",  "GNU",     "PC-BSD",  "APFS",      "HFS",
+    "NTFS",        "ZFS",  "UFS",    "FFS",       "BFS",     "XFS",     "JFS",       "GEFS",
+    "FAT32",       "EXT2", "EXT3",   "EXT4",      "HAMMER2", "LUKS",    "LVM",       "RAID",
+    "ReFS",        "GPT",  "MBR",    "ESP",       "EFI",     "UEFI",    "NVMe",      "SSD",
+    "HD",          "USB",  "DHH",    "PinkPuffy", "RS",      "CURRENT", "STABLE",    "RELEASE",
 };
 
 static UINTN word_len(const char *s) {
@@ -284,6 +285,12 @@ VOID conn_grid_frame(ConnGrid *g, const ConnTextTheme *th) {
     set_cell(g, CONN_COLS - 1, 2, BX_VL, fr, TRANSPARENT, FALSE);
     set_cell(g, 0, CONN_ROWS - 3, BX_VR, fr, TRANSPARENT, FALSE);
     set_cell(g, CONN_COLS - 1, CONN_ROWS - 3, BX_VL, fr, TRANSPARENT, FALSE);
+
+    // Build version, right-aligned on the bottom border so it never competes
+    // with the header's theme/resolution/clock fields.
+    static const char ver[] = " v" VERSION_STRING_ASCII " ";
+    puts_at(g, CONN_COLS - 3 - (INTN)(sizeof(ver) - 1), CONN_ROWS - 1, ver, th->dim, TRANSPARENT,
+            FALSE);
 }
 
 static UINT32 saver_mix(UINT32 x)
