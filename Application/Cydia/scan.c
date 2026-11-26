@@ -5,6 +5,7 @@
 #include <Library/DevicePathLib.h>
 #include <Library/IoLib.h>
 #include <IndustryStandard/Atapi.h>
+#include <IndustryStandard/Nvme.h>
 #include <IndustryStandard/SmBios.h>
 #include <Protocol/GraphicsOutput.h>
 #include <Protocol/EdidActive.h>
@@ -12,6 +13,7 @@
 #include <Protocol/SimpleNetwork.h>
 #include <Protocol/UsbIo.h>
 #include <Protocol/DiskInfo.h>
+#include <Protocol/NvmExpressPassthru.h>
 #include <Protocol/AtaPassThru.h>
 #include <Protocol/Tcg2Protocol.h>
 #include <Guid/SmBios.h>
@@ -65,7 +67,7 @@ static UINT8 *SmbiosTableAddr(OUT UINTN *Len)
     return NULL;
 }
 
-static CONST CHAR8 *SmbiosStr(IN SMBIOS_STRUCTURE *Hdr, IN UINT8 Index)
+CONST CHAR8 *CySmbiosStr(IN SMBIOS_STRUCTURE *Hdr, IN UINT8 Index)
 {
     CONST CHAR8 *P = (CONST CHAR8 *)Hdr + Hdr->Length;
     UINT8 n = 1;
@@ -85,7 +87,7 @@ static CONST CHAR8 *SmbiosStr(IN SMBIOS_STRUCTURE *Hdr, IN UINT8 Index)
     return "";
 }
 
-static VOID SmbiosWalk(BOOLEAN (*Cb)(SMBIOS_STRUCTURE *, VOID *), VOID *Ctx)
+VOID CyWalkSmbios(BOOLEAN (*Cb)(SMBIOS_STRUCTURE *, VOID *), VOID *Ctx)
 {
     UINTN Len;
     UINT8 *Tab = SmbiosTableAddr(&Len);
@@ -95,7 +97,7 @@ static VOID SmbiosWalk(BOOLEAN (*Cb)(SMBIOS_STRUCTURE *, VOID *), VOID *Ctx)
     }
     P = Tab;
     End = Tab + Len;
-    while (P + sizeof(SMBIOS_STRUCTURE) <= End) {
+    while ((UINTN)(End - P) >= sizeof(SMBIOS_STRUCTURE)) {
         SMBIOS_STRUCTURE *Hdr = (SMBIOS_STRUCTURE *)P;
         UINT8 *S;
         if (Hdr->Length < sizeof(SMBIOS_STRUCTURE) || Hdr->Length > (UINTN)(End - P)) {
@@ -104,13 +106,12 @@ static VOID SmbiosWalk(BOOLEAN (*Cb)(SMBIOS_STRUCTURE *, VOID *), VOID *Ctx)
         if (Hdr->Type == 127) {
             break;
         }
-        if (Cb(Hdr, Ctx)) {
-            return;
-        }
-
         S = P + Hdr->Length;
-        while (S + 1 < End && !(S[0] == 0 && S[1] == 0)) {
+        while ((UINTN)(End - S) >= 2 && !(S[0] == 0 && S[1] == 0)) {
             S++;
+        }
+        if ((UINTN)(End - S) < 2 || Cb(Hdr, Ctx)) {
+            return;
         }
         P = S + 2;
     }
@@ -119,27 +120,28 @@ static VOID SmbiosWalk(BOOLEAN (*Cb)(SMBIOS_STRUCTURE *, VOID *), VOID *Ctx)
 static BOOLEAN Cb_Sys(SMBIOS_STRUCTURE *Hdr, VOID *Ctx)
 {
     CY_REPORT *R = Ctx;
-    if (Hdr->Type == 0) {
+    if (Hdr->Type == 0 && Hdr->Length > OFFSET_OF(SMBIOS_TABLE_TYPE0, BiosVersion)) {
         SMBIOS_TABLE_TYPE0 *T0 = (SMBIOS_TABLE_TYPE0 *)Hdr;
-        AsciiStrnCpyS(R->FwVendor, sizeof(R->FwVendor), SmbiosStr(Hdr, T0->Vendor),
+        AsciiStrnCpyS(R->FwVendor, sizeof(R->FwVendor), CySmbiosStr(Hdr, T0->Vendor),
                       sizeof(R->FwVendor) - 1);
-        AsciiStrnCpyS(R->FwVersion, sizeof(R->FwVersion), SmbiosStr(Hdr, T0->BiosVersion),
+        AsciiStrnCpyS(R->FwVersion, sizeof(R->FwVersion), CySmbiosStr(Hdr, T0->BiosVersion),
                       sizeof(R->FwVersion) - 1);
     }
-    else if (Hdr->Type == 1) {
+    else if (Hdr->Type == 1 && Hdr->Length > OFFSET_OF(SMBIOS_TABLE_TYPE1, SerialNumber)) {
         SMBIOS_TABLE_TYPE1 *T1 = (SMBIOS_TABLE_TYPE1 *)Hdr;
-        CONST CHAR8 *Mfr = SmbiosStr(Hdr, T1->Manufacturer);
-        AsciiStrnCpyS(R->Model, sizeof(R->Model), SmbiosStr(Hdr, T1->ProductName),
+        CONST CHAR8 *Mfr = CySmbiosStr(Hdr, T1->Manufacturer);
+        AsciiStrnCpyS(R->Manufacturer, sizeof(R->Manufacturer), Mfr, sizeof(R->Manufacturer) - 1);
+        AsciiStrnCpyS(R->Model, sizeof(R->Model), CySmbiosStr(Hdr, T1->ProductName),
                       sizeof(R->Model) - 1);
-        AsciiStrnCpyS(R->Serial, sizeof(R->Serial), SmbiosStr(Hdr, T1->SerialNumber),
+        AsciiStrnCpyS(R->Serial, sizeof(R->Serial), CySmbiosStr(Hdr, T1->SerialNumber),
                       sizeof(R->Serial) - 1);
         if (AsciiStrStr(Mfr, "Apple") != NULL) {
             R->IsApple = TRUE;
         }
     }
-    else if (Hdr->Type == 4) {
+    else if (Hdr->Type == 4 && Hdr->Length > OFFSET_OF(SMBIOS_TABLE_TYPE4, ProcessorVersion)) {
         SMBIOS_TABLE_TYPE4 *T4 = (SMBIOS_TABLE_TYPE4 *)Hdr;
-        AsciiStrnCpyS(R->Cpu, sizeof(R->Cpu), SmbiosStr(Hdr, T4->ProcessorVersion),
+        AsciiStrnCpyS(R->Cpu, sizeof(R->Cpu), CySmbiosStr(Hdr, T4->ProcessorVersion),
                       sizeof(R->Cpu) - 1);
     }
     return FALSE;
@@ -167,8 +169,8 @@ static VOID CpuBrand(OUT CHAR8 *Out, UINTN Cap)
 VOID CyScanSystem(IN OUT CY_REPORT *R)
 {
     CY_COMPONENT *C;
-    SmbiosWalk(Cb_Sys, R);
-    R->ModelPolicy = CyModelPolicy(R);
+    CyWalkSmbios(Cb_Sys, R);
+    R->ModelPolicy = R->PcProfile ? 0 : CyModelPolicy(R);
 #if defined(MDE_CPU_IA32) || defined(MDE_CPU_X64)
     CpuBrand(R->Cpu, sizeof(R->Cpu));
 #endif
@@ -198,9 +200,10 @@ typedef struct
     UINT64 TotalMB;
     UINT32 TypeMask;
     BOOLEAN UnknownSize;
+    BOOLEAN PcProfile;
 } MEM_CTX;
 
-// SMBIOS Type 17 families used in shipping Intel Macs. SMBIOS doesn't
+// SMBIOS Type 17 families used in Intel Macs, plus DDR5/LPDDR5 for PCs. SMBIOS doesn't
 // distinguish DDR3L from DDR3 or LPDDR4X from LPDDR4.
 static CONST struct
 {
@@ -210,6 +213,7 @@ static CONST struct
     {MemoryTypeDdr2, "DDR2"}, {MemoryTypeDdr2FbDimm, "DDR2 FB-DIMM"},
     {MemoryTypeDdr3, "DDR3"}, {MemoryTypeLpddr3, "LPDDR3"},
     {MemoryTypeDdr4, "DDR4"}, {MemoryTypeLpddr4, "LPDDR4"},
+    {MemoryTypeDdr5, "DDR5"}, {MemoryTypeLpddr5, "LPDDR5"},
 };
 
 static BOOLEAN Cb_Mem(SMBIOS_STRUCTURE *Hdr, VOID *Ctx)
@@ -222,7 +226,8 @@ static BOOLEAN Cb_Mem(SMBIOS_STRUCTURE *Hdr, VOID *Ctx)
             M->Populated++;
             if (Hdr->Length > OFFSET_OF(SMBIOS_TABLE_TYPE17, MemoryType)) {
                 for (UINTN i = 0; i < ARRAY_SIZE(gRamTypes); i++) {
-                    if (T->MemoryType == gRamTypes[i].Type) {
+                    if (T->MemoryType == gRamTypes[i].Type &&
+                        (M->PcProfile || T->MemoryType < MemoryTypeDdr5)) {
                         M->TypeMask |= 1U << i;
                         M->Typed++;
                         break;
@@ -253,7 +258,8 @@ VOID CyScanMemory(IN OUT CY_REPORT *R)
     MEM_CTX M = {0};
     CY_COMPONENT *C;
     CY_STATE St;
-    SmbiosWalk(Cb_Mem, &M);
+    M.PcProfile = R->PcProfile;
+    CyWalkSmbios(Cb_Mem, &M);
 
     if (M.Slots == 0) {
         C = CyAdd(R, "Memory", CY_UNKNOWN);
@@ -316,6 +322,50 @@ static BOOLEAN CyAtaModel(IN CONST ATA_IDENTIFY_DATA *Id, OUT CHAR8 *Model, IN U
            (AsciiStrnCmp(Model, "APPLE ", 6) == 0 || AsciiStrnCmp(Model, "Apple ", 6) == 0);
 }
 
+// DiskInfo.Identify can return Identify *Namespace*. Only Identify Controller
+// contains a model string. Resolve the parent of this disk, not the first NVMe.
+static BOOLEAN CyNvmeModel(EFI_HANDLE Disk, CHAR8 *Model, UINTN Cap)
+{
+    EFI_GUID Guid = EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL_GUID;
+    EFI_DEVICE_PATH_PROTOCOL *Path = DevicePathFromHandle(Disk);
+    EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL *Nvme;
+    EFI_HANDLE Parent;
+    if (Path == NULL || EFI_ERROR(gBS->LocateDevicePath(&Guid, &Path, &Parent)) ||
+        DevicePathType(Path) != MESSAGING_DEVICE_PATH ||
+        DevicePathSubType(Path) != MSG_NVME_NAMESPACE_DP ||
+        EFI_ERROR(gBS->HandleProtocol(Parent, &Guid, (VOID **)&Nvme)) || Nvme->Mode == NULL) {
+        return FALSE;
+    }
+    UINTN Align = Nvme->Mode->IoAlign;
+    if (Align > SIZE_1MB || (Align && (Align & (Align - 1)) != 0)) {
+        return FALSE;
+    }
+    STATIC_ASSERT(sizeof(NVME_ADMIN_CONTROLLER_DATA) == EFI_PAGE_SIZE, "NVMe Identify page size");
+    NVME_ADMIN_CONTROLLER_DATA *Id = AllocateAlignedPages(1, Align);
+    if (Id == NULL) {
+        return FALSE;
+    }
+    EFI_NVM_EXPRESS_COMMAND Cmd = {0};
+    EFI_NVM_EXPRESS_COMPLETION Completion = {0};
+    EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET Pkt = {0};
+    Cmd.Cdw0.Opcode = NVME_ADMIN_IDENTIFY_CMD;
+    Cmd.Cdw10 = 1; // CNS = Identify Controller
+    Cmd.Flags = CDW10_VALID;
+    Pkt.NvmeCmd = &Cmd;
+    Pkt.NvmeCompletion = &Completion;
+    Pkt.CommandTimeout = EFI_TIMER_PERIOD_SECONDS(2);
+    Pkt.TransferBuffer = Id;
+    Pkt.TransferLength = sizeof(*Id);
+    Pkt.QueueType = NVME_ADMIN_QUEUE;
+    ZeroMem(Id, sizeof(*Id));
+    if (!EFI_ERROR(Nvme->PassThru(Nvme, 0, &Pkt, NULL)) && Pkt.TransferLength == sizeof(*Id) &&
+        (Completion.DW3 & 0x0ffe0000U) == 0) {
+        CySanitizeModel(Id->Mn, sizeof(Id->Mn), Model, Cap);
+    }
+    FreeAlignedPages(Id, 1);
+    return Model[0] != '\0';
+}
+
 static BOOLEAN CyDiskModel(IN EFI_HANDLE Handle, OUT CHAR8 *Model, IN UINTN Cap)
 {
     EFI_GUID DiGuid = EFI_DISK_INFO_PROTOCOL_GUID;
@@ -328,7 +378,9 @@ static BOOLEAN CyDiskModel(IN EFI_HANDLE Handle, OUT CHAR8 *Model, IN UINTN Cap)
     BOOLEAN AppleHdd = FALSE;
 
     Model[0] = '\0';
-    if (Cap < 2 || EFI_ERROR(gBS->HandleProtocol(Handle, &DiGuid, (VOID **)&Di))) {
+    if (Cap < 2 || CyNvmeModel(Handle, Model, Cap) ||
+        EFI_ERROR(gBS->HandleProtocol(Handle, &DiGuid, (VOID **)&Di)) ||
+        CompareGuid(&Di->Interface, &Nvme)) {
         return FALSE;
     }
     Buf = AllocateZeroPool(Size);
@@ -336,12 +388,8 @@ static BOOLEAN CyDiskModel(IN EFI_HANDLE Handle, OUT CHAR8 *Model, IN UINTN Cap)
         return FALSE;
     }
 
-    if (CompareGuid(&Di->Interface, &Nvme) && !EFI_ERROR(Di->Identify(Di, Buf, &Size)) &&
-        Size >= 64) {
-        CySanitizeModel(Buf + 24, 40, Model, Cap);
-    }
-    else if ((CompareGuid(&Di->Interface, &Ahci) || CompareGuid(&Di->Interface, &Ide)) &&
-             !EFI_ERROR(Di->Identify(Di, Buf, &Size)) && Size >= sizeof(ATA_IDENTIFY_DATA)) {
+    if ((CompareGuid(&Di->Interface, &Ahci) || CompareGuid(&Di->Interface, &Ide)) &&
+        !EFI_ERROR(Di->Identify(Di, Buf, &Size)) && Size >= sizeof(ATA_IDENTIFY_DATA)) {
         AppleHdd = CyAtaModel((CONST ATA_IDENTIFY_DATA *)Buf, Model, Cap);
     }
     else {
@@ -456,7 +504,7 @@ VOID CyScanStorage(IN OUT CY_REPORT *R)
             if (AsciiStrLen(Model) < 3) {
                 AppleHdd = CyAtaModelForPath(Path, Model, sizeof(Model));
             }
-            if (!Bio->Media->RemovableMedia && CyOnboardAta(Path)) {
+            if (!R->PcProfile && !Bio->Media->RemovableMedia && CyOnboardAta(Path)) {
                 // Multiple possible bays: don't attribute one bay's sensor to the other.
                 R->AppleBayHdd = (++BayCandidates == 1 && AppleHdd);
             }
@@ -471,7 +519,7 @@ VOID CyScanStorage(IN OUT CY_REPORT *R)
         FreePool(H);
     }
 
-    C = CyAdd(R, "Storage", Disks ? CY_PRESENT : CY_ABSENT);
+    C = CyAdd(R, "Storage", Disks ? CY_PRESENT : (R->PcProfile ? CY_UNKNOWN : CY_ABSENT));
     if (Disks) {
         AsciiSPrint(C->Detail, sizeof(C->Detail), "%u disk(s): %a", (UINT32)Disks, List);
     }
@@ -526,6 +574,18 @@ VOID CyScanDisplay(IN OUT CY_REPORT *R)
             }
         }
         FreePool(H);
+    }
+
+    if (R->PcProfile) {
+        C = CyAdd(R, "Display", Gop ? CY_PRESENT : CY_UNKNOWN);
+        if (Gop) {
+            AsciiSPrint(C->Detail, sizeof(C->Detail), "UEFI framebuffer %ux%u; active EDID %a", W,
+                        Hgt, Edid ? "available" : "not exposed");
+        }
+        else {
+            AsciiStrCpyS(C->Detail, sizeof(C->Detail), "firmware did not expose a framebuffer");
+        }
+        return;
     }
 
     EFI_GUID UgaGuid = {
@@ -698,7 +758,7 @@ VOID CyScanNetwork(IN OUT CY_REPORT *R)
         FreePool(H);
     }
 
-    C = CyAdd(R, "Network", Nics ? CY_PRESENT : CY_ABSENT);
+    C = CyAdd(R, "Network", Nics ? CY_PRESENT : (R->PcProfile ? CY_UNKNOWN : CY_ABSENT));
     if (Nics && GotMac) {
         AsciiSPrint(C->Detail, sizeof(C->Detail), "%u NIC(s), MAC %02x:%02x:%02x:%02x:%02x:%02x",
                     (UINT32)Nics, Mac[0], Mac[1], Mac[2], Mac[3], Mac[4], Mac[5]);
@@ -707,7 +767,9 @@ VOID CyScanNetwork(IN OUT CY_REPORT *R)
         AsciiSPrint(C->Detail, sizeof(C->Detail), "%u NIC(s)", (UINT32)Nics);
     }
     else {
-        AsciiStrCpyS(C->Detail, sizeof(C->Detail), "no wired NIC visible pre-OS (Wi-Fi is normal)");
+        AsciiStrCpyS(C->Detail, sizeof(C->Detail),
+                     R->PcProfile ? "firmware exposes no network interface (SNP)"
+                                  : "no wired NIC visible pre-OS (Wi-Fi is normal)");
     }
 }
 
@@ -916,8 +978,8 @@ VOID CyScanTpm(IN OUT CY_REPORT *R)
 
     if (EFI_ERROR(gBS->LocateProtocol(&gEfiTcg2ProtocolGuid, NULL, (VOID **)&Tcg2)) ||
         Tcg2 == NULL) {
-        C = CyAdd(R, "TPM", CY_ABSENT);
-        AsciiStrCpyS(C->Detail, sizeof(C->Detail), "no TCG2 (no TPM / disabled in firmware)");
+        C = CyAdd(R, "TPM", R->PcProfile ? CY_UNKNOWN : CY_ABSENT);
+        AsciiStrCpyS(C->Detail, sizeof(C->Detail), "firmware exposes no TCG2 protocol");
         return;
     }
     ZeroMem(&Cap, sizeof(Cap));

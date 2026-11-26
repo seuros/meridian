@@ -151,6 +151,9 @@
     MeridianPkg/filesystems/ufs.inf
 
 
+[Components.X64]
+    MeridianPkg/Application/Elater/Elater.inf
+
 [PcdsFixedAtBuild]
     gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x2F
     gEfiMdePkgTokenSpaceGuid.PcdDebugClearMemoryValue|0x00

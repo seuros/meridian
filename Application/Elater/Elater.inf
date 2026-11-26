@@ -1,0 +1,49 @@
+## @file
+# Standalone UEFI hardware inventory for non-Apple Intel PCs.
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Abdelkader Boudih <oss@seuros.com>
+##
+
+[Defines]
+    INF_VERSION    = 0x00010006
+    BASE_NAME      = Elater
+    FILE_GUID      = 8a44b097-3888-4110-bda0-4d2a8b72d9b1
+    MODULE_TYPE    = UEFI_APPLICATION
+    VERSION_STRING = 0.1.0
+    ENTRY_POINT    = UefiMain
+
+[Sources.X64]
+    Elater.c
+    nvme.c
+    ../Cydia/report.c
+    ../Cydia/scan.c
+
+[Packages]
+    MdePkg/MdePkg.dec
+
+[LibraryClasses]
+    UefiApplicationEntryPoint
+    UefiLib
+    BaseLib
+    BaseMemoryLib
+    DevicePathLib
+    MemoryAllocationLib
+    PrintLib
+    IoLib
+    FileHandleLib
+    UefiBootServicesTableLib
+
+[Protocols]
+    gEfiSimpleFileSystemProtocolGuid
+    gEfiLoadedImageProtocolGuid
+    gEfiGraphicsOutputProtocolGuid
+    gEfiEdidActiveProtocolGuid
+    gEfiBlockIoProtocolGuid
+    gEfiSimpleNetworkProtocolGuid
+    gEfiUsbIoProtocolGuid
+    gEfiTcg2ProtocolGuid
+    gEfiNvmExpressPassThruProtocolGuid
+
+[Guids]
+    gEfiSmbiosTableGuid
+    gEfiSmbios3TableGuid

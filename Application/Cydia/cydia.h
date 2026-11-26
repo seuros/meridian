@@ -5,6 +5,7 @@
 #define __CYDIA_H_
 
 #include <Uefi.h>
+#include <IndustryStandard/SmBios.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiLib.h>
 #include <Library/BaseLib.h>
@@ -49,11 +50,13 @@ typedef struct
 typedef struct
 {
     CHAR8 Model[48];
+    CHAR8 Manufacturer[48];
     CHAR8 Serial[32];
     CHAR8 FwVendor[40];
     CHAR8 FwVersion[40];
     CHAR8 Cpu[64];
     BOOLEAN IsApple;
+    BOOLEAN PcProfile;
     UINT16 ModelPolicy;
     BOOLEAN AppleBayHdd;
 
@@ -61,6 +64,11 @@ typedef struct
     UINTN Count;
     CY_SENSOR_GROUP Voltages, Currents, Power;
 } CY_REPORT;
+
+typedef EFI_STATUS (*CY_SCAN)(CY_REPORT *R);
+EFI_STATUS CyRunReport(EFI_HANDLE ImageHandle, BOOLEAN PcProfile, CY_SCAN Scan);
+VOID CyWalkSmbios(BOOLEAN (*Cb)(SMBIOS_STRUCTURE *, VOID *), VOID *Ctx);
+CONST CHAR8 *CySmbiosStr(SMBIOS_STRUCTURE *Hdr, UINT8 Index);
 
 #define CY_EXP_BATTERY BIT0
 #define CY_EXP_DISPLAY BIT1

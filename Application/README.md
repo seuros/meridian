@@ -1,16 +1,17 @@
 # Application/
 
 Standalone UEFI applications. Each one is its own `.efi` with its own entry
-point; neither links anything from the Meridian boot manager, and neither is
+point; none link anything from the Meridian boot manager or are
 part of `Meridian.efi`. Put them on a FAT stick and run them from the UEFI
 shell, or launch them from the Meridian menu as EFI tools.
 
 | Application | Binary | Purpose |
 | --- | --- | --- |
 | [Cydia](Cydia/README.md) | `Cydia.efi` | Hardware diagnostic for Intel Macs. Writes a repair report. |
+| [Elater](Elater/README.md) | `Elater.efi` | Hardware diagnostic for non-Apple Intel PCs (x64 UEFI). |
 | [DarkPassenger](DarkPassenger/README.md) | `DarkPassenger.efi` | Maps what the vendor firmware fused off, ahead of a coreboot port. |
 
-Both are registered in `[Components]` in `MeridianPkg.dsc` and shipped as loose
+These applications are registered in `MeridianPkg.dsc` and shipped as loose
 release downloads by `scripts/package-release.sh`.
 
 ## Adding an application

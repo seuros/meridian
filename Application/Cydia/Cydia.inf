@@ -24,6 +24,7 @@
 
 [Sources]
     Cydia.c
+    report.c
     scan.c
     electrical.c
 

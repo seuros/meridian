@@ -63,7 +63,7 @@ ARCH="${ARCH^^}"
 TARGET="${TARGET^^}"
 
 case "${ARCH}" in
-    X64)      FALLBACK_NAME="BOOTX64.EFI"; ARCH_SLUG="x64" ;;
+    X64)      FALLBACK_NAME="BOOTX64.EFI"; ARCH_SLUG="x64"; APPLICATIONS+=(Elater) ;;
     AARCH64)  FALLBACK_NAME="BOOTAA64.EFI"; ARCH_SLUG="aarch64" ;;
     *)
         printf 'Unsupported --arch value: %s (X64 or AARCH64)\n' "${ARCH}" >&2

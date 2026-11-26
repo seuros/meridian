@@ -79,7 +79,8 @@ Each release attaches, per architecture (`x64` and `aarch64`):
 | --- | --- |
 | `meridian-<version>-<arch>-esp.zip` | The complete on-ESP tree. Unzip it at the root of your ESP. |
 | `Meridian-<version>-<arch>.efi` | The boot manager on its own. |
-| `Cydia-<version>-<arch>.efi` | Standalone pre-OS hardware diagnostic. |
+| `Cydia-<version>-<arch>.efi` | Standalone pre-OS hardware diagnostic for Intel Macs. |
+| `Elater-<version>-x64.efi` | Standalone pre-OS hardware diagnostic for non-Apple Intel PCs. |
 | `DarkPassenger-<version>-<arch>.efi` | Standalone read-only recon for vendor firmware lockouts. |
 | `SHA256SUMS` | Checksums for every asset above. |
 
