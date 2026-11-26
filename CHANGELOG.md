@@ -1,5 +1,12 @@
 # Changelog
 
+## [2026.12.1](https://github.com/seuros/meridian/compare/v2026.12.0...v2026.12.1) (2026-11-26)
+
+
+### Features
+
+* **elater:** add pre-OS hardware diagnostics for Intel PCs ([aafb91a](https://github.com/seuros/meridian/commit/aafb91a95232dece2244f8248cdce1794434fe8c))
+
 ## [2026.12.0](https://github.com/seuros/meridian/compare/v2026.11.0...v2026.12.0) (2026-11-26)
 
 
