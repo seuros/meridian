@@ -15,9 +15,9 @@
 
 typedef UINT32 ConnColor;
 #define CONN_RGB(r, g, b)                                                                          \
-    ((ConnColor)(0xFF000000u | ((UINT32)(r) << 16) | ((UINT32)(g) << 8) | (UINT32)(b)))
+    ((ConnColor)(0xFF000000u | ((UINT32)(r) << 16u) | ((UINT32)(g) << 8u) | (UINT32)(b)))
 #define CONN_RGBA(r, g, b, a)                                                                      \
-    ((ConnColor)(((UINT32)(a) << 24) | ((UINT32)(r) << 16) | ((UINT32)(g) << 8) | (UINT32)(b)))
+    ((ConnColor)(((UINT32)(a) << 24u) | ((UINT32)(r) << 16u) | ((UINT32)(g) << 8u) | (UINT32)(b)))
 #define CONN_A(c) (((c) >> 24) & 0xFF)
 #define CONN_R(c) (((c) >> 16) & 0xFF)
 #define CONN_G(c) (((c) >> 8) & 0xFF)
