@@ -1,5 +1,18 @@
 # Changelog
 
+## [2026.12.0](https://github.com/seuros/meridian/compare/v2026.11.0...v2026.12.0) (2026-11-26)
+
+
+### Features
+
+* **cydia:** report Intel Mac RAM types and skip inapplicable checks ([750ba9c](https://github.com/seuros/meridian/commit/750ba9caf6982d80f3e1b994a6f38f47385cf46a))
+* **cydia:** report SMC current and power readings ([2dbcb9c](https://github.com/seuros/meridian/commit/2dbcb9c4de2df5b8ea17ded2da7f57febda1e26e))
+
+
+### Documentation
+
+* **readme:** keep build migration notes out of the user guide ([3172846](https://github.com/seuros/meridian/commit/3172846b13be94f7f66fe879239f98f66984db69))
+
 ## [2026.11.0](https://github.com/seuros/meridian/compare/v2026.10.2...v2026.11.0) (2026-11-25)
 
 
