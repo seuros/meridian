@@ -34,12 +34,25 @@ is not zero, and neither changes the repair verdict.
 
 Everything else comes from what the firmware publishes: SMBIOS for model,
 serial, CPU and memory, GOP/UGA plus EDID for display, BlockIo for storage, SNP
-for network, TCG2 for the TPM, and UsbIo for enumerated devices.
+for network, and UsbIo for enumerated devices. The TCG2/TPM check is for
+non-Apple firmware only; it is not a test for Apple's T2 chip.
+The `Memory` line lists only RAM families used in Intel Macs: DDR2 (including
+fully buffered DIMMs), DDR3, LPDDR3, DDR4 and the LPDDR4 family. SMBIOS Type 17
+reports DDR3L as DDR3 and LPDDR4X as LPDDR4; Cydia does not guess the variant.
+If firmware does not identify a supported type for a populated slot, Cydia
+reports it as unverified, not as a fault. Empty slots do not contribute a type.
 
 The result is diffed against a per-model expectation table keyed on the SMBIOS
 product name (`MacBookPro`, `MacBookAir`, `iMac`, `Macmini`, `MacPro`, …). That
-is what makes an absence meaningful: a missing battery on a MacBook is a fault,
-a missing battery on a Mac mini is the Mac mini working correctly.
+is what makes an absence meaningful: a missing battery on a MacBook is a fault.
+On an iMac (including Pro), Mac mini, Mac Pro or Xserve, the battery check is
+`N/A` and Cydia does not query the battery. The Mac model takes precedence over
+the firmware chassis label, which can say “Laptop” even on an iMac.
+
+A drive-bay sensor reading of −127°C or −128°C is informational unless the Mac
+model expects the sensor and the bay drive identifies itself as an Apple HDD
+with a reported rotation rate. An SSD, an unidentified disk or an ambiguous bay
+does not turn that reading into a repair fault.
 
 ## Output
 
@@ -61,6 +74,7 @@ VERDICT  : DEFECTIVE -- see MISSING/DEGRADED lines  (1 missing, 1 degraded)
 | `OK` | Present and reporting sane values. |
 | `DEGRADED` | Present but wrong: worn battery, framebuffer without EDID, sensor mismatch. |
 | `UNKNOWN` | Not observable from the pre-OS environment, so not counted against the machine. |
+| `N/A` | The check does not apply to this Mac model and was skipped. |
 | `MISSING` | Absent, and the model table says this machine shipped with one. |
 | `absent` | Absent, and not expected on this model. |
 
@@ -82,8 +96,9 @@ it found. The fault count lives in the report, not the exit status.
 - `electrical.c`: discovery and decoding of SMC voltage, current and power keys.
 - `cydia.h`: report/component structures and the scan function list.
 
-Adding a model is a row in `gModels` in `scan.c`: an SMBIOS name prefix, a mask
-of the parts that model shipped with, and its DIMM slot count. The table is
+Adding a model is a row in `gModels` in `scan.c`: an SMBIOS name prefix and a
+mask of the parts that model shipped with. DIMM slot counts come from the
+machine's own SMBIOS records, not a family-wide estimate. The table is
 scanned top to bottom with a prefix compare and the first hit wins, so the
 specific entry has to come first: `iMacPro` above `iMac`, `MacBookPro` and
 `MacBookAir` above `MacBook`.

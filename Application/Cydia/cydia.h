@@ -17,7 +17,8 @@ typedef enum
     CY_ABSENT = 0,
     CY_UNKNOWN,
     CY_DEGRADED,
-    CY_PRESENT
+    CY_PRESENT,
+    CY_NOT_APPLICABLE
 } CY_STATE;
 
 typedef struct
@@ -53,7 +54,8 @@ typedef struct
     CHAR8 FwVersion[40];
     CHAR8 Cpu[64];
     BOOLEAN IsApple;
-    BOOLEAN NonAppleDisk;
+    UINT16 ModelPolicy;
+    BOOLEAN AppleBayHdd;
 
     CY_COMPONENT Comp[CY_MAX_COMPONENTS];
     UINTN Count;
@@ -65,8 +67,7 @@ typedef struct
 #define CY_EXP_NETWORK BIT2
 #define CY_EXP_STORAGE BIT3
 #define CY_EXP_TPM BIT4
-
-UINT16 CyExpectFor(IN CONST CHAR8 *Model, IN BOOLEAN IsApple, OUT UINT8 *DimmSlots);
+#define CY_SKIP_BATTERY BIT5
 
 VOID CyScanSystem(IN OUT CY_REPORT *R);
 VOID CyScanMemory(IN OUT CY_REPORT *R);

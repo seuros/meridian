@@ -36,6 +36,8 @@ static CONST CHAR8 *Verdict(IN CY_COMPONENT *C)
         return "DEGRADED";
     case CY_UNKNOWN:
         return "UNKNOWN";
+    case CY_NOT_APPLICABLE:
+        return "N/A";
     case CY_ABSENT:
     default:
         return C->Expected ? "MISSING" : "absent";
@@ -162,8 +164,6 @@ EFI_STATUS EFIAPI UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *Syste
     CY_REPORT *R;
     CHAR8 *Buf;
     UINTN Size, Faults = 0, i;
-    UINT16 Expect;
-    UINT8 DimmSlots;
     EFI_STATUS Status;
 
     R = AllocateZeroPool(sizeof(CY_REPORT));
@@ -184,13 +184,15 @@ EFI_STATUS EFIAPI UefiMain(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *Syste
     CyScanNetwork(R);
     CyScanThermal(R);
     CyScanShutdown(R);
-    CyScanTpm(R);
+    // Intel Mac firmware doesn't expose TCG2 (the T2 isn't a PC TPM).
+    if (!R->IsApple) {
+        CyScanTpm(R);
+    }
     CyScanUsb(R);
 
-    Expect = CyExpectFor(R->Model, R->IsApple, &DimmSlots);
     for (i = 0; i < R->Count; i++) {
         UINT16 Bit = BitFor(R->Comp[i].Name);
-        if (Bit != 0 && (Expect & Bit)) {
+        if (Bit != 0 && (R->ModelPolicy & Bit)) {
             R->Comp[i].Expected = TRUE;
         }
     }

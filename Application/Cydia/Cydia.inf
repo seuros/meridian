@@ -35,6 +35,7 @@
     UefiLib
     BaseLib
     BaseMemoryLib
+    DevicePathLib
     MemoryAllocationLib
     PrintLib
     IoLib

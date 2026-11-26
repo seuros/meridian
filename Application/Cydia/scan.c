@@ -2,7 +2,9 @@
 // SPDX-FileCopyrightText: 2026 Abdelkader Boudih <oss@seuros.com>
 
 #include "cydia.h"
+#include <Library/DevicePathLib.h>
 #include <Library/IoLib.h>
+#include <IndustryStandard/Atapi.h>
 #include <IndustryStandard/SmBios.h>
 #include <Protocol/GraphicsOutput.h>
 #include <Protocol/EdidActive.h>
@@ -13,6 +15,8 @@
 #include <Protocol/AtaPassThru.h>
 #include <Protocol/Tcg2Protocol.h>
 #include <Guid/SmBios.h>
+
+static UINT16 CyModelPolicy(IN CONST CY_REPORT *R);
 
 CY_COMPONENT *CyAdd(IN OUT CY_REPORT *R, IN CONST CHAR8 *Name, IN CY_STATE State)
 {
@@ -94,7 +98,7 @@ static VOID SmbiosWalk(BOOLEAN (*Cb)(SMBIOS_STRUCTURE *, VOID *), VOID *Ctx)
     while (P + sizeof(SMBIOS_STRUCTURE) <= End) {
         SMBIOS_STRUCTURE *Hdr = (SMBIOS_STRUCTURE *)P;
         UINT8 *S;
-        if (Hdr->Length < sizeof(SMBIOS_STRUCTURE)) {
+        if (Hdr->Length < sizeof(SMBIOS_STRUCTURE) || Hdr->Length > (UINTN)(End - P)) {
             break;
         }
         if (Hdr->Type == 127) {
@@ -164,6 +168,7 @@ VOID CyScanSystem(IN OUT CY_REPORT *R)
 {
     CY_COMPONENT *C;
     SmbiosWalk(Cb_Sys, R);
+    R->ModelPolicy = CyModelPolicy(R);
 #if defined(MDE_CPU_IA32) || defined(MDE_CPU_X64)
     CpuBrand(R->Cpu, sizeof(R->Cpu));
 #endif
@@ -189,19 +194,47 @@ VOID CyScanSystem(IN OUT CY_REPORT *R)
 
 typedef struct
 {
-    UINTN Slots, Populated;
+    UINTN Slots, Populated, Typed;
     UINT64 TotalMB;
+    UINT32 TypeMask;
+    BOOLEAN UnknownSize;
 } MEM_CTX;
+
+// SMBIOS Type 17 families used in shipping Intel Macs. SMBIOS doesn't
+// distinguish DDR3L from DDR3 or LPDDR4X from LPDDR4.
+static CONST struct
+{
+    UINT8 Type;
+    CONST CHAR8 *Name;
+} gRamTypes[] = {
+    {MemoryTypeDdr2, "DDR2"}, {MemoryTypeDdr2FbDimm, "DDR2 FB-DIMM"},
+    {MemoryTypeDdr3, "DDR3"}, {MemoryTypeLpddr3, "LPDDR3"},
+    {MemoryTypeDdr4, "DDR4"}, {MemoryTypeLpddr4, "LPDDR4"},
+};
 
 static BOOLEAN Cb_Mem(SMBIOS_STRUCTURE *Hdr, VOID *Ctx)
 {
     MEM_CTX *M = Ctx;
-    if (Hdr->Type == 17) {
+    if (Hdr->Type == 17 && Hdr->Length >= OFFSET_OF(SMBIOS_TABLE_TYPE17, Size) + sizeof(UINT16)) {
         SMBIOS_TABLE_TYPE17 *T = (SMBIOS_TABLE_TYPE17 *)Hdr;
         M->Slots++;
-        if (T->Size != 0 && T->Size != 0xFFFF) {
+        if (T->Size != 0) {
             M->Populated++;
-            if (T->Size == 0x7FFF && Hdr->Length > OFFSET_OF(SMBIOS_TABLE_TYPE17, ExtendedSize)) {
+            if (Hdr->Length > OFFSET_OF(SMBIOS_TABLE_TYPE17, MemoryType)) {
+                for (UINTN i = 0; i < ARRAY_SIZE(gRamTypes); i++) {
+                    if (T->MemoryType == gRamTypes[i].Type) {
+                        M->TypeMask |= 1U << i;
+                        M->Typed++;
+                        break;
+                    }
+                }
+            }
+            if (T->Size == 0xFFFF ||
+                (T->Size == 0x7FFF &&
+                 Hdr->Length < OFFSET_OF(SMBIOS_TABLE_TYPE17, ExtendedSize) + sizeof(UINT32))) {
+                M->UnknownSize = TRUE;
+            }
+            else if (T->Size == 0x7FFF) {
                 M->TotalMB += (T->ExtendedSize & 0x7FFFFFFF);
             }
             else if (T->Size & 0x8000) {
@@ -217,7 +250,7 @@ static BOOLEAN Cb_Mem(SMBIOS_STRUCTURE *Hdr, VOID *Ctx)
 
 VOID CyScanMemory(IN OUT CY_REPORT *R)
 {
-    MEM_CTX M = {0, 0, 0};
+    MEM_CTX M = {0};
     CY_COMPONENT *C;
     CY_STATE St;
     SmbiosWalk(Cb_Mem, &M);
@@ -230,11 +263,24 @@ VOID CyScanMemory(IN OUT CY_REPORT *R)
 
     St = (M.Populated == 0) ? CY_ABSENT : CY_PRESENT;
     C = CyAdd(R, "Memory", St);
-    AsciiSPrint(C->Detail, sizeof(C->Detail), "%u of %u slot(s) populated, %lu MB total",
-                (UINT32)M.Populated, (UINT32)M.Slots, (UINT64)M.TotalMB);
+    UINTN Off = AsciiSPrint(C->Detail, sizeof(C->Detail), "%u of %u slot(s) populated, ",
+                            (UINT32)M.Populated, (UINT32)M.Slots);
+    Off += AsciiSPrint(C->Detail + Off, sizeof(C->Detail) - Off,
+                       M.UnknownSize ? "total capacity unknown" : "%lu MB total", M.TotalMB);
+    CONST CHAR8 *Sep = "; RAM type: ";
+    for (UINTN i = 0; i < ARRAY_SIZE(gRamTypes); i++) {
+        if (M.TypeMask & (1U << i)) {
+            Off += AsciiSPrint(C->Detail + Off, sizeof(C->Detail) - Off, "%a%a", Sep,
+                               gRamTypes[i].Name);
+            Sep = "/";
+        }
+    }
+    if (M.Typed < M.Populated) {
+        AsciiSPrint(C->Detail + Off, sizeof(C->Detail) - Off,
+                    "; RAM type not verified for %u populated slot(s)",
+                    (UINT32)(M.Populated - M.Typed));
+    }
 }
-
-#define CY_MAXDISK 8
 
 static VOID CySanitizeModel(IN CONST UINT8 *Raw, IN UINTN RawLen, OUT CHAR8 *Out, IN UINTN Cap)
 {
@@ -258,7 +304,19 @@ static VOID CySanitizeModel(IN CONST UINT8 *Raw, IN UINTN RawLen, OUT CHAR8 *Out
     Out[o] = '\0';
 }
 
-static VOID CyDiskModel(IN EFI_HANDLE Handle, OUT CHAR8 *Model, IN UINTN Cap)
+static BOOLEAN CyAtaModel(IN CONST ATA_IDENTIFY_DATA *Id, OUT CHAR8 *Model, IN UINTN Cap)
+{
+    UINT8 Raw[sizeof(Id->ModelName)];
+    for (UINTN i = 0; i < sizeof(Raw); i++) {
+        Raw[i] = Id->ModelName[i ^ 1]; // ATA strings are word-swapped.
+    }
+    CySanitizeModel(Raw, sizeof(Raw), Model, Cap);
+    // Word 217: 1 is solid-state; 0, 0xffff and 2..0x400 don't specify an RPM.
+    return Id->nominal_media_rotation_rate >= 0x401 && Id->nominal_media_rotation_rate < 0xFFFF &&
+           (AsciiStrnCmp(Model, "APPLE ", 6) == 0 || AsciiStrnCmp(Model, "Apple ", 6) == 0);
+}
+
+static BOOLEAN CyDiskModel(IN EFI_HANDLE Handle, OUT CHAR8 *Model, IN UINTN Cap)
 {
     EFI_GUID DiGuid = EFI_DISK_INFO_PROTOCOL_GUID;
     EFI_GUID Nvme = EFI_DISK_INFO_NVME_INTERFACE_GUID;
@@ -266,41 +324,34 @@ static VOID CyDiskModel(IN EFI_HANDLE Handle, OUT CHAR8 *Model, IN UINTN Cap)
     EFI_GUID Ide = EFI_DISK_INFO_IDE_INTERFACE_GUID;
     EFI_DISK_INFO_PROTOCOL *Di;
     UINT8 *Buf;
-    UINT8 Raw[64];
-    UINTN RawLen = 0, i;
     UINT32 Size = 4096;
+    BOOLEAN AppleHdd = FALSE;
 
     Model[0] = '\0';
     if (Cap < 2 || EFI_ERROR(gBS->HandleProtocol(Handle, &DiGuid, (VOID **)&Di))) {
-        return;
+        return FALSE;
     }
     Buf = AllocateZeroPool(Size);
     if (Buf == NULL) {
-        return;
+        return FALSE;
     }
-    ZeroMem(Raw, sizeof(Raw));
 
-    if (CompareGuid(&Di->Interface, &Nvme) && !EFI_ERROR(Di->Identify(Di, Buf, &Size))) {
-        CopyMem(Raw, Buf + 24, 40);
-        RawLen = 40;
+    if (CompareGuid(&Di->Interface, &Nvme) && !EFI_ERROR(Di->Identify(Di, Buf, &Size)) &&
+        Size >= 64) {
+        CySanitizeModel(Buf + 24, 40, Model, Cap);
     }
     else if ((CompareGuid(&Di->Interface, &Ahci) || CompareGuid(&Di->Interface, &Ide)) &&
-             !EFI_ERROR(Di->Identify(Di, Buf, &Size))) {
-        for (i = 0; i < 40; i += 2) {
-            Raw[i] = Buf[54 + i + 1];
-            Raw[i + 1] = Buf[54 + i];
-        }
-        RawLen = 40;
+             !EFI_ERROR(Di->Identify(Di, Buf, &Size)) && Size >= sizeof(ATA_IDENTIFY_DATA)) {
+        AppleHdd = CyAtaModel((CONST ATA_IDENTIFY_DATA *)Buf, Model, Cap);
     }
     else {
         Size = 4096;
         if (!EFI_ERROR(Di->Inquiry(Di, Buf, &Size)) && Size >= 32) {
-            CopyMem(Raw, Buf + 8, 24);
-            RawLen = 24;
+            CySanitizeModel(Buf + 8, 24, Model, Cap);
         }
     }
     FreePool(Buf);
-    CySanitizeModel(Raw, RawLen, Model, Cap);
+    return AppleHdd;
 }
 
 static BOOLEAN CyAtaIdentify(IN EFI_ATA_PASS_THRU_PROTOCOL *Ata, IN UINT16 Port, IN UINT16 Pmp,
@@ -324,7 +375,7 @@ static BOOLEAN CyAtaIdentify(IN EFI_ATA_PASS_THRU_PROTOCOL *Ata, IN UINT16 Port,
 
     ZeroMem(&Acb, sizeof(Acb));
     ZeroMem(&Pkt, sizeof(Pkt));
-    Acb.AtaCommand = 0xEC;
+    Acb.AtaCommand = ATA_CMD_IDENTIFY_DRIVE;
     Pkt.Acb = &Acb;
     Pkt.Asb = Asb;
     Pkt.InDataBuffer = DataBuf;
@@ -333,7 +384,7 @@ static BOOLEAN CyAtaIdentify(IN EFI_ATA_PASS_THRU_PROTOCOL *Ata, IN UINT16 Port,
     Pkt.Length = EFI_ATA_PASS_THRU_LENGTH_BYTES;
     Pkt.Timeout = 30000000ULL;
 
-    if (!EFI_ERROR(Ata->PassThru(Ata, Port, Pmp, &Pkt, NULL))) {
+    if (!EFI_ERROR(Ata->PassThru(Ata, Port, Pmp, &Pkt, NULL)) && Pkt.InTransferLength == 512) {
         CopyMem(Id512, DataBuf, 512);
         Ok = TRUE;
     }
@@ -341,55 +392,48 @@ static BOOLEAN CyAtaIdentify(IN EFI_ATA_PASS_THRU_PROTOCOL *Ata, IN UINT16 Port,
     return Ok;
 }
 
-static UINTN CyAtaModels(OUT CHAR8 Models[][48], IN UINTN MaxN)
+// Only a fixed disk directly on the onboard controller is evidence about the bay.
+// USB bridges, PCI expansion/Thunderbolt chains and unknown paths aren't.
+static BOOLEAN CyOnboardAta(IN CONST EFI_DEVICE_PATH_PROTOCOL *Path)
+{
+    if (Path == NULL || DevicePathType(Path) != ACPI_DEVICE_PATH) {
+        return FALSE;
+    }
+    Path = NextDevicePathNode(Path);
+    if (DevicePathType(Path) != HARDWARE_DEVICE_PATH || DevicePathSubType(Path) != HW_PCI_DP) {
+        return FALSE;
+    }
+    Path = NextDevicePathNode(Path);
+    return DevicePathType(Path) == MESSAGING_DEVICE_PATH &&
+           (DevicePathSubType(Path) == MSG_SATA_DP || DevicePathSubType(Path) == MSG_ATAPI_DP) &&
+           IsDevicePathEnd(NextDevicePathNode(Path));
+}
+
+static BOOLEAN CyAtaModelForPath(IN EFI_DEVICE_PATH_PROTOCOL *Path, OUT CHAR8 *Model, IN UINTN Cap)
 {
     EFI_GUID Guid = EFI_ATA_PASS_THRU_PROTOCOL_GUID;
-    EFI_HANDLE *H = NULL;
-    UINTN N = 0, i, Count = 0;
-
-    if (EFI_ERROR(gBS->LocateHandleBuffer(ByProtocol, &Guid, NULL, &N, &H)) || H == NULL) {
-        return 0;
+    EFI_ATA_PASS_THRU_PROTOCOL *Ata;
+    EFI_HANDLE Controller;
+    UINT16 Port, Pmp;
+    ATA_IDENTIFY_DATA Id;
+    // Resolve the physical disk, not an unrelated drive at the same enumeration index.
+    if (Path == NULL || EFI_ERROR(gBS->LocateDevicePath(&Guid, &Path, &Controller)) ||
+        IsDevicePathEnd(Path) || EFI_ERROR(gBS->HandleProtocol(Controller, &Guid, (VOID **)&Ata)) ||
+        EFI_ERROR(Ata->GetDevice(Ata, Path, &Port, &Pmp)) ||
+        !CyAtaIdentify(Ata, Port, Pmp, (UINT8 *)&Id)) {
+        return FALSE;
     }
-    for (i = 0; i < N && Count < MaxN; i++) {
-        EFI_ATA_PASS_THRU_PROTOCOL *Ata;
-        UINT16 Port = 0xFFFF;
-        if (EFI_ERROR(gBS->HandleProtocol(H[i], &Guid, (VOID **)&Ata))) {
-            continue;
-        }
-        while (Count < MaxN && Ata->GetNextPort(Ata, &Port) == EFI_SUCCESS) {
-            UINT16 Pmp = 0xFFFF;
-            while (Count < MaxN && Ata->GetNextDevice(Ata, Port, &Pmp) == EFI_SUCCESS) {
-                UINT8 Id[512];
-                if (CyAtaIdentify(Ata, Port, Pmp, Id)) {
-                    UINT8 Raw[40];
-                    UINTN k;
-                    for (k = 0; k < 40; k += 2) {
-                        Raw[k] = Id[54 + k + 1];
-                        Raw[k + 1] = Id[54 + k];
-                    }
-                    CySanitizeModel(Raw, 40, Models[Count], 48);
-                    if (AsciiStrLen(Models[Count]) >= 3) {
-                        Count++;
-                    }
-                }
-            }
-        }
-    }
-    FreePool(H);
-    return Count;
+    return CyAtaModel(&Id, Model, Cap);
 }
 
 VOID CyScanStorage(IN OUT CY_REPORT *R)
 {
     EFI_HANDLE *H = NULL;
-    UINTN N = 0, i, Disks = 0, AtaN, AtaUsed = 0;
+    UINTN N = 0, i, Disks = 0, BayCandidates = 0;
     CY_COMPONENT *C;
     CHAR8 List[160];
-    CHAR8 AtaPool[CY_MAXDISK][48];
 
     List[0] = '\0';
-
-    AtaN = CyAtaModels(AtaPool, CY_MAXDISK);
 
     if (!EFI_ERROR(gBS->LocateHandleBuffer(ByProtocol, &gEfiBlockIoProtocolGuid, NULL, &N, &H)) &&
         H != NULL) {
@@ -407,18 +451,16 @@ VOID CyScanStorage(IN OUT CY_REPORT *R)
             Disks++;
             Gb = ((Bio->Media->LastBlock + 1) * Bio->Media->BlockSize) / 1000000000ULL;
 
-            CyDiskModel(H[i], Model, sizeof(Model));
-            if (AsciiStrLen(Model) < 3 && AtaUsed < AtaN) {
-                AsciiStrCpyS(Model, sizeof(Model), AtaPool[AtaUsed++]);
+            EFI_DEVICE_PATH_PROTOCOL *Path = DevicePathFromHandle(H[i]);
+            BOOLEAN AppleHdd = CyDiskModel(H[i], Model, sizeof(Model));
+            if (AsciiStrLen(Model) < 3) {
+                AppleHdd = CyAtaModelForPath(Path, Model, sizeof(Model));
             }
-
-            if (AsciiStrLen(Model) >= 3) {
-
-                if (AsciiStrStr(Model, "APPLE") == NULL && AsciiStrStr(Model, "Apple") == NULL) {
-                    R->NonAppleDisk = TRUE;
-                }
+            if (!Bio->Media->RemovableMedia && CyOnboardAta(Path)) {
+                // Multiple possible bays: don't attribute one bay's sensor to the other.
+                R->AppleBayHdd = (++BayCandidates == 1 && AppleHdd);
             }
-            else {
+            if (AsciiStrLen(Model) < 3) {
                 AsciiStrCpyS(Model, sizeof(Model), "unknown");
             }
             if (AsciiStrLen(List) + AsciiStrLen(Model) + 12 < sizeof(List)) {
@@ -490,9 +532,9 @@ VOID CyScanDisplay(IN OUT CY_REPORT *R)
         0x982C298B, 0xF4FA, 0x41CB, {0xB8, 0x38, 0x77, 0xAA, 0x68, 0x8F, 0xB8, 0x39}};
     BOOLEAN Uga = CountHandles(&UgaGuid) > 0;
 
-    BOOLEAN InternalPanel = (CyExpectFor(R->Model, R->IsApple, NULL) & CY_EXP_DISPLAY) != 0;
+    BOOLEAN InternalPanel = (R->ModelPolicy & CY_EXP_DISPLAY) != 0;
 
-    BOOLEAN AppleNotDriven = R->IsApple && CyApplePanelDead();
+    BOOLEAN AppleNotDriven = InternalPanel && R->IsApple && CyApplePanelDead();
 
     if (!InternalPanel) {
 
@@ -559,6 +601,11 @@ VOID CyScanBattery(IN OUT CY_REPORT *R)
     CHAR8 *D;
     UINTN Cap;
 
+    if (R->ModelPolicy & CY_SKIP_BATTERY) {
+        C = CyAdd(R, "Battery", CY_NOT_APPLICABLE);
+        AsciiStrCpyS(C->Detail, sizeof(C->Detail), "desktop or server; no built-in battery");
+        return;
+    }
     if (!R->IsApple) {
 
         C = CyAdd(R, "Battery", CY_UNKNOWN);
@@ -675,7 +722,7 @@ static BOOLEAN CyAppleHddSensorBad(OUT CHAR8 KeyOut[5], OUT INT8 *CelsiusOut)
         if (CySmcRead(Keys[i], v, 2)) {
             INT8 c = (INT8)v[0];
 
-            if (c <= 10) {
+            if (c == -127 || c == -128) {
                 CopyMem(KeyOut, Keys[i], 4);
                 KeyOut[4] = '\0';
                 *CelsiusOut = c;
@@ -752,12 +799,11 @@ VOID CyScanThermal(IN OUT CY_REPORT *R)
     }
 
     if (CyModelHasDriveSensor(R->Model) && CyAppleHddSensorBad(HddKey, &HddC)) {
-        C = CyAdd(R, "Thermal", CY_DEGRADED);
-
-        AsciiSPrint(C->Detail, sizeof(C->Detail),
-                    "%a; HDD sensor %a reads %dC -- %a, SMC ramps fans", Fan, HddKey, (INT32)HddC,
-                    R->NonAppleDisk ? "aftermarket drive has no Apple thermal sensor"
-                                    : "dead sensor (swapped/sensorless drive?)");
+        C = CyAdd(R, "Thermal", R->AppleBayHdd ? CY_DEGRADED : CY_PRESENT);
+        AsciiSPrint(C->Detail, sizeof(C->Detail), "%a; HDD bay sensor unavailable (%a: %dC); %a",
+                    Fan, HddKey, (INT32)HddC,
+                    R->AppleBayHdd ? "check Apple HDD sensor and connection"
+                                   : "no confirmed Apple HDD in this bay");
     }
     else {
         C = CyAdd(R, "Thermal", CY_PRESENT);
@@ -930,45 +976,35 @@ typedef struct
 {
     CONST CHAR8 *Prefix;
     UINT16 Mask;
-    UINT8 DimmSlots;
 } CY_MODEL_ROW;
 
 static CONST CY_MODEL_ROW gModels[] = {
 
-    {"MacBookPro", CY_EXP_BATTERY | CY_EXP_DISPLAY | CY_EXP_STORAGE | CY_EXP_NETWORK, 2},
-    {"MacBookAir", CY_EXP_BATTERY | CY_EXP_DISPLAY | CY_EXP_STORAGE | CY_EXP_NETWORK, 0},
-    {"MacBook", CY_EXP_BATTERY | CY_EXP_DISPLAY | CY_EXP_STORAGE | CY_EXP_NETWORK, 0},
+    {"MacBookPro", CY_EXP_BATTERY | CY_EXP_DISPLAY | CY_EXP_STORAGE | CY_EXP_NETWORK},
+    {"MacBookAir", CY_EXP_BATTERY | CY_EXP_DISPLAY | CY_EXP_STORAGE | CY_EXP_NETWORK},
+    {"MacBook", CY_EXP_BATTERY | CY_EXP_DISPLAY | CY_EXP_STORAGE | CY_EXP_NETWORK},
 
-    {"iMacPro", CY_EXP_DISPLAY | CY_EXP_STORAGE | CY_EXP_NETWORK, 4},
-    {"iMac", CY_EXP_DISPLAY | CY_EXP_STORAGE | CY_EXP_NETWORK, 4},
+    {"iMacPro", CY_EXP_DISPLAY | CY_EXP_STORAGE | CY_EXP_NETWORK},
+    {"iMac", CY_EXP_DISPLAY | CY_EXP_STORAGE | CY_EXP_NETWORK},
 
-    {"Macmini", CY_EXP_STORAGE | CY_EXP_NETWORK, 2},
-    {"MacPro", CY_EXP_STORAGE | CY_EXP_NETWORK, 4},
+    {"Macmini", CY_EXP_STORAGE | CY_EXP_NETWORK},
+    {"MacPro", CY_EXP_STORAGE | CY_EXP_NETWORK},
+    {"Xserve", CY_EXP_STORAGE | CY_EXP_NETWORK},
 };
 
-UINT16 CyExpectFor(IN CONST CHAR8 *Model, IN BOOLEAN IsApple, OUT UINT8 *DimmSlots)
+static UINT16 CyModelPolicy(IN CONST CY_REPORT *R)
 {
-    UINTN i;
-    if (DimmSlots) {
-        *DimmSlots = 0;
-    }
-    if (Model == NULL) {
+    if (!R->IsApple) {
         return 0;
     }
-    for (i = 0; i < sizeof(gModels) / sizeof(gModels[0]); i++) {
-        UINTN L = AsciiStrLen(gModels[i].Prefix);
-        if (AsciiStrnCmp(Model, gModels[i].Prefix, L) == 0) {
-            if (DimmSlots) {
-                *DimmSlots = gModels[i].DimmSlots;
-            }
-            return gModels[i].Mask;
+    // Some iMacs identify their enclosure as a laptop. Use the Mac model, not Type 3.
+    for (UINTN i = 0; i < ARRAY_SIZE(gModels); i++) {
+        if (AsciiStrnCmp(R->Model, gModels[i].Prefix, AsciiStrLen(gModels[i].Prefix)) == 0) {
+            UINT16 Mask = gModels[i].Mask;
+            return (Mask & CY_EXP_BATTERY) ? Mask : (Mask | CY_SKIP_BATTERY);
         }
     }
-
-    if (IsApple) {
-        return CY_EXP_STORAGE | CY_EXP_NETWORK;
-    }
-    return 0;
+    return CY_EXP_STORAGE | CY_EXP_NETWORK;
 }
 
 #define CY_SMC_PROTO_GUID                                                                          \
