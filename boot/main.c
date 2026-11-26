@@ -1935,6 +1935,16 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
             InstallMeridian();
 
             break;
+        case TAG_SPLASH_LOGOS:
+#if MERIDIAN_DEBUG > 0
+            INFO_LOG("Received User Input:");
+            INFO_LOG("%s  - Show '%s'", OffsetNext, LABEL_SPLASH_LOGOS);
+            INFO_LOG("\n\n");
+#endif
+
+            ConnSplashGallery();
+
+            break;
         case TAG_BOOTORDER:
 #if MERIDIAN_DEBUG > 0
             INFO_LOG("Received User Input:");

@@ -872,6 +872,8 @@ VOID ReadConfig(CHAR16 *FileName)
                     GlobalConfig.ShowTools[j] = TAG_CSR_ROTATE;
                 else if (MrdStrStartsWithCI(L"clean_nvram", Flag))
                     GlobalConfig.ShowTools[j] = TAG_CLEAN_NVRAM;
+                else if (MrdStrStartsWithCI(L"splash_logos", Flag))
+                    GlobalConfig.ShowTools[j] = TAG_SPLASH_LOGOS;
                 else if (MrdStrStartsWithCI(L"windows_recovery", Flag))
                     GlobalConfig.ShowTools[j] = TAG_RECOVERY_WIN;
                 else if (MrdStrStartsWithCI(L"apple_recovery", Flag))

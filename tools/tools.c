@@ -656,6 +656,7 @@ VOID ScanForTools(VOID)
         case TAG_SHUTDOWN:
         case TAG_RECOVERY_MAC:
         case TAG_RECOVERY_WIN:
+        case TAG_SPLASH_LOGOS:
             ToolTotal++;
             break;
         default:
@@ -744,6 +745,9 @@ VOID ScanForTools(VOID)
         case TAG_RECOVERY_WIN:
             ToolName = LABEL_RECOVERY_WIN;
             break;
+        case TAG_SPLASH_LOGOS:
+            ToolName = LABEL_SPLASH_LOGOS;
+            break;
         default:
             continue;
         }
@@ -764,6 +768,9 @@ VOID ScanForTools(VOID)
             break;
         case TAG_REBOOT:
             AddOptionalToolMenuEntry(ToolName, TAG_REBOOT, FALSE, FALSE);
+            break;
+        case TAG_SPLASH_LOGOS:
+            AddOptionalToolMenuEntry(ToolName, TAG_SPLASH_LOGOS, FALSE, FALSE);
             break;
         case TAG_EXIT:
             AddOptionalToolMenuEntry(ToolName, TAG_EXIT, FALSE, FALSE);

@@ -22,6 +22,7 @@
 #define LABEL_GPTSYNC L"GPTsync Tool"
 #define LABEL_FWUPDATE L"Firmware Update"
 #define LABEL_CLEAN_NVRAM L"Clean nvRAM"
+#define LABEL_SPLASH_LOGOS L"Splash Logos"
 #define LABEL_RECOVERY_MAC L"Recovery (Mac)"
 #define LABEL_RECOVERY_WIN L"Recovery (Win)"
 #define LABEL_CYDIA L"Diagnostics (Cydia)"

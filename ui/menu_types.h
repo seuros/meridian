@@ -30,7 +30,8 @@
 #define TAG_INSTALL (17)
 #define TAG_BOOTORDER (18)
 #define TAG_CLEAN_NVRAM (19)
-#define NUM_TOOLS (20)
+#define TAG_SPLASH_LOGOS (20)
+#define NUM_TOOLS (21)
 
 #define TAG_TOOL (21)
 #define TAG_LOADER (22)
