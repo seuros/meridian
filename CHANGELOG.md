@@ -1,5 +1,29 @@
 # Changelog
 
+## [2026.12.2](https://github.com/seuros/meridian/compare/v2026.12.1...v2026.12.2) (2026-11-26)
+
+
+### Features
+
+* **conn:** draw splash logos in their own colours ([a27db8b](https://github.com/seuros/meridian/commit/a27db8baeaa426fb363884bdc93f101421f907a0))
+* **conn:** show build version on the frame border ([426ae96](https://github.com/seuros/meridian/commit/426ae962de1778e18dca4df0699ef2c4f4335175))
+* **tools:** add splash_logos showtools entry ([7363630](https://github.com/seuros/meridian/commit/7363630b9e572b78ebdee9dfe9a3e66db7270a79))
+
+
+### Refactoring
+
+* **conn:** use unsigned shift counts in CONN_RGB/CONN_RGBA ([bce1bb7](https://github.com/seuros/meridian/commit/bce1bb7422ccb9bd85a5a497df9271b74e3e48a1))
+
+
+### Documentation
+
+* **readme:** refresh mock OS versions and theme screenshots ([550cbae](https://github.com/seuros/meridian/commit/550cbae6fba5b81b7f95bd90255151c9bf6c4169))
+
+
+### Chores
+
+* release 2026.12.2 ([1ce5003](https://github.com/seuros/meridian/commit/1ce5003c80c07f5d4f8155785f9a884794a86753))
+
 ## [2026.12.1](https://github.com/seuros/meridian/compare/v2026.12.0...v2026.12.1) (2026-11-26)
 
 
